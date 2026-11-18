@@ -1,103 +1,171 @@
-import Image from "next/image";
+"use client";
+import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
+import { AlertOctagon, AlertTriangle, CheckCircle2, FileSearch, Globe, Info, ListChecks, PlusCircle, Radar, ScrollText } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/common/page-header";
+import { MetricCard } from "@/components/common/metric-card";
+import { SectionCard } from "@/components/common/section-card";
+import { EmptyState } from "@/components/common/empty-state";
+import { ErrorState } from "@/components/common/error-state";
+import { LoadingSkeleton } from "@/components/common/loading-skeleton";
+import { StatusBadge } from "@/components/common/status-badge";
+import { SeoScoreCard } from "@/components/audit/seo-score-card";
+import { AuditHistoryTable } from "@/components/audit/audit-history-table";
+import { IssueDistributionChart } from "@/components/charts/issue-distribution-chart";
+import { CategoryChart } from "@/components/charts/category-chart";
+import { ScoreHistoryChart } from "@/components/charts/score-history-chart";
+import { CrawlStatusChart } from "@/components/charts/crawl-status-chart";
+import { api } from "@/lib/api";
+import { useApi } from "@/hooks/use-api";
+import { formatDate, formatNumber } from "@/lib/format";
+import type { HistoryData, OverviewData } from "@/lib/api-types";
 
-export default function Home() {
+export default function OverviewPage() {
+  const audits = useApi(() => api.listAudits({ pageSize: 100 }), []);
+  const latest = useMemo(() => audits.data?.items.find((a) => a.hasResults && a.status === "completed") ?? null, [audits.data]);
+  const [ov, setOv] = useState<OverviewData | null>(null);
+  const [hist, setHist] = useState<HistoryData | null>(null);
+  const [ovErr, setOvErr] = useState<Error | null>(null);
+
+  useEffect(() => {
+    if (!latest) return;
+    setOv(null);
+    api.overview(latest.id).then(setOv).catch(setOvErr);
+    api.history(latest.domain).then(setHist).catch(() => setHist(null));
+  }, [latest]);
+
+  const header = (
+    <PageHeader
+      title="SEO Overview"
+      description="Monitor website health, discover technical issues, and prioritize SEO improvements."
+      actions={
+        <Button asChild>
+          <Link href="/audits/new">
+            <PlusCircle className="size-4" /> New Audit
+          </Link>
+        </Button>
+      }
+    />
+  );
+
+  if (audits.loading && !audits.data) return <div className="space-y-6">{header}<LoadingSkeleton /></div>;
+  if (audits.error) return <div className="space-y-6">{header}<ErrorState error={audits.error} onRetry={audits.reload} /></div>;
+
+  const running = audits.data?.items.filter((a) => a.status === "running" || a.status === "queued") ?? [];
+
+  if (!latest) {
+    return (
+      <div className="space-y-6">
+        {header}
+        {running.length > 0 && <RunningBanner items={running} />}
+        <SectionCard>
+          <EmptyState
+            icon={Radar}
+            title="No completed audits yet"
+            description={
+              <>Run your first audit to see scores, findings and recommendations here. Existing folders in <code className="rounded bg-muted px-1">jev-seo-reports/</code> are picked up automatically.</>
+            }
+            action={
+              <Button asChild>
+                <Link href="/audits/new"><PlusCircle className="size-4" /> Start an audit</Link>
+              </Button>
+            }
+          />
+        </SectionCard>
+      </div>
+    );
+  }
+
+  const sev = ov?.bySeverity;
   return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+    <div className="space-y-6">
+      {header}
+      {running.length > 0 && <RunningBanner items={running} />}
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+      <SectionCard bodyClassName="p-0" className="overflow-hidden">
+        <div className="grid grid-cols-2 gap-px bg-border sm:grid-cols-3 lg:grid-cols-6">
+          {[
+            ["Domain", <Link key="d" href={`/audits/${encodeURIComponent(latest.id)}`} className="font-medium hover:underline">{latest.domain}</Link>],
+            ["Last audit", formatDate(latest.finishedAt)],
+            ["Status", <StatusBadge key="s" status={latest.status} />],
+            ["Pages crawled", formatNumber(latest.pagesCrawled)],
+            ["Sitemap URLs", formatNumber(latest.sitemapUrls)],
+            ["Rules evaluated", formatNumber(latest.rulesEvaluated)],
+          ].map(([label, value]) => (
+            <div key={label as string} className="min-w-0 bg-card px-4 py-3">
+              <p className="text-xs text-muted-foreground">{label as string}</p>
+              <div className="mt-0.5 truncate text-sm">{value}</div>
+            </div>
+          ))}
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+      </SectionCard>
+
+      {ovErr && <ErrorState error={ovErr} />}
+      {!ov ? (
+        <LoadingSkeleton variant="cards" />
+      ) : (
+        <>
+          <div className="grid gap-4 lg:grid-cols-3">
+            <div className="lg:col-span-1"><SeoScoreCard scores={ov.scores} /></div>
+            <div className="grid grid-cols-2 content-start gap-4 lg:col-span-2 xl:grid-cols-4">
+              <MetricCard label="Pages crawled" value={formatNumber(ov.counts.pages)} hint={`${ov.counts.htmlPages} HTML pages (200)`} icon={Globe} />
+              <MetricCard label="Total findings" value={formatNumber(ov.counts.findings)} icon={FileSearch} />
+              <MetricCard label="Critical issues" value={sev!.critical} hint={`${sev!.high} high severity`} icon={AlertOctagon} tone="critical" />
+              <MetricCard label="Warnings" value={sev!.medium} hint="Medium severity" icon={AlertTriangle} tone="warning" />
+              <MetricCard label="Informational" value={sev!.low + sev!.info} hint={`${sev!.low} low · ${sev!.info} info`} icon={Info} tone="info" />
+              <MetricCard label="Passed checks" value={ov.counts.passedRules} hint="Rules with no issue detected" icon={CheckCircle2} tone="success" />
+              <MetricCard label="Recommended actions" value={ov.counts.actions} hint={`${ov.counts.quickWins} quick wins`} icon={ListChecks} />
+              <MetricCard label="Requests made" value={formatNumber(ov.site.requests)} hint="During the crawl" icon={ScrollText} />
+            </div>
+          </div>
+
+          <div className="grid gap-4 lg:grid-cols-2">
+            <SectionCard title="Findings by severity" description="All findings in the latest audit">
+              <IssueDistributionChart counts={ov.bySeverity} />
+            </SectionCard>
+            <SectionCard title="Findings by category" description="Engine categories (jevseo/checks.py)">
+              {ov.byCategory.length ? <CategoryChart data={ov.byCategory} /> : <EmptyState compact icon={CheckCircle2} title="No findings" />}
+            </SectionCard>
+            <SectionCard title="SEO score history" description={`Completed audits of ${latest.domain}`}>
+              {hist && hist.points.length >= 2 ? (
+                <ScoreHistoryChart points={hist.points} />
+              ) : (
+                <EmptyState compact icon={Radar} title="Not enough history yet" description="Run another audit of this domain to see how the score changes over time." />
+              )}
+            </SectionCard>
+            <SectionCard title="Crawl statistics" description="Fetched URLs by HTTP status">
+              <CrawlStatusChart buckets={ov.statusBuckets} />
+              <dl className="mt-3 grid grid-cols-3 gap-2 text-xs">
+                <div><dt className="text-muted-foreground">Crawl time</dt><dd className="font-medium tabular">{ov.run.timings.crawl ?? "—"} s</dd></div>
+                <div><dt className="text-muted-foreground">Page cap hit</dt><dd className="font-medium">{ov.site.limits?.hit_page_cap ? "Yes" : "No"}</dd></div>
+                <div><dt className="text-muted-foreground">Time budget hit</dt><dd className="font-medium">{ov.site.limits?.hit_time_budget ? "Yes" : "No"}</dd></div>
+              </dl>
+            </SectionCard>
+          </div>
+        </>
+      )}
+
+      <SectionCard
+        title="Recent audits"
+        actions={<Button variant="outline" size="sm" asChild><Link href="/audits">View all</Link></Button>}
+        bodyClassName="p-0"
+      >
+        <AuditHistoryTable audits={audits.data!.items.slice(0, 5)} compact />
+      </SectionCard>
+    </div>
+  );
+}
+
+function RunningBanner({ items }: { items: Array<{ id: string; domain: string }> }) {
+  return (
+    <div role="status" className="flex flex-wrap items-center gap-3 rounded-lg border border-info/20 bg-info-soft px-4 py-3 text-sm">
+      <span className="font-medium text-info">Audit in progress:</span>
+      {items.map((r) => (
+        <Link key={r.id} href={`/audits/${encodeURIComponent(r.id)}/progress`} className="text-info underline-offset-2 hover:underline">
+          {r.domain}
+        </Link>
+      ))}
     </div>
   );
 }

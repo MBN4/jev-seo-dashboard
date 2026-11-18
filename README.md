@@ -1,36 +1,88 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Jev SEO Dashboard
 
-## Getting Started
+A local web dashboard for the [jev-seo](https://github.com/agricidaniel/jev-seo) audit engine. Start audits from the browser, watch the engine's real progress, explore findings, pages, AI judgments and Core Web Vitals, track fixes, and download the engine's own PDF, Excel and Markdown reports.
 
-First, run the development server:
+**The engine is not modified.** The dashboard runs the unchanged `jevseo` CLI as a subprocess and reads the `audit.json` it writes. The 52 rules, scoring and report generators are exactly the engine's own, and the CLI keeps working on its own.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+```
+Browser ──► Next.js (UI + /api routes, port 3000) ──spawn──► python -m jevseo run … (your engine venv)
+                     │                                                    │
+                     └──────── reads ◄── jev-seo-reports/<domain>-<stamp>/audit.json, report.pdf/.xlsx/.md
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Features
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- **Overview dashboard:** the latest audit's score, grade and completeness, severity and category charts, score history (from saved audits only), crawl statistics and recent audits.
+- **New audit:** URL validation in the browser and on the server, including the SSRF guard. Every option maps to a real engine flag: max pages and depth, time budget, JS rendering, Jev, PageSpeed, DataForSEO and formats. A summary shows missing dependencies, and paid mode needs explicit confirmation.
+- **Live progress:** Server-Sent Events from the engine's own `== n/7` stage lines and counters (URLs crawled, pages judged, PageSpeed runs), plus warnings, errors, the engine log and cancellation. Progress survives page reloads and dashboard restarts.
+- **Results workspace:** Overview, Technical SEO (filters, search, sort, pagination, detail drawer), Pages (sortable table and lazy-loaded page analysis), AI Content (real Jev answers only), Performance (mobile and desktop, with 429 and missing data shown as such), Recommendations (status and notes stored separately from audit data) and Reports.
+- **History:** search, status and date filters, sorting, pagination, and removal from history that never deletes files. Existing folders in `jev-seo-reports/`, such as an InboxWarm audit, are picked up automatically.
+- **Reports center:** original engine files with secure downloads and in-browser PDF preview.
+- **Settings:** write-only, masked API keys (stored in `data/secrets.env`, mode 600), audit defaults, and system diagnostics (engine `doctor`, Python, Playwright/Chromium, directories, keys).
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Quick start (Ubuntu 20.04+)
 
-## Learn More
+```bash
+# 1. engine (skip if you already have it with a working venv)
+git clone https://github.com/agricidaniel/jev-seo ~/jev-seo
+cd ~/jev-seo && uv venv .venv -p 3.12 && uv pip install -p .venv/bin/python -r requirements.txt
 
-To learn more about Next.js, take a look at the following resources:
+# 2. dashboard
+git clone https://github.com/MBN4/jev-seo-dashboard ~/jev-seo-dashboard
+cd ~/jev-seo-dashboard
+echo "JEVSEO_DIR=$HOME/jev-seo" > .env.local
+./start.sh            # first run installs and builds, then serves http://localhost:3000
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Open **http://localhost:3000**, go to **New Audit**, enter a URL and press **Start audit**.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+| What | Where |
+| --- | --- |
+| Dashboard | http://localhost:3000 |
+| API | http://localhost:3000/api (for example `/api/system/health`) |
+| Development mode | `./start.sh --dev` |
 
-## Deploy on Vercel
+Full instructions: [docs/INSTALLATION.md](docs/INSTALLATION.md). Using the app: [docs/USER_GUIDE.md](docs/USER_GUIDE.md). Internals: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). Endpoints: [docs/API.md](docs/API.md).
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Configuration
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+`.env.local` (see `.env.example`):
+
+| Variable | Default | Purpose |
+| --- | --- | --- |
+| `JEVSEO_DIR` | `../jev-seo` | Engine checkout |
+| `JEVSEO_PYTHON` | `$JEVSEO_DIR/.venv/bin/python` | Interpreter with the engine requirements |
+| `JEVSEO_REPORTS_DIR` | `$JEVSEO_DIR/jev-seo-reports` | Audit folders (same place the CLI writes) |
+| `JEVSEO_DATA_DIR` | `./data` | Dashboard state, secrets, job logs |
+| `JEVSEO_MAX_CONCURRENT` | `1` | Simultaneous audits (max 4) |
+| `JEVSEO_MAX_AUDIT_SECONDS` | `3600` | Hard limit per audit process |
+| `JEVSEO_ALLOWED_HOSTS` | (localhost only) | Extra hostnames allowed to reach the dashboard |
+
+API keys (`TYPESAFE_API_KEY`, `PAGESPEED_API_KEY`, `DATAFORSEO_USERNAME`, `DATAFORSEO_PASSWORD`) are set in **Settings → API keys**. Keys already present in the engine's `.env` or your environment are detected and used. Every key is optional:
+
+- Without the TypeSafe key, the audit is marked partial.
+- Without a PageSpeed key, runs are unkeyed and often rate limited.
+- DataForSEO keys are needed only for paid full mode.
+
+## Development
+
+```bash
+npm run dev        # http://127.0.0.1:3000 with hot reload
+npm test           # 91 Vitest tests: backend routes/services + React components
+npm run typecheck && npm run lint && npm run build
+```
+
+## Troubleshooting
+
+| Symptom | Fix |
+| --- | --- |
+| `jev-seo engine not found` | Set `JEVSEO_DIR` in `.env.local`. |
+| `Engine Python … missing packages` | `$JEVSEO_DIR/.venv/bin/python -m pip install -r $JEVSEO_DIR/requirements.txt` |
+| Performance shows "Rate limited (HTTP 429)" | Add a free `PAGESPEED_API_KEY` in Settings. |
+| AI Content says "not available" | Add `TYPESAFE_API_KEY` in Settings and run a new audit. |
+| Chromium unavailable (Ubuntu 20.04) | Optional. Crawling works without it; JavaScript-only pages are read as raw HTML. |
+| "Only 1 audit(s) can run at once" | Wait, cancel the running audit, or raise `JEVSEO_MAX_CONCURRENT`. |
+| Audit shows "Interrupted" | The engine process stopped while the dashboard was down. Start a new audit. |
+| 403 "Host not allowed" | Open the dashboard via `localhost`, or add your hostname to `JEVSEO_ALLOWED_HOSTS`. |
+
+Settings → Diagnostics runs all of these checks and suggests the fix.
