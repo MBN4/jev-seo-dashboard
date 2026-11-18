@@ -67,6 +67,8 @@ export const api = {
   settings: () => request<SettingsData>(`/api/settings`),
   saveSettings: (body: { secrets?: Record<string, string | null>; defaults?: Partial<AuditOptions> }) =>
     request<SettingsData>(`/api/settings`, { method: "PUT", body: JSON.stringify(body) }),
+  verifyKey: (service: "pagespeed" | "dataforseo") =>
+    request<{ service: string; ok: boolean; status: string; message: string }>(`/api/settings/verify`, { method: "POST", body: JSON.stringify({ service }) }),
   health: () => request<{ status: string; engineFound: boolean; running: Array<{ id: string; domain: string; startedAt: string | null }> }>(`/api/system/health`),
   diagnostics: (refresh = false) => request<Diagnostics>(`/api/system/diagnostics${refresh ? "?refresh=1" : ""}`),
 };

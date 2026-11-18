@@ -2,7 +2,7 @@ import { cn } from "@/lib/utils";
 
 const RATING = {
   good: { cls: "bg-success-soft text-brand-strong", label: "Good" },
-  "needs improvement": { cls: "bg-warning-soft text-[oklch(0.45_0.11_62)]", label: "Needs improvement" },
+  "needs improvement": { cls: "bg-warning-soft text-warning-ink", label: "Needs improvement" },
   poor: { cls: "bg-critical-soft text-critical", label: "Poor" },
 } as const;
 

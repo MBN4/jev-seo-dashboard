@@ -1,5 +1,6 @@
 import { AlertTriangle } from "lucide-react";
 import { ScoreGauge } from "@/components/charts/score-gauge";
+import { GrowBar } from "@/components/motion/primitives";
 import type { EngineScores } from "@/types/engine";
 
 /** Score + grade + completeness exactly as the engine computed them (jevseo/score.py). */
@@ -7,7 +8,7 @@ export function SeoScoreCard({ scores }: { scores: EngineScores }) {
   const c = scores.completeness;
   const pct = c ? Math.round((c.categories_scored / c.categories_total) * 100) : null;
   return (
-    <div className="flex h-full flex-col items-center gap-4 rounded-lg border bg-card p-5 shadow-[var(--shadow-card)] sm:flex-row lg:flex-col">
+    <div className="relative flex h-full flex-col items-center gap-5 overflow-hidden surface p-6 sm:flex-row lg:flex-col">
       <ScoreGauge score={scores.overall} grade={scores.grade} />
       <div className="w-full min-w-0 flex-1 space-y-3">
         <div>
@@ -18,7 +19,7 @@ export function SeoScoreCard({ scores }: { scores: EngineScores }) {
                 <span className="font-semibold tabular">{c.categories_scored}</span> of {c.categories_total} categories scored
               </p>
               <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-muted" role="progressbar" aria-valuenow={pct ?? 0} aria-valuemin={0} aria-valuemax={100} aria-label="Audit completeness">
-                <div className="h-full rounded-full bg-brand" style={{ width: `${pct}%` }} />
+                <GrowBar pct={pct ?? 0} delay={0.2} className="h-full rounded-full bg-gradient-to-r from-brand/70 to-brand" />
               </div>
               <ul className="mt-2 flex flex-wrap gap-1.5 text-[0.7rem]">
                 {[
@@ -39,7 +40,7 @@ export function SeoScoreCard({ scores }: { scores: EngineScores }) {
         {(scores.partial?.length || scores.caps?.length) ? (
           <div className="space-y-1 rounded-md bg-warning-soft/70 p-2.5 text-xs">
             {scores.partial?.length ? (
-              <p className="flex items-center gap-1 font-medium text-[oklch(0.45_0.11_62)]">
+              <p className="flex items-center gap-1 font-medium text-warning-ink">
                 <AlertTriangle className="size-3.5" aria-hidden /> Partial audit
               </p>
             ) : null}

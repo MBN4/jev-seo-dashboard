@@ -8,11 +8,11 @@ export function ChartTooltip({ active, payload, label, unit, labelFormatter }: {
 }) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="rounded-md border bg-popover px-3 py-2 text-xs shadow-[var(--shadow-raised)]">
+    <div className="rounded-lg border bg-popover/90 px-3 py-2 text-xs shadow-[var(--shadow-raised)] backdrop-blur-md">
       <p className="mb-1 font-medium">{labelFormatter ? labelFormatter(label, payload[0]?.payload) : label}</p>
       {payload.map((p, i) => (
         <p key={i} className="flex items-center gap-2 text-muted-foreground">
-          <span className="size-2 rounded-sm" style={{ background: (p.payload?.fill as string) ?? p.color }} aria-hidden />
+          <span className="size-2 rounded-sm" style={{ background: String((p.payload?.fill as string) ?? p.color).startsWith("url(") ? p.color : ((p.payload?.fill as string) ?? p.color) }} aria-hidden />
           <span>{p.name}</span>
           <span className="ml-auto font-medium text-foreground tabular">
             {p.value}

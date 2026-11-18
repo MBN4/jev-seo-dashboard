@@ -133,7 +133,7 @@ function DiagnosticsTab() {
           ["Python", data.versions.python ?? "Unavailable"],
           ["Node.js", data.versions.node],
         ].map(([k, val]) => (
-          <div key={k} className="rounded-lg border bg-card p-3 shadow-[var(--shadow-card)]"><p className="text-xs text-muted-foreground">{k}</p><p className="mt-0.5 text-sm font-semibold">{val}</p></div>
+          <div key={k} className="surface p-3"><p className="text-xs text-muted-foreground">{k}</p><p className="mt-0.5 text-sm font-semibold">{val}</p></div>
         ))}
       </div>
       <SectionCard

@@ -2,7 +2,8 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Loader2, Menu, Search, Settings } from "lucide-react";
+import { Menu, PanelLeft, Search, Settings } from "lucide-react";
+import { AnimatePresence, motion } from "motion/react";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +11,8 @@ import { api } from "@/lib/api";
 import { Logo } from "./logo";
 import { SidebarNav } from "./app-sidebar";
 import { AUDIT_TABS, auditContext, NAV } from "./nav";
+import { ThemeToggle } from "./theme-toggle";
+import { useSidebar } from "./sidebar-state";
 
 function useCrumbs(pathname: string): Array<{ label: string; href?: string }> {
   const ctx = auditContext(pathname);
@@ -52,8 +55,8 @@ function RunningIndicator() {
     );
   if (!running.length)
     return (
-      <span role="status" className="hidden items-center gap-1.5 rounded-md px-2 py-1 text-xs text-muted-foreground sm:inline-flex">
-        <span className="size-1.5 rounded-full bg-brand" /> Engine idle
+      <span role="status" className="hidden items-center gap-2 rounded-full border bg-card/60 px-2.5 py-1 text-xs text-muted-foreground sm:inline-flex">
+        <span className="relative flex size-1.5"><span className="size-1.5 rounded-full bg-brand" /></span> Engine idle
       </span>
     );
   const r = running[0];
@@ -61,9 +64,12 @@ function RunningIndicator() {
     <Link
       href={`/audits/${encodeURIComponent(r.id)}/progress`}
       role="status"
-      className="inline-flex max-w-[14rem] items-center gap-1.5 rounded-md bg-info-soft px-2 py-1 text-xs font-medium text-info hover:underline"
+      className="inline-flex max-w-[15rem] items-center gap-2 rounded-full border border-info/25 bg-info-soft px-2.5 py-1 text-xs font-medium text-info transition-shadow hover:shadow-[0_0_0_3px_var(--info-soft)]"
     >
-      <Loader2 className="size-3 shrink-0 animate-spin" aria-hidden />
+      <span className="relative flex size-2 shrink-0" aria-hidden>
+        <span className="absolute inline-flex size-full animate-ping rounded-full bg-info opacity-60" />
+        <span className="relative inline-flex size-2 rounded-full bg-info" />
+      </span>
       <span className="truncate">Auditing {r.domain}{running.length > 1 ? ` +${running.length - 1}` : ""}</span>
     </Link>
   );
@@ -71,15 +77,20 @@ function RunningIndicator() {
 
 export function AppHeader() {
   const pathname = usePathname();
+  const sidebar = useSidebar();
   const router = useRouter();
   const crumbs = useCrumbs(pathname);
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
   return (
-    <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b bg-background/90 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/75 sm:px-6">
+    <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b bg-background/70 px-4 backdrop-blur-xl backdrop-saturate-150 sm:px-6">
       <Button variant="ghost" size="icon-sm" className="lg:hidden" onClick={() => setOpen(true)} aria-label="Open navigation">
         <Menu className="size-4" />
       </Button>
+      <Button variant="ghost" size="icon-sm" className="hidden lg:inline-flex" onClick={sidebar.toggle} aria-label={sidebar.collapsed ? "Expand sidebar" : "Collapse sidebar"} title="Toggle sidebar (Ctrl+B)">
+        <PanelLeft className="size-4" />
+      </Button>
+      <span className="hidden h-5 w-px bg-border lg:block" aria-hidden />
       <Sheet open={open} onOpenChange={setOpen}>
         <SheetContent side="left" className="w-72 border-sidebar-border bg-sidebar p-0 text-sidebar-foreground">
           <SheetTitle className="sr-only">Navigation</SheetTitle>
@@ -87,14 +98,15 @@ export function AppHeader() {
             <Logo />
           </div>
           <div className="overflow-y-auto px-3 py-4">
-            <SidebarNav onNavigate={() => setOpen(false)} />
+            <SidebarNav layoutGroup="mobile" onNavigate={() => setOpen(false)} />
           </div>
         </SheetContent>
       </Sheet>
       <nav aria-label="Breadcrumb" className="min-w-0 flex-1">
         <ol className="flex min-w-0 items-center gap-1.5 text-sm">
+          <AnimatePresence initial={false} mode="popLayout">
           {crumbs.map((c, i) => (
-            <li key={i} className="flex min-w-0 items-center gap-1.5">
+            <motion.li key={`${i}-${c.label}`} layout initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }} className="flex min-w-0 items-center gap-1.5">
               {i > 0 && <span className="text-muted-foreground/60" aria-hidden>/</span>}
               {c.href ? (
                 <Link href={c.href} className="truncate text-muted-foreground hover:text-foreground">
@@ -105,8 +117,9 @@ export function AppHeader() {
                   {c.label}
                 </span>
               )}
-            </li>
+            </motion.li>
           ))}
+          </AnimatePresence>
         </ol>
       </nav>
       <form
@@ -118,9 +131,10 @@ export function AppHeader() {
         }}
       >
         <Search className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground" aria-hidden />
-        <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search audits by domain" aria-label="Search audits by domain" className="h-8 w-56 bg-card pl-8 text-sm" />
+        <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search audits by domain" aria-label="Search audits by domain" className="h-9 w-56 rounded-full bg-card/70 pl-8 text-sm transition-[width,box-shadow] duration-300 focus-visible:w-72" />
       </form>
       <RunningIndicator />
+      <ThemeToggle />
       <Button variant="ghost" size="icon-sm" asChild>
         <Link href="/settings" aria-label="Settings">
           <Settings className="size-4" />

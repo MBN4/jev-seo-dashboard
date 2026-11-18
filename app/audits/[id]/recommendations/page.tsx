@@ -41,7 +41,7 @@ export default function RecommendationsTab() {
 
   return (
     <div className="space-y-4">
-      <div className="rounded-lg border bg-card p-4 shadow-[var(--shadow-card)]">
+      <div className="surface p-4">
         <div className="flex flex-wrap items-baseline justify-between gap-2 text-sm">
           <p><span className="font-semibold tabular">{counts.completed}</span> of {data.items.length} actions completed · {counts.in_progress} in progress · {counts.pending} pending</p>
           <p className="text-xs text-muted-foreground">Ranked by the engine (priority, impact, effort). Your status and notes never modify audit.json.</p>

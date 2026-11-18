@@ -30,14 +30,14 @@ export default function AuditOverviewPage() {
       <div className="grid gap-4 lg:grid-cols-3">
         <SeoScoreCard scores={ov.scores} />
         <div className="grid grid-cols-2 content-start gap-4 lg:col-span-2 xl:grid-cols-4">
-          <MetricCard label="Pages crawled" value={formatNumber(ov.counts.pages)} hint={`${ov.counts.htmlPages} HTML pages`} icon={Globe} />
-          <MetricCard label="Total findings" value={ov.counts.findings} icon={FileSearch} />
-          <MetricCard label="Critical findings" value={s.critical} hint={`${s.high} high`} icon={AlertOctagon} tone="critical" />
-          <MetricCard label="Warnings" value={s.medium} hint="Medium severity" icon={AlertTriangle} tone="warning" />
-          <MetricCard label="Passed checks" value={ov.counts.passedRules} icon={CheckCircle2} tone="success" />
-          <MetricCard label="Recommended actions" value={ov.counts.actions} icon={ListChecks} />
-          <MetricCard label="Quick wins" value={ov.counts.quickWins} hint="High impact, low effort" icon={Zap} tone="info" />
-          <MetricCard label="Jev pages judged" value={ov.jev.available ? ov.jev.judged : "—"} hint={ov.jev.available ? `${ov.jev.notJudged} not judged` : "Jev not available"} icon={Bot} />
+          <MetricCard index={0} label="Pages crawled" value={formatNumber(ov.counts.pages)} hint={`${ov.counts.htmlPages} HTML pages`} icon={Globe} />
+          <MetricCard index={1} label="Total findings" value={ov.counts.findings} icon={FileSearch} />
+          <MetricCard index={2} label="Critical findings" value={s.critical} hint={`${s.high} high`} icon={AlertOctagon} tone="critical" />
+          <MetricCard index={3} label="Warnings" value={s.medium} hint="Medium severity" icon={AlertTriangle} tone="warning" />
+          <MetricCard index={4} label="Passed checks" value={ov.counts.passedRules} icon={CheckCircle2} tone="success" />
+          <MetricCard index={5} label="Recommended actions" value={ov.counts.actions} icon={ListChecks} />
+          <MetricCard index={6} label="Quick wins" value={ov.counts.quickWins} hint="High impact, low effort" icon={Zap} tone="info" />
+          <MetricCard index={7} label="Jev pages judged" value={ov.jev.available ? ov.jev.judged : "—"} hint={ov.jev.available ? `${ov.jev.notJudged} not judged` : "Jev not available"} icon={Bot} />
         </div>
       </div>
 

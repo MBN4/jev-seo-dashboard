@@ -9,7 +9,7 @@ const ICON = { pdf: FileType, xlsx: FileSpreadsheet, md: FileText, json: FileJso
 export function ReportDownloadCard({ auditId, report, onPreview }: { auditId: string; report: ReportFile; onPreview?: () => void }) {
   const Icon = ICON[report.type] ?? FileText;
   return (
-    <div className="flex items-center gap-3 rounded-lg border bg-card p-3 shadow-[var(--shadow-card)]">
+    <div className="flex items-center gap-3 surface p-3 ">
       <span className="grid size-10 shrink-0 place-items-center rounded-md bg-muted text-muted-foreground"><Icon className="size-5" aria-hidden /></span>
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-medium">{report.label}</p>

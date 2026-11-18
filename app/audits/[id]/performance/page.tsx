@@ -117,10 +117,24 @@ export default function PerformanceTab() {
       ) : (
         <>
           {limited > 0 && (
-            <div role="status" className="flex flex-wrap items-center gap-3 rounded-lg border border-warning/30 bg-warning-soft/60 p-4 text-sm">
+            <div role="status" className="flex flex-col gap-3 rounded-xl border border-warning/30 bg-warning-soft/60 p-4 text-sm sm:flex-row sm:items-start">
               <KeyRound className="size-5 shrink-0 text-warning" />
-              <p className="flex-1">{limited} PageSpeed request(s) were rate limited. Without an API key Google shares a small quota across all unkeyed callers.</p>
-              <Button asChild size="sm" variant="outline"><Link href="/settings">Add PAGESPEED_API_KEY</Link></Button>
+              <div className="flex-1 space-y-2">
+                <p className="font-medium">
+                  {limited} PageSpeed request(s) were rate limited{data.keyed ? " even with an API key" : ""}.
+                </p>
+                {data.keyed ? (
+                  <p className="text-muted-foreground">The key&apos;s own quota was exhausted. Check its quota in Google Cloud Console, wait a few minutes, and re-run with fewer PageSpeed pages.</p>
+                ) : (
+                  <ol className="list-decimal space-y-0.5 pl-4 text-muted-foreground">
+                    <li>Open Google Cloud Console, create (or pick) a project and enable <strong className="text-foreground">PageSpeed Insights API</strong>.</li>
+                    <li>APIs &amp; Services → Credentials → Create credentials → API key. It is free (25,000 requests/day).</li>
+                    <li>Paste it in Settings → API keys → PAGESPEED_API_KEY, press Save, then Verify.</li>
+                    <li>Run the audit again. Without a key, Google shares one tiny quota among all unkeyed callers, so 429s are expected.</li>
+                  </ol>
+                )}
+              </div>
+              <Button asChild size="sm" variant="outline" className="shrink-0"><Link href="/settings">Open API keys</Link></Button>
             </div>
           )}
           <div className="grid gap-4 xl:grid-cols-2">

@@ -53,6 +53,41 @@ describe("settings and credentials", () => {
   });
 });
 
+describe("credential verification", () => {
+  it("reports a missing PageSpeed key without any network call", async () => {
+    const { POST } = await import("@/app/api/settings/verify/route");
+    const body = await (await POST(jsonReq("/api/settings/verify", "POST", { service: "pagespeed" }))).json();
+    expect(body).toMatchObject({ service: "pagespeed", ok: false, status: "missing" });
+  });
+  it("maps Google's answers to actionable statuses and never echoes the key", async () => {
+    const { PUT } = await import("@/app/api/settings/route");
+    await PUT(jsonReq("/api/settings", "PUT", { secrets: { PAGESPEED_API_KEY: "AIzaTESTkey000000000000000000" } }));
+    const { verifyPagespeed } = await import("@/lib/server/verify");
+    const real = global.fetch;
+    const cases: Array<[number, unknown, string]> = [
+      [200, {}, "valid"],
+      [400, { error: { message: "API key not valid. Please pass a valid API key." } }, "invalid"],
+      [403, { error: { message: "PageSpeed Insights API has not been used in project 1." } }, "api_disabled"],
+      [429, { error: { message: "Quota exceeded" } }, "rate_limited"],
+    ];
+    try {
+      for (const [status, payload, expected] of cases) {
+        global.fetch = (async () => new Response(JSON.stringify(payload), { status })) as typeof fetch;
+        const r = await verifyPagespeed();
+        expect(r.status).toBe(expected);
+        expect(JSON.stringify(r)).not.toContain("AIzaTESTkey");
+      }
+    } finally {
+      global.fetch = real;
+      await PUT(jsonReq("/api/settings", "PUT", { secrets: { PAGESPEED_API_KEY: null } }));
+    }
+  });
+  it("rejects unknown services", async () => {
+    const { POST } = await import("@/app/api/settings/verify/route");
+    expect((await POST(jsonReq("/api/settings/verify", "POST", { service: "typesafe" }))).status).toBe(400);
+  });
+});
+
 describe("API request guard (middleware)", () => {
   const mk = (method: string, headers: Record<string, string>) => new NextRequest("http://localhost:3000/api/audits", { method, headers });
   it("blocks foreign Host headers (DNS rebinding)", () => {

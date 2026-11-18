@@ -2,6 +2,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { use } from "react";
+import { motion } from "motion/react";
+import { FadeIn } from "@/components/motion/primitives";
 import { ArrowRight, Download, FileSearch, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/common/status-badge";
@@ -51,10 +53,10 @@ export default function AuditLayout({ children, params }: { children: React.Reac
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
-              <h1 className="truncate text-xl font-semibold tracking-tight">{a.domain}</h1>
+              <h1 className="text-gradient-brand truncate text-2xl font-semibold tracking-tight">{a.domain}</h1>
               <GradeBadge grade={a.grade} score={a.score} />
               <StatusBadge status={a.status} />
-              {a.partial.length > 0 && <span className="rounded-md bg-warning-soft px-1.5 py-0.5 text-xs font-medium text-[oklch(0.45_0.11_62)]" title={a.partial.join("\n")}>Partial audit</span>}
+              {a.partial.length > 0 && <span className="rounded-md bg-warning-soft px-1.5 py-0.5 text-xs font-medium text-warning-ink" title={a.partial.join("\n")}>Partial audit</span>}
             </div>
             <p className="mt-0.5 truncate text-xs text-muted-foreground">
               {a.url} · audited {formatDate(a.finishedAt)} · engine v{a.engineVersion ?? "?"} · {a.origin === "imported" ? "imported from reports folder" : "launched from dashboard"}
@@ -66,7 +68,7 @@ export default function AuditLayout({ children, params }: { children: React.Reac
             </Button>
           )}
         </div>
-        <nav aria-label="Audit sections" className="-mx-4 overflow-x-auto border-b px-4 sm:mx-0 sm:px-0">
+        <nav aria-label="Audit sections" className="-mx-4 overflow-x-auto border-b px-4 sm:mx-0 sm:px-0 [scrollbar-width:none]">
           <ul className="flex min-w-max gap-1">
             {AUDIT_TABS.map((t) => {
               const href = t.key === "overview" ? base : `${base}/${t.key}`;
@@ -77,16 +79,21 @@ export default function AuditLayout({ children, params }: { children: React.Reac
                   <Link
                     href={href}
                     aria-current={active ? "page" : undefined}
-                    className={cn("-mb-px flex items-center gap-1.5 border-b-2 px-3 py-2.5 text-sm whitespace-nowrap transition-colors", active ? "border-brand font-medium text-foreground" : "border-transparent text-muted-foreground hover:border-border hover:text-foreground")}
+                    className={cn("group relative flex items-center gap-1.5 px-3 py-3 text-sm whitespace-nowrap transition-colors duration-200", active ? "font-medium text-foreground" : "text-muted-foreground hover:text-foreground")}
                   >
-                    <Icon className="size-3.5" aria-hidden /> {t.label}
+                    <span className="absolute inset-x-1 inset-y-1.5 rounded-md bg-muted/0 transition-colors duration-200 group-hover:bg-muted/70" aria-hidden />
+                    <Icon className={cn("relative size-3.5 transition-colors", active && "text-brand")} aria-hidden />
+                    <span className="relative">{t.label}</span>
+                    {active && (
+                      <motion.span layoutId="audit-tab-indicator" className="absolute inset-x-2 -bottom-px h-[2px] rounded-full bg-brand shadow-[0_0_10px_var(--brand)]" transition={{ type: "spring", stiffness: 500, damping: 40 }} aria-hidden />
+                    )}
                   </Link>
                 </li>
               );
             })}
           </ul>
         </nav>
-        {children}
+        <FadeIn key={pathname} y={6}>{children}</FadeIn>
       </div>
     </AuditCtx.Provider>
   );

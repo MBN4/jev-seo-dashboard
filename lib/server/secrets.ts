@@ -105,6 +105,17 @@ export function secretStatuses(): SecretStatus[] {
   });
 }
 
+/** Server-only: the effective value of a key, using the same precedence as secretStatuses(). */
+export function resolveSecret(key: SecretKey): string | null {
+  const dash = readDashboardSecrets();
+  if (dash[key]) return dash[key] as string;
+  if (process.env[key]) return process.env[key] as string;
+  const engineEnv = parseEnvFile(path.join(engineDir(), ".env"));
+  if (engineEnv[key]) return engineEnv[key];
+  const userKeys = parseEnvFile(path.join(os.homedir(), "Desktop", "Keys", ".env"));
+  return userKeys[key] ?? null;
+}
+
 export function isConfigured(key: SecretKey): boolean {
   return secretStatuses().find((s) => s.key === key)?.configured ?? false;
 }

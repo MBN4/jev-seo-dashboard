@@ -40,6 +40,24 @@ class RO {
   disconnect() {}
 }
 (globalThis as unknown as { ResizeObserver: typeof RO }).ResizeObserver = RO;
+
+// motion's whileInView/useInView use IntersectionObserver; report everything as visible.
+class IO {
+  constructor(private cb: (entries: Array<{ isIntersecting: boolean; target: Element; intersectionRatio: number }>) => void) {}
+  observe(el: Element) {
+    this.cb([{ isIntersecting: true, target: el, intersectionRatio: 1 }]);
+  }
+  unobserve() {}
+  disconnect() {}
+  takeRecords() {
+    return [];
+  }
+}
+(globalThis as unknown as { IntersectionObserver: unknown }).IntersectionObserver = IO;
+if (typeof window !== "undefined" && !window.matchMedia) {
+  window.matchMedia = (q: string) =>
+    ({ matches: false, media: q, onchange: null, addListener() {}, removeListener() {}, addEventListener() {}, removeEventListener() {}, dispatchEvent: () => false }) as unknown as MediaQueryList;
+}
 if (typeof window !== "undefined") {
   window.HTMLElement.prototype.scrollIntoView = () => {};
   window.HTMLElement.prototype.hasPointerCapture = () => false;

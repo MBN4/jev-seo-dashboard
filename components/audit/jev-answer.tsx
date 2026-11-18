@@ -21,7 +21,7 @@ export function describeAnswer(a: JevAnswer, q?: JevQuestion | null): { value: s
 export function BandBadge({ band }: { band?: string }) {
   if (!band) return null;
   const cls =
-    band === "act" || band === "yes" ? "bg-success-soft text-brand-strong" : band === "review" ? "bg-warning-soft text-[oklch(0.45_0.11_62)]" : band === "no" ? "bg-high-soft text-high" : "bg-muted text-muted-foreground";
+    band === "act" || band === "yes" ? "bg-success-soft text-brand-strong" : band === "review" ? "bg-warning-soft text-warning-ink" : band === "no" ? "bg-high-soft text-high" : "bg-muted text-muted-foreground";
   const label = band === "act" ? "Confident" : band === "review" ? "Needs review" : band === "yes" ? "Yes" : band === "no" ? "No" : band;
   return <span className={cn("rounded px-1.5 py-0.5 text-[0.68rem] font-medium whitespace-nowrap", cls)}>{label}</span>;
 }

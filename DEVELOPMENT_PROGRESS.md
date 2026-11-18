@@ -55,6 +55,19 @@ The component tests cover: navigation, the audit form (URL validation, defaults,
 - **Chromium on Ubuntu 20.04** may not install. Rendering then shows as unavailable, and standard crawling is unaffected.
 - **One port.** The UI and API share :3000. The spec's :8000 backend does not exist, because no Python web server was added.
 
+## Update: UI refresh (branch `ui-refresh`)
+
+- Light, dark and system themes, each with its own tokens. Status colours meet contrast on both, and the remaining hard-coded colours were replaced with tokens.
+- The sidebar can be resized by dragging (208–380 px), and dragging past the minimum collapses it to a 72 px rail. It also collapses on click or Ctrl+B, resets on double-click, and supports arrow keys on the handle. State persists in localStorage, transitions use spring animation, and the active item indicator slides between items.
+- Motion (`motion` library):
+  - page and tab transitions, cards that rise into view, count-up metrics;
+  - an animated score gauge with a glow, animated chart bars and areas, a sliding tab indicator;
+  - spring-animated progress bars and stage icons, animated recommendation expansion, blurred overlays behind drawers and dialogs.
+  - All of it respects `prefers-reduced-motion`.
+- PageSpeed rate limits: Settings → **Verify** checks a PageSpeed or DataForSEO key with one live request. It was tested against Google's real API with an invalid key and returned "invalid". The Performance tab now gives step-by-step instructions for getting a key.
+- The Next.js dev badge is disabled (`devIndicators: false`) because it covered the sidebar collapse button.
+- Tests: 97/97 (added sidebar resize/collapse/keyboard tests and verify-endpoint tests). Typecheck, lint and production build are clean. A real-browser check covered drag-resize (256 → 340 px), drag-to-collapse, expand on click, scroll-reveal, mobile drawer, and no console errors.
+
 ## Remaining tasks
 
 - Push to `MBN4/jev-seo-dashboard` once the empty repository exists.

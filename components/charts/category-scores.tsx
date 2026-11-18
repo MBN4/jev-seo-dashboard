@@ -1,4 +1,6 @@
+"use client";
 import { cn } from "@/lib/utils";
+import { GrowBar } from "@/components/motion/primitives";
 
 /** Engine category scores (0–100 or not assessed) with the engine's own notes. */
 export function CategoryScores({ categories, names, weights, notes }: {
@@ -19,10 +21,7 @@ export function CategoryScores({ categories, names, weights, notes }: {
           </div>
           <div className="h-1.5 overflow-hidden rounded-full bg-muted" aria-hidden>
             {v != null && (
-              <div
-                className={cn("h-full rounded-full", v >= 75 ? "bg-brand" : v >= 60 ? "bg-warning" : v >= 40 ? "bg-high" : "bg-critical")}
-                style={{ width: `${v}%` }}
-              />
+              <GrowBar pct={v} className={cn("h-full rounded-full", v >= 75 ? "bg-brand" : v >= 60 ? "bg-warning" : v >= 40 ? "bg-high" : "bg-critical")} />
             )}
           </div>
           {notes?.[key] && <p className="text-xs text-muted-foreground">{notes[key]}</p>}

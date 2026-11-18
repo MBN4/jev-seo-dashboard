@@ -11,7 +11,8 @@ export function EmptyState({ icon: Icon, title, description, action, className, 
 }) {
   return (
     <div className={cn("flex flex-col items-center justify-center text-center", compact ? "gap-2 px-4 py-8" : "gap-3 px-6 py-14", className)}>
-      <div className="grid size-11 place-items-center rounded-xl border bg-card text-muted-foreground shadow-[var(--shadow-card)]">
+      <div className="relative grid size-12 place-items-center rounded-2xl border bg-card text-brand shadow-[var(--shadow-raised)] motion-safe:animate-[float_4s_ease-in-out_infinite]">
+        <span className="absolute inset-0 -z-10 rounded-2xl bg-brand/20 blur-xl" aria-hidden />
         <Icon className="size-5" aria-hidden />
       </div>
       <div className="max-w-md space-y-1">

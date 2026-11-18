@@ -17,9 +17,9 @@ export function LogoMark({ className }: { className?: string }) {
 export function Logo({ collapsed }: { collapsed?: boolean }) {
   return (
     <span className="flex items-center gap-2.5">
-      <LogoMark />
+      <LogoMark className="shrink-0 drop-shadow-[0_4px_14px_oklch(0.76_0.15_160/0.45)]" />
       {!collapsed && (
-        <span className="leading-tight">
+        <span className="leading-tight whitespace-nowrap">
           <span className="block text-[0.95rem] font-semibold tracking-tight text-sidebar-accent-foreground">Jev SEO</span>
           <span className="block text-[0.7rem] text-sidebar-muted">Site audit workspace</span>
         </span>

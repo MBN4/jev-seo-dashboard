@@ -175,7 +175,7 @@ export default function NewAuditPage() {
                 title="AI content evaluation (Jev)"
                 checked={v.jev}
                 onChange={(c) => setValue("jev", c)}
-                badge={!has("TYPESAFE_API_KEY") && <span className="rounded bg-warning-soft px-1.5 py-0.5 text-[0.68rem] font-medium text-[oklch(0.45_0.11_62)]">Key missing</span>}
+                badge={!has("TYPESAFE_API_KEY") && <span className="rounded bg-warning-soft px-1.5 py-0.5 text-[0.68rem] font-medium text-warning-ink">Key missing</span>}
                 description={<>Asks Jev typed questions about each page: intent, helpfulness, specificity, trust, title and meta fit. Requires <code>TYPESAFE_API_KEY</code>; about one cent per site.</>}
               >
                 <div className="grid gap-4 sm:grid-cols-2">

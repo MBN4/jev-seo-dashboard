@@ -18,7 +18,8 @@ Browser ──► Next.js (UI + /api routes, port 3000) ──spawn──► pyt
 - **Results workspace:** Overview, Technical SEO (filters, search, sort, pagination, detail drawer), Pages (sortable table and lazy-loaded page analysis), AI Content (real Jev answers only), Performance (mobile and desktop, with 429 and missing data shown as such), Recommendations (status and notes stored separately from audit data) and Reports.
 - **History:** search, status and date filters, sorting, pagination, and removal from history that never deletes files. Existing folders in `jev-seo-reports/`, such as an InboxWarm audit, are picked up automatically.
 - **Reports center:** original engine files with secure downloads and in-browser PDF preview.
-- **Settings:** write-only, masked API keys (stored in `data/secrets.env`, mode 600), audit defaults, and system diagnostics (engine `doctor`, Python, Playwright/Chromium, directories, keys).
+- **Settings:** write-only, masked API keys (stored in `data/secrets.env`, mode 600) with a **Verify** button for PageSpeed and DataForSEO (one live test request), audit defaults, and system diagnostics (engine `doctor`, Python, Playwright/Chromium, directories, keys).
+- **Interface:** light, dark and system themes, and a sidebar you can drag to resize, click (or press Ctrl+B) to collapse to an icon rail, and double-click to reset. Smooth motion (page transitions, animated score gauge, count-up metrics, animated charts) automatically switches off when the OS asks for reduced motion.
 
 ## Quick start (Ubuntu 20.04+)
 
@@ -78,7 +79,7 @@ npm run typecheck && npm run lint && npm run build
 | --- | --- |
 | `jev-seo engine not found` | Set `JEVSEO_DIR` in `.env.local`. |
 | `Engine Python … missing packages` | `$JEVSEO_DIR/.venv/bin/python -m pip install -r $JEVSEO_DIR/requirements.txt` |
-| Performance shows "Rate limited (HTTP 429)" | Add a free `PAGESPEED_API_KEY` in Settings. |
+| Performance shows "Rate limited (HTTP 429)" | Google's unkeyed quota is shared by everyone. Create a free key (Google Cloud Console → enable *PageSpeed Insights API* → Credentials → API key), paste it in Settings → API keys, press **Verify**, then re-run the audit. |
 | AI Content says "not available" | Add `TYPESAFE_API_KEY` in Settings and run a new audit. |
 | Chromium unavailable (Ubuntu 20.04) | Optional. Crawling works without it; JavaScript-only pages are read as raw HTML. |
 | "Only 1 audit(s) can run at once" | Wait, cancel the running audit, or raise `JEVSEO_MAX_CONCURRENT`. |

@@ -8,7 +8,7 @@ const META: Record<AuditStatus, { label: string; className: string; icon: typeof
   completed: { label: "Completed", className: "bg-success-soft text-brand-strong ring-brand/20", icon: CheckCircle2 },
   failed: { label: "Failed", className: "bg-critical-soft text-critical ring-critical/20", icon: OctagonX },
   cancelled: { label: "Cancelled", className: "bg-neutral-soft text-muted-foreground ring-border", icon: Ban },
-  interrupted: { label: "Interrupted", className: "bg-warning-soft text-[oklch(0.5_0.12_62)] ring-warning/25", icon: PauseCircle },
+  interrupted: { label: "Interrupted", className: "bg-warning-soft text-warning-ink ring-warning/25", icon: PauseCircle },
 };
 
 export function StatusBadge({ status, className }: { status: AuditStatus | string; className?: string }) {

@@ -3,7 +3,7 @@ import { gradeTone } from "@/lib/format";
 
 const TONE = {
   good: "bg-success-soft text-brand-strong ring-brand/25",
-  ok: "bg-warning-soft text-[oklch(0.5_0.12_62)] ring-warning/30",
+  ok: "bg-warning-soft text-warning-ink ring-warning/30",
   poor: "bg-high-soft text-high ring-high/25",
   bad: "bg-critical-soft text-critical ring-critical/25",
   none: "bg-neutral-soft text-muted-foreground ring-border",

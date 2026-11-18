@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { AnimatePresence, motion } from "motion/react";
 import { ChevronDown, ExternalLink, Loader2, StickyNote, Zap } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -11,7 +12,7 @@ import { shortUrl, formatRelative } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { Recommendation } from "@/lib/api-types";
 
-const PRIORITY = { P1: "bg-critical-soft text-critical", P2: "bg-warning-soft text-[oklch(0.45_0.11_62)]", P3: "bg-muted text-muted-foreground" } as const;
+const PRIORITY = { P1: "bg-critical-soft text-critical", P2: "bg-warning-soft text-warning-ink", P3: "bg-muted text-muted-foreground" } as const;
 const STATUS_LABEL = { pending: "Pending", in_progress: "In progress", completed: "Completed" } as const;
 
 export function RecommendationCard({ auditId, rec, onChange }: { auditId: string; rec: Recommendation; onChange: (r: Recommendation) => void }) {
@@ -31,7 +32,7 @@ export function RecommendationCard({ auditId, rec, onChange }: { auditId: string
     }
   };
   return (
-    <article className={cn("rounded-lg border bg-card shadow-[var(--shadow-card)] transition-opacity", rec.status === "completed" && "opacity-70")}>
+    <article className={cn("surface surface-hover transition-opacity", rec.status === "completed" && "opacity-70")}>
       <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-start">
         <div className="flex items-center gap-2 sm:flex-col sm:items-start">
           <span className={cn("rounded px-1.5 py-0.5 font-mono text-xs font-semibold", PRIORITY[rec.priority])}>{rec.priority}</span>
@@ -63,7 +64,9 @@ export function RecommendationCard({ auditId, rec, onChange }: { auditId: string
           </Button>
         </div>
       </div>
+      <AnimatePresence initial={false}>
       {open && (
+        <motion.div key="details" initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }} className="overflow-hidden">
         <div className="grid gap-4 border-t p-4 text-sm lg:grid-cols-2">
           <div className="space-y-3">
             <div><p className="mb-1 text-xs font-semibold text-muted-foreground uppercase">Evidence</p><p className="rounded-md bg-muted/60 p-2.5 text-xs break-words">{rec.evidence}</p></div>
@@ -82,7 +85,9 @@ export function RecommendationCard({ auditId, rec, onChange }: { auditId: string
             </div>
           </div>
         </div>
+        </motion.div>
       )}
+      </AnimatePresence>
     </article>
   );
 }

@@ -109,14 +109,14 @@ export default function OverviewPage() {
           <div className="grid gap-4 lg:grid-cols-3">
             <div className="lg:col-span-1"><SeoScoreCard scores={ov.scores} /></div>
             <div className="grid grid-cols-2 content-start gap-4 lg:col-span-2 xl:grid-cols-4">
-              <MetricCard label="Pages crawled" value={formatNumber(ov.counts.pages)} hint={`${ov.counts.htmlPages} HTML pages (200)`} icon={Globe} />
-              <MetricCard label="Total findings" value={formatNumber(ov.counts.findings)} icon={FileSearch} />
-              <MetricCard label="Critical issues" value={sev!.critical} hint={`${sev!.high} high severity`} icon={AlertOctagon} tone="critical" />
-              <MetricCard label="Warnings" value={sev!.medium} hint="Medium severity" icon={AlertTriangle} tone="warning" />
-              <MetricCard label="Informational" value={sev!.low + sev!.info} hint={`${sev!.low} low · ${sev!.info} info`} icon={Info} tone="info" />
-              <MetricCard label="Passed checks" value={ov.counts.passedRules} hint="Rules with no issue detected" icon={CheckCircle2} tone="success" />
-              <MetricCard label="Recommended actions" value={ov.counts.actions} hint={`${ov.counts.quickWins} quick wins`} icon={ListChecks} />
-              <MetricCard label="Requests made" value={formatNumber(ov.site.requests)} hint="During the crawl" icon={ScrollText} />
+              <MetricCard index={0} label="Pages crawled" value={formatNumber(ov.counts.pages)} hint={`${ov.counts.htmlPages} HTML pages (200)`} icon={Globe} />
+              <MetricCard index={1} label="Total findings" value={formatNumber(ov.counts.findings)} icon={FileSearch} />
+              <MetricCard index={2} label="Critical issues" value={sev!.critical} hint={`${sev!.high} high severity`} icon={AlertOctagon} tone="critical" />
+              <MetricCard index={3} label="Warnings" value={sev!.medium} hint="Medium severity" icon={AlertTriangle} tone="warning" />
+              <MetricCard index={4} label="Informational" value={sev!.low + sev!.info} hint={`${sev!.low} low · ${sev!.info} info`} icon={Info} tone="info" />
+              <MetricCard index={5} label="Passed checks" value={ov.counts.passedRules} hint="Rules with no issue detected" icon={CheckCircle2} tone="success" />
+              <MetricCard index={6} label="Recommended actions" value={ov.counts.actions} hint={`${ov.counts.quickWins} quick wins`} icon={ListChecks} />
+              <MetricCard index={7} label="Requests made" value={formatNumber(ov.site.requests)} hint="During the crawl" icon={ScrollText} />
             </div>
           </div>
 

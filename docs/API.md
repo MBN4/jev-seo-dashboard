@@ -92,6 +92,7 @@ Query parameters: `q`, `status` (repeatable), `from`, `to` (YYYY-MM-DD), `sort=d
 | --- | --- |
 | `GET /api/settings` | `{ secrets: [{ key, configured, source: dashboard\|environment\|engine-env-file\|user-keys-file\|null, hint: "••••abcd"\|null, usedFor }], defaults }` |
 | `PUT /api/settings` | Body `{ "secrets": { "PAGESPEED_API_KEY": "…" \| null }, "defaults": { "maxPages": 40 } }`. `null` removes a key from the dashboard store. Values are validated, and invalid keys return `400` with per-key messages. |
+| `POST /api/settings/verify` | Body `{ "service": "pagespeed" \| "dataforseo" }`. Makes one live request with the configured key and returns `{ ok, status: valid\|missing\|invalid\|api_disabled\|rate_limited\|unreachable\|error, message }`. PageSpeed uses one call of the key's quota; the DataForSEO account endpoint is free. The key is never echoed. |
 | `GET /api/system/health` | `{ status, engineFound, reportsDirExists, running: [{id, domain, startedAt}] }` |
 | `GET /api/system/diagnostics[?refresh=1]` | `{ versions: {engine, python, node}, rendering: {playwright, chromium}, checks: [{key, label, state: ok\|warning\|error, detail, action}] }`. Cached for 30 s. |
 

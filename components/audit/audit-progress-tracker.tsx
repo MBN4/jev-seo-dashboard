@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import { motion } from "motion/react";
 import { AuditStageIndicator } from "./audit-stage-indicator";
 import { formatDuration } from "@/lib/format";
 import type { ProgressView } from "@/lib/progress";
@@ -32,8 +33,15 @@ export function AuditProgressTracker({ progress }: { progress: ProgressView }) {
           </span>
           <span className="tabular">{pct}%</span>
         </div>
-        <div className="h-2 overflow-hidden rounded-full bg-muted" role="progressbar" aria-valuenow={progress.completedStages} aria-valuemin={0} aria-valuemax={progress.stages.length} aria-label="Stages finished">
-          <div className="h-full rounded-full bg-brand transition-[width] duration-500" style={{ width: `${pct}%` }} />
+        <div className="h-2.5 overflow-hidden rounded-full bg-muted" role="progressbar" aria-valuenow={progress.completedStages} aria-valuemin={0} aria-valuemax={progress.stages.length} aria-label="Stages finished">
+          <motion.div
+            className="relative h-full overflow-hidden rounded-full bg-gradient-to-r from-brand/70 to-brand"
+            initial={false}
+            animate={{ width: `${pct}%` }}
+            transition={{ type: "spring", stiffness: 120, damping: 22 }}
+          >
+            {pct < 100 && <span className="shimmer absolute inset-0" aria-hidden />}
+          </motion.div>
         </div>
       </div>
       <ol aria-label="Audit stages">
