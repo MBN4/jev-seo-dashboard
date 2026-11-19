@@ -47,7 +47,7 @@ const columns: ColumnDef<PageRowData>[] = [
     meta: { num: true },
     cell: ({ row }) => (
       <span className="inline-flex items-center gap-1">
-        {row.original.jevJudged && <Bot className="size-3 text-muted-foreground" aria-label="Judged by Jev" />}
+        {row.original.jevJudged && <Bot className="size-3 text-muted-foreground" aria-label="Judged by AI" />}
         <span className={row.original.issueCount ? "font-medium" : "text-muted-foreground"}>{row.original.issueCount}</span>
       </span>
     ),

@@ -26,7 +26,7 @@ All routes are served by the dashboard at `http://localhost:3000/api`. Responses
 ### `POST /api/audits`
 
 ```json
-{ "url": "https://example.com", "options": { "maxPages": 30, "jev": true, "psi": true, "psiPages": 3, "full": false, "render": "auto", "formats": ["pdf","xlsx","md"] }, "confirmPaid": false }
+{ "url": "https://example.com", "keywords": ["seo audit tool"], "options": { "maxPages": 30, "jev": true, "psi": true, "psiPages": 3, "full": false, "render": "auto", "formats": ["pdf","xlsx","md"] }, "confirmPaid": false }
 ```
 
 → `202 {"id":"example.com-2026-11-18-1058","status":"running","url":"https://example.com/","domain":"example.com","warnings":["PAGESPEED_API_KEY is not set: …"]}`
@@ -70,11 +70,13 @@ Query parameters: `q`, `status` (repeatable), `from`, `to` (YYYY-MM-DD), `sort=d
 | `GET /api/audits/{id}/findings` | Query: `severity`, `category`, `origin` (repeatable), `q`, `sort=severity\|count\|title\|category`, `dir`, `page`, `pageSize`. Returns items, total, facets and `passedRules`. |
 | `GET /api/audits/{id}/findings/{findingId}` | Full finding (all URLs, detail, linked action) |
 | `GET /api/audits/{id}/pages` | Query: `q`, `status=2xx\|3xx\|4xx\|5xx\|error`, `indexable=yes\|no`, `issues=with\|without`, `sort`, `dir`, `page`, `pageSize` |
-| `GET /api/audits/{id}/pages/detail?url=` | One page: meta, headings, content, links (with status), structured data, findings, Jev answers |
+| `GET /api/audits/{id}/pages/detail?url=` | One page: meta, headings, content, links (with status), structured data, findings, AI answers |
 | `GET /api/audits/{id}/ai` | `{ available, skipped, site[], dimensions[], pages[{url, answers, findings}], notJudged, findings }`. Empty when Jev did not run. |
 | `GET /api/audits/{id}/performance` | `{ skipped, keyed, runs[{strategy, outcome: ok\|rate_limited\|failed, scores?, lab?, field_url?, field_origin?}], ttfb[], perfFindings[] }` |
 | `GET /api/audits/{id}/recommendations` | Engine actions merged with the user's status and notes |
 | `PATCH /api/audits/{id}/recommendations/{key}` | Body `{ "status": "pending\|in_progress\|completed", "notes": "…" }` |
+| `GET /api/audits/{id}/extra` | Extra checks layer: `{ findings[{id, group, severity, title, fix, source, heuristic, urls, count, evidence}], passed[], skipped[], keywords[], keywordReport[{keyword, targetUrl, checks{title,h1,url,meta,intro}, densityPct, wordCount}], readability[], notCheckable[], checksTotal }`. Computed from the saved audit.json; does not change the engine score. |
+| `GET/PUT /api/audits/{id}/keywords` | Focus keywords for the extra checks. PUT body `{ "keywords": ["…"] }` (max 10, each ≤ 80 chars); an empty list clears them. Works for imported audits too. |
 | `GET /api/audits/{id}/reports` | `[{ type, label, filename, size, modifiedAt }]` |
 | `GET /api/audits/{id}/reports/{pdf\|xlsx\|md\|json\|digest}[?inline=1]` | Streams the original file. `inline` is allowed for pdf and md. |
 

@@ -37,7 +37,7 @@ export default function AuditOverviewPage() {
           <MetricCard index={4} label="Passed checks" value={ov.counts.passedRules} icon={CheckCircle2} tone="success" />
           <MetricCard index={5} label="Recommended actions" value={ov.counts.actions} icon={ListChecks} />
           <MetricCard index={6} label="Quick wins" value={ov.counts.quickWins} hint="High impact, low effort" icon={Zap} tone="info" />
-          <MetricCard index={7} label="Jev pages judged" value={ov.jev.available ? ov.jev.judged : "—"} hint={ov.jev.available ? `${ov.jev.notJudged} not judged` : "Jev not available"} icon={Bot} />
+          <MetricCard index={7} label="AI pages judged" value={ov.jev.available ? ov.jev.judged : "—"} hint={ov.jev.available ? `${ov.jev.notJudged} not judged` : "AI judgments not available"} icon={Bot} />
         </div>
       </div>
 

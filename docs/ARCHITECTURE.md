@@ -27,7 +27,7 @@
                 │        --out <reports>/<id> --max-pages… │
                 ▼                                          │
 ┌──────────── jev-seo engine (unchanged) ──────────┐       │
-│ crawl → 52 rules → DataForSEO → Jev → PageSpeed  │       │
+│ crawl → 52 rules → DataForSEO → AI   → PageSpeed  │       │
 │ → scoring → render (PDF / XLSX / MD)             │───────┘ jev-seo-reports/<domain>-<stamp>/
 └──────────────────────────────────────────────────┘          audit.json, digest.md, report.*
 ```
@@ -36,7 +36,7 @@
 
 The engine is a CLI with no web API, and the brief was to build the frontend without changing the Python engine. The Node server therefore acts as a thin backend. It runs the same command a user would type, `python -m jevseo run`, and reads the same files. Nothing in the engine is re-implemented:
 
-- Scores, grades, findings, actions, Jev answers and PageSpeed data come straight from `audit.json`.
+- Scores, grades, findings, actions, AI answers and PageSpeed data come straight from `audit.json`.
 - Reports are the engine's own files, served unchanged.
 
 ## Engine integration

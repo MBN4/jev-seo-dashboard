@@ -7,14 +7,14 @@
 3. Adjust the options:
    - **Maximum pages, depth and time budget** cap the crawl. The engine default is 60 pages.
    - **JavaScript rendering**: *Auto* renders only pages that need it. It requires Playwright and Chromium, and the form shows whether they are available.
-   - **AI content evaluation (Jev)** needs `TYPESAFE_API_KEY` and costs about one cent per site, with a hard spend cap.
+   - **AI content evaluation** needs `TYPESAFE_API_KEY` and costs about one cent per site, with a hard spend cap.
    - **PageSpeed Insights** works without a key, but Google often rate limits unkeyed requests (HTTP 429).
    - **Advanced analysis (DataForSEO)** is paid per call, needs credentials, and always asks for confirmation.
 4. The **Audit summary** panel lists what will run and what is missing. Press **Start audit**.
 
 ## Monitoring progress
 
-The progress page shows the engine's seven stages: crawl, rules, DataForSEO, Jev, PageSpeed, scoring and report generation.
+The progress page shows the engine's seven stages: crawl, rules, DataForSEO, AI judgments, PageSpeed, scoring and report generation.
 
 - **Stage states**:
   - *done*: the stage finished.
@@ -32,7 +32,7 @@ You can close the tab. The audit keeps running, and the header shows *Auditing <
 The score (0–100) and grade (A ≥ 90, B ≥ 75, C ≥ 60, D ≥ 40, F) are the engine's own.
 
 - **Completeness** shows how many of the nine weighted categories could be scored.
-- **Partial audit** appears when Jev or PageSpeed was unavailable, so some categories could not be assessed.
+- **Partial audit** appears when AI judgments or PageSpeed were unavailable, so some categories could not be assessed.
 - **Caps** (for example "Capped at 60: not reliably served over HTTPS") are engine rules that limit the score.
 - **Category scores** list each category's weight and the engine's note, such as "Rules only".
 
@@ -40,18 +40,18 @@ The score (0–100) and grade (A ≥ 90, B ≥ 75, C ≥ 60, D ≥ 40, F) are th
 
 **Technical SEO** lists every finding with its severity, rule ID, category, affected URLs, evidence and fix.
 
-- Filter by severity, category or source (rules, Jev, DataForSEO), search, and sort.
+- Filter by severity, category or source (rules, AI judgments, DataForSEO), search, and sort.
 - Click a finding to open the detail drawer, which lists all URLs, links to Google's guidance and shows impact and effort.
 - **No issue detected** lists the rules that passed.
 
-**Pages** lists every crawled URL with its status, indexability, H1, word count, depth and links. Click a row to see its metadata, heading outline, content, links (with their HTTP status), structured data, findings and Jev answers.
+**Pages** lists every crawled URL with its status, indexability, H1, word count, depth and links. Click a row to see its metadata, heading outline, content, links (with their HTTP status), structured data, findings and AI answers.
 
-**AI Content** appears only when Jev ran. It shows Jev's typed answers per page, such as intent, helpfulness, specificity, trust and title/meta fit, with a confidence band:
+**AI Content** appears only when AI judgments ran. It shows the AI model's typed answers per page, such as intent, helpfulness, specificity, trust and title/meta fit, with a confidence band:
 
 - *Confident*: the answer is reliable.
-- *Needs review*: Jev was undecided; check it yourself.
+- *Needs review*: the model was undecided; check it yourself.
 
-Jev returns probabilities, not prose, so each answer is explained by the engine's criterion text that it matched.
+The model returns probabilities, not prose, so each answer is explained by the engine's criterion text that it matched.
 
 **Performance** separates mobile and desktop. Each run shows either Lighthouse lab metrics plus real-user Core Web Vitals, or the reason it has no data (rate limited, failed or skipped). Missing values are shown as unavailable, never as 0.
 
@@ -92,7 +92,7 @@ In **Settings → API keys**, paste a key and press **Save**.
 
 | Key | Needed for |
 | --- | --- |
-| `TYPESAFE_API_KEY` | Jev judgments; without it the audit is partial |
+| `TYPESAFE_API_KEY` | AI judgments (TypeSafe Jev model); without it the audit is partial |
 | `PAGESPEED_API_KEY` | Higher PageSpeed quota. It is free from Google Cloud: enable the *PageSpeed Insights API*, then create an API key. |
 | `DATAFORSEO_USERNAME` / `DATAFORSEO_PASSWORD` | Full mode only (paid) |
 

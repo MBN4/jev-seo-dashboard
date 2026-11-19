@@ -40,8 +40,12 @@ export const DEFAULT_AUDIT_OPTIONS: AuditOptions = {
   formats: ["pdf", "xlsx", "md"],
 };
 
+export const keywordsSchema = z.array(z.string().trim().min(1).max(80)).max(10);
+
 export const createAuditSchema = z.object({
   url: z.string().min(1).max(2048),
+  /** Optional focus keywords for the extra checks layer (stored by the dashboard, not sent to the engine) */
+  keywords: keywordsSchema.optional(),
   options: auditOptionsSchema.partial().default({}),
   /** Must be true when options.full is true: DataForSEO is billed per call. */
   confirmPaid: z.boolean().optional(),

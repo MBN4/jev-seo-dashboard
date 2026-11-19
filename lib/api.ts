@@ -1,5 +1,6 @@
 import type { AuditOptions } from "@/lib/schemas";
 import type { RecommendationStatus } from "@/lib/server/state";
+import type { ExtraResult } from "@/lib/server/extra-checks";
 import type {
   AiData, AuditList, AuditSummary, Diagnostics, FindingDetail, FindingsData, HistoryData, OverviewData,
   PageDetailData, PagesData, PerformanceData, ProgressSnapshot, Recommendation, ReportFile, SettingsData,
@@ -43,7 +44,7 @@ export function qs(params: Query): string {
 export const api = {
   listAudits: (q: Query = {}) => request<AuditList>(`/api/audits${qs(q)}`),
   getAudit: (id: string) => request<AuditSummary>(`/api/audits/${enc(id)}`),
-  createAudit: (body: { url: string; options: Partial<AuditOptions>; confirmPaid?: boolean }) =>
+  createAudit: (body: { url: string; options: Partial<AuditOptions>; confirmPaid?: boolean; keywords?: string[] }) =>
     request<{ id: string; status: string; warnings: string[] }>(`/api/audits`, { method: "POST", body: JSON.stringify(body) }),
   cancelAudit: (id: string) => request<{ id: string; status: string }>(`/api/audits/${enc(id)}/cancel`, { method: "POST" }),
   hideAudit: (id: string) => request<{ id: string; hidden: boolean }>(`/api/audits/${enc(id)}`, { method: "DELETE" }),
@@ -61,6 +62,8 @@ export const api = {
   recommendations: (id: string) => request<{ items: Recommendation[] }>(`/api/audits/${enc(id)}/recommendations`),
   updateRecommendation: (id: string, key: string, body: { status?: RecommendationStatus; notes?: string }) =>
     request<{ key: string; status: RecommendationStatus; notes: string; updatedAt: string }>(`/api/audits/${enc(id)}/recommendations/${enc(key)}`, { method: "PATCH", body: JSON.stringify(body) }),
+  extra: (id: string) => request<ExtraResult>(`/api/audits/${enc(id)}/extra`),
+  setKeywords: (id: string, keywords: string[]) => request<{ keywords: string[] }>(`/api/audits/${enc(id)}/keywords`, { method: "PUT", body: JSON.stringify({ keywords }) }),
   reports: (id: string) => request<{ items: ReportFile[] }>(`/api/audits/${enc(id)}/reports`),
   reportUrl: (id: string, type: string, inline = false) => `/api/audits/${enc(id)}/reports/${enc(type)}${inline ? "?inline=1" : ""}`,
   history: (domain?: string) => request<HistoryData>(`/api/history${qs({ domain })}`),

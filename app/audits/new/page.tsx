@@ -26,7 +26,17 @@ const formSchema = auditOptionsSchema.extend({
     const r = checkUrlSyntax(v);
     if (!r.ok) ctx.addIssue({ code: z.ZodIssueCode.custom, message: r.error ?? "Invalid URL" });
   }),
+  /** Optional, comma-separated focus keywords for the extra checks (not sent to the engine) */
+  keywordsText: z
+    .string()
+    .max(900)
+    .refine((v) => splitKeywords(v).length <= 10, "Up to 10 keywords.")
+    .refine((v) => splitKeywords(v).every((k) => k.length <= 80), "Each keyword must be 80 characters or fewer."),
 });
+
+function splitKeywords(v: string | undefined): string[] {
+  return [...new Set((v ?? "").split(",").map((k) => k.trim()).filter(Boolean))];
+}
 type FormValues = z.infer<typeof formSchema>;
 
 function NumberField({ id, label, hint, min, max, step = 1, value, onChange, error }: {
@@ -52,7 +62,7 @@ export default function NewAuditPage() {
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: { url: "", ...DEFAULT_AUDIT_OPTIONS },
+    defaultValues: { url: "", keywordsText: "", ...DEFAULT_AUDIT_OPTIONS },
     mode: "onTouched",
   });
   const { register, handleSubmit, watch, setValue, formState, reset } = form;
@@ -61,7 +71,7 @@ export default function NewAuditPage() {
   useEffect(() => {
     api.settings().then((s) => {
       setSettings(s);
-      reset({ url: form.getValues("url"), ...s.defaults, full: false });
+      reset({ url: form.getValues("url"), keywordsText: form.getValues("keywordsText"), ...s.defaults, full: false });
     }).catch(() => setSettings({ secrets: [], defaults: DEFAULT_AUDIT_OPTIONS }));
     api.diagnostics().then(setDiag).catch(() => setDiag(null));
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -73,7 +83,7 @@ export default function NewAuditPage() {
 
   const notes = useMemo(() => {
     const n: Array<{ tone: "ok" | "warn" | "error"; text: string }> = [];
-    if (v.jev) n.push(has("TYPESAFE_API_KEY") ? { tone: "ok", text: "Jev AI judgments: TYPESAFE_API_KEY configured." } : { tone: "warn", text: "TYPESAFE_API_KEY missing: Jev will be skipped and the score marked partial." });
+    if (v.jev) n.push(has("TYPESAFE_API_KEY") ? { tone: "ok", text: "AI judgments: TYPESAFE_API_KEY configured." } : { tone: "warn", text: "TYPESAFE_API_KEY missing: AI judgments will be skipped and the score marked partial." });
     if (v.psi) n.push(has("PAGESPEED_API_KEY") ? { tone: "ok", text: "PageSpeed: API key configured." } : { tone: "warn", text: "No PAGESPEED_API_KEY: unkeyed requests are often rate limited (HTTP 429)." });
     if (v.full) n.push(dfsReady ? { tone: "warn", text: `DataForSEO full mode is billed per call (hard cap $${v.dfsBudget}).` } : { tone: "error", text: "DataForSEO credentials missing: full mode cannot run." });
     if (v.render === "always" && !chromium) n.push({ tone: "warn", text: "Chromium is not available: pages will be analysed from raw HTML." });
@@ -85,9 +95,10 @@ export default function NewAuditPage() {
   const launch = async (values: FormValues, confirmPaid = false) => {
     setSubmitting(true);
     setServerError(null);
-    const { url, ...options } = values;
+    const { url, keywordsText, ...options } = values;
+    const keywords = splitKeywords(keywordsText);
     try {
-      const res = await api.createAudit({ url, options: options as AuditOptions, confirmPaid });
+      const res = await api.createAudit({ url, options: options as AuditOptions, confirmPaid, ...(keywords.length ? { keywords } : {}) });
       res.warnings.forEach((w) => toast.warning(w));
       toast.success("Audit started");
       router.push(`/audits/${encodeURIComponent(res.id)}/progress`);
@@ -114,7 +125,7 @@ export default function NewAuditPage() {
 
   return (
     <form onSubmit={onSubmit} noValidate className="space-y-6">
-      <PageHeader title="New Audit" description="Crawl a public website with the Jev SEO engine. Results, scores and reports are saved to jev-seo-reports/." />
+      <PageHeader title="New Audit" description="Crawl a public website with the audit engine. Results, scores and reports are saved to your reports folder." />
       <div className="grid gap-6 lg:grid-cols-[1fr_340px]">
         <div className="space-y-6">
           <SectionCard title="Website">
@@ -126,6 +137,12 @@ export default function NewAuditPage() {
               </div>
               <p id="url-help" className="text-xs text-muted-foreground">The homepage of a public site. A bare domain works too. Local and private network addresses are refused.</p>
               {err.url && <p id="url-error" role="alert" className="text-xs text-critical">{err.url.message}</p>}
+            </div>
+            <div className="mt-4 space-y-1.5">
+              <Label htmlFor="keywordsText">Focus keywords <span className="font-normal text-muted-foreground">(optional)</span></Label>
+              <Input id="keywordsText" placeholder="e.g. seo audit tool, technical seo services" className="h-10" aria-invalid={Boolean(err.keywordsText)} aria-describedby="kw-help" {...register("keywordsText")} />
+              <p id="kw-help" className="text-xs text-muted-foreground">Comma-separated, up to 10. Used by the Extra Checks for Rank Math-style keyword placement checks. You can also add or change them after the audit.</p>
+              {err.keywordsText && <p role="alert" className="text-xs text-critical">{err.keywordsText.message}</p>}
             </div>
           </SectionCard>
 
@@ -172,14 +189,14 @@ export default function NewAuditPage() {
             <div className="space-y-3">
               <OptionRow
                 id="jev"
-                title="AI content evaluation (Jev)"
+                title="AI content evaluation"
                 checked={v.jev}
                 onChange={(c) => setValue("jev", c)}
                 badge={!has("TYPESAFE_API_KEY") && <span className="rounded bg-warning-soft px-1.5 py-0.5 text-[0.68rem] font-medium text-warning-ink">Key missing</span>}
-                description={<>Asks Jev typed questions about each page: intent, helpfulness, specificity, trust, title and meta fit. Requires <code>TYPESAFE_API_KEY</code>; about one cent per site.</>}
+                description={<>Asks the AI model typed questions about each page: intent, helpfulness, specificity, trust, title and meta fit. Requires <code>TYPESAFE_API_KEY</code>; about one cent per site.</>}
               >
                 <div className="grid gap-4 sm:grid-cols-2">
-                  <NumberField id="jevPages" label="Pages sent to Jev" min={1} max={200} value={v.jevPages} onChange={(n) => setValue("jevPages", n, { shouldValidate: true })} error={err.jevPages?.message} />
+                  <NumberField id="jevPages" label="Pages sent to AI" min={1} max={200} value={v.jevPages} onChange={(n) => setValue("jevPages", n, { shouldValidate: true })} error={err.jevPages?.message} />
                   <NumberField id="jevBudget" label="Hard spend cap (USD)" step={0.05} min={0.01} max={5} value={v.jevBudget} onChange={(n) => setValue("jevBudget", n, { shouldValidate: true })} error={err.jevBudget?.message} />
                 </div>
               </OptionRow>
@@ -220,9 +237,10 @@ export default function NewAuditPage() {
             <dl className="space-y-2 text-sm">
               {[
                 ["Website", v.url ? (checkUrlSyntax(v.url).url ?? v.url) : "—"],
+                ["Focus keywords", splitKeywords(v.keywordsText).length ? `${splitKeywords(v.keywordsText).length} set` : "none"],
                 ["Pages / depth", `${v.maxPages} pages, depth ${v.maxDepth}`],
                 ["Rendering", v.render],
-                ["Jev AI", v.jev ? `on, ${v.jevPages} pages, cap $${v.jevBudget}` : "off"],
+                ["AI judgments", v.jev ? `on, ${v.jevPages} pages, cap $${v.jevBudget}` : "off"],
                 ["PageSpeed", v.psi ? `on, ${v.psiPages} page(s)` : "off"],
                 ["DataForSEO", v.full ? `on, cap $${v.dfsBudget}` : "off"],
                 ["Reports", v.formats.map((f) => f.toUpperCase()).join(", ")],

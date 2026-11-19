@@ -37,7 +37,7 @@ export default function AiTab() {
           title="AI content analysis was not available for this audit"
           description={
             <>
-              {data.skipped ? `Reason: ${data.skipped}. ` : "The engine ran without TYPESAFE_API_KEY, so Jev judgments were skipped and content quality was not scored. "}
+              {data.skipped ? `Reason: ${data.skipped}. ` : "The engine ran without TYPESAFE_API_KEY, so AI judgments were skipped and content quality was not scored. "}
               Add the key in Settings and run a new audit to get intent, helpfulness, specificity, trust and title/meta relevance per page. No judgments are shown here because none were produced.
             </>
           }
@@ -55,7 +55,7 @@ export default function AiTab() {
           <p className="text-3xl font-semibold tabular">{data.contentScore ?? "—"}</p>
           <p className="mt-1 text-xs text-muted-foreground">{data.pages.filter((p) => p.judged).length} pages judged · {data.notJudged.length} not judged · cost ${Number((data.ledger as Record<string, unknown>).cost_usd ?? 0).toFixed(4)}</p>
         </SectionCard>
-        <SectionCard className="lg:col-span-2" title="Site-level judgments" description="Jev's answers about the whole site, from the homepage and page titles">
+        <SectionCard className="lg:col-span-2" title="Site-level judgments" description="AI answers about the whole site, from the homepage and page titles">
           {data.site.length ? (
             <ul className="grid gap-3 sm:grid-cols-2">
               {data.site.map((s) => {
@@ -75,7 +75,7 @@ export default function AiTab() {
 
       <SectionCard
         title="Page judgments"
-        description="Typed answers from Jev with the engine's confidence band. Jev returns probabilities, not prose, so the explanation shown is the criterion its answer matched."
+        description="Typed answers from the AI model with the engine's confidence band. The model returns probabilities, not prose, so the explanation shown is the criterion its answer matched."
         actions={
           <Select value={dim} onValueChange={setDim}>
             <SelectTrigger className="h-8 w-52" aria-label="Dimension"><SelectValue /></SelectTrigger>
@@ -137,7 +137,7 @@ export default function AiTab() {
       </SectionCard>
 
       {data.findings.length > 0 && (
-        <SectionCard title="Jev findings" bodyClassName="p-0">
+        <SectionCard title="AI findings" bodyClassName="p-0">
           <ul className="divide-y">
             {data.findings.map((f) => (
               <li key={f.id} className="flex items-start gap-3 px-4 py-3 text-sm">
@@ -150,7 +150,7 @@ export default function AiTab() {
         </SectionCard>
       )}
       {data.notJudged.length > 0 && (
-        <p className="flex items-center gap-2 text-xs text-muted-foreground"><Bot className="size-3.5" /> {data.notJudged.length} page(s) were not judged (request failed or budget cap). Their absence of Jev findings is not a pass.</p>
+        <p className="flex items-center gap-2 text-xs text-muted-foreground"><Bot className="size-3.5" /> {data.notJudged.length} page(s) were not judged (request failed or budget cap). Their absence of AI findings is not a pass.</p>
       )}
       <PageDetailsDrawer auditId={audit.id} url={open} onClose={() => setOpen(null)} />
     </div>

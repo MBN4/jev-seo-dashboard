@@ -23,7 +23,7 @@ export function SeoScoreCard({ scores }: { scores: EngineScores }) {
               </div>
               <ul className="mt-2 flex flex-wrap gap-1.5 text-[0.7rem]">
                 {[
-                  ["Jev AI", c.jev],
+                  ["AI judgments", c.jev],
                   ["PageSpeed", c.pagespeed],
                   ["DataForSEO", c.dataforseo],
                 ].map(([label, ok]) => (

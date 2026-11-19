@@ -39,10 +39,12 @@ describe("new audit form", () => {
     });
     render(<NewAuditPage />);
     await userEvent.type(await screen.findByLabelText("Website URL"), "example.org");
+    await userEvent.type(screen.getByLabelText(/Focus keywords/), "seo audit, site speed, seo audit");
     const btn = screen.getByRole("button", { name: /start audit/i });
     await userEvent.click(btn);
     await waitFor(() => expect(push).toHaveBeenCalledWith("/audits/example.org-2026-01-01-0000/progress"));
-    expect(posted).toMatchObject({ url: "example.org", options: { maxPages: 60, jev: true, psi: true, full: false } });
+    expect(posted).toMatchObject({ url: "example.org", keywords: ["seo audit", "site speed"], options: { maxPages: 60, jev: true, psi: true, full: false } });
+    expect((posted as { options: Record<string, unknown> }).options).not.toHaveProperty("keywordsText");
   });
 
   it("requires confirmation before a paid DataForSEO audit", async () => {

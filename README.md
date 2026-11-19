@@ -1,6 +1,6 @@
-# Jev SEO Dashboard
+# Rankora — SEO audit dashboard
 
-A local web dashboard for the [jev-seo](https://github.com/agricidaniel/jev-seo) audit engine. Start audits from the browser, watch the engine's real progress, explore findings, pages, AI judgments and Core Web Vitals, track fixes, and download the engine's own PDF, Excel and Markdown reports.
+A local web dashboard for SEO audits, built on the open-source [jev-seo](https://github.com/agricidaniel/jev-seo) audit engine (MIT). Start audits from the browser, watch the engine's real progress, explore findings, pages, AI judgments and Core Web Vitals, track fixes, and download the engine's own PDF, Excel and Markdown reports.
 
 **The engine is not modified.** The dashboard runs the unchanged `jevseo` CLI as a subprocess and reads the `audit.json` it writes. The 52 rules, scoring and report generators are exactly the engine's own, and the CLI keeps working on its own.
 
@@ -13,9 +13,14 @@ Browser ──► Next.js (UI + /api routes, port 3000) ──spawn──► pyt
 ## Features
 
 - **Overview dashboard:** the latest audit's score, grade and completeness, severity and category charts, score history (from saved audits only), crawl statistics and recent audits.
-- **New audit:** URL validation in the browser and on the server, including the SSRF guard. Every option maps to a real engine flag: max pages and depth, time budget, JS rendering, Jev, PageSpeed, DataForSEO and formats. A summary shows missing dependencies, and paid mode needs explicit confirmation.
+- **New audit:** URL validation in the browser and on the server, including the SSRF guard. Every option maps to a real engine flag: max pages and depth, time budget, JS rendering, AI judgments, PageSpeed, DataForSEO and formats, plus optional focus keywords. A summary shows missing dependencies, and paid mode needs explicit confirmation.
 - **Live progress:** Server-Sent Events from the engine's own `== n/7` stage lines and counters (URLs crawled, pages judged, PageSpeed runs), plus warnings, errors, the engine log and cancellation. Progress survives page reloads and dashboard restarts.
-- **Results workspace:** Overview, Technical SEO (filters, search, sort, pagination, detail drawer), Pages (sortable table and lazy-loaded page analysis), AI Content (real Jev answers only), Performance (mobile and desktop, with 429 and missing data shown as such), Recommendations (status and notes stored separately from audit data) and Reports.
+- **Results workspace:** Overview, Technical SEO (filters, search, sort, pagination, detail drawer), Pages (sortable table and lazy-loaded page analysis), AI Content (real AI answers only), Performance (mobile and desktop, with 429 and missing data shown as such), Recommendations (status and notes stored separately from audit data) and Reports.
+- **Extra checks:** 31 dashboard-side checks on the saved crawl data, beyond the engine's 52 rules. They are reported separately and never change the engine's score.
+  - Rank Math-style focus-keyword placement: title, H1, URL, meta, intro and density.
+  - E-E-A-T and trust signals: About, Contact, privacy and terms pages, authors and dates on articles, Organization schema with sameAs.
+  - URL structure, Breadcrumb and Article schema coverage, internal linking, readability, keyword stuffing, image lazy loading and social cards.
+  - A list of what cannot be checked from crawl data.
 - **History:** search, status and date filters, sorting, pagination, and removal from history that never deletes files. Existing folders in `jev-seo-reports/`, such as an InboxWarm audit, are picked up automatically.
 - **Reports center:** original engine files with secure downloads and in-browser PDF preview.
 - **Settings:** write-only, masked API keys (stored in `data/secrets.env`, mode 600) with a **Verify** button for PageSpeed and DataForSEO (one live test request), audit defaults, and system diagnostics (engine `doctor`, Python, Playwright/Chromium, directories, keys).
@@ -44,6 +49,17 @@ Open **http://localhost:3000**, go to **New Audit**, enter a URL and press **Sta
 | Development mode | `./start.sh --dev` |
 
 Full instructions: [docs/INSTALLATION.md](docs/INSTALLATION.md). Using the app: [docs/USER_GUIDE.md](docs/USER_GUIDE.md). Internals: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). Endpoints: [docs/API.md](docs/API.md).
+
+## Branding
+
+The product name and tagline come from `lib/brand.ts`. To change them without editing code, add these lines to `.env.local` and rebuild (`npm run build`):
+
+```
+NEXT_PUBLIC_BRAND_NAME=Your Name
+NEXT_PUBLIC_BRAND_TAGLINE=SEO audit workspace
+```
+
+The logo is a lettermark built from the name's initials. The PDF, Excel and Markdown reports are produced by the engine and keep the engine's own design.
 
 ## Configuration
 

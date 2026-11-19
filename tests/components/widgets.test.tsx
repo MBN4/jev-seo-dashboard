@@ -35,7 +35,7 @@ describe("dashboard widgets", () => {
     );
     expect(screen.getByRole("img", { name: /60 out of 100, grade C/ })).toBeInTheDocument();
     expect(screen.getByText("Partial audit")).toBeInTheDocument();
-    expect(screen.getByText("Jev AI: not included")).toBeInTheDocument();
+    expect(screen.getByText("AI judgments: not included")).toBeInTheDocument();
   });
 
   it("shows an unavailable gauge rather than zero", () => {

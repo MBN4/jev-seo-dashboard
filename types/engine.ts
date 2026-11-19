@@ -102,6 +102,9 @@ export interface EnginePage {
   links_internal?: Array<{ url: string; anchor: string }>;
   links_external?: Array<{ url: string; anchor: string }>;
   schema_errors?: string[];
+  /** JSON-LD node summaries: types and the property names present (values are not stored) */
+  schema_nodes?: Array<{ types: string[]; keys: string[] }>;
+  script_count?: number;
   mixed_content?: string[];
   calls_to_action?: string[];
   nav_labels?: string[];

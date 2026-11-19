@@ -4,10 +4,11 @@ import { ThemeProvider } from "next-themes";
 import { AppShell } from "@/components/layout/app-shell";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/sonner";
+import { BRAND } from "@/lib/brand";
 
 export const metadata: Metadata = {
-  title: { default: "Jev SEO", template: "%s · Jev SEO" },
-  description: "Local dashboard for the jev-seo audit engine.",
+  title: { default: BRAND.name, template: `%s · ${BRAND.name}` },
+  description: `${BRAND.name}: local SEO audit dashboard.`,
 };
 
 export const viewport: Viewport = {

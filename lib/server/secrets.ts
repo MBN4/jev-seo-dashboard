@@ -27,7 +27,7 @@ export interface SecretStatus {
 }
 
 export const SECRET_PURPOSE: Record<SecretKey, string> = {
-  TYPESAFE_API_KEY: "Jev AI judgments (content quality, intent, trust, title and meta fit). Without it the audit runs as a partial audit.",
+  TYPESAFE_API_KEY: "AI judgments (content quality, intent, trust, title and meta fit). Without it the audit runs as a partial audit.",
   PAGESPEED_API_KEY: "Optional. Raises the Google PageSpeed Insights quota; unkeyed runs are often rate limited (HTTP 429).",
   DATAFORSEO_USERNAME: "Full mode only: rankings, keywords, competitors, backlinks (billed per call by DataForSEO).",
   DATAFORSEO_PASSWORD: "Full mode only, paired with DATAFORSEO_USERNAME.",
@@ -82,7 +82,7 @@ export function writeDashboardSecrets(update: Partial<Record<SecretKey, string |
     else current[k] = v.trim();
   }
   const body =
-    "# Written by the Jev SEO dashboard. Do not commit. Mode 600.\n" +
+    "# Written by the SEO dashboard. Do not commit. Mode 600.\n" +
     SECRET_KEYS.filter((k) => current[k]).map((k) => `${k}=${current[k]}`).join("\n") +
     "\n";
   writeAtomic(secretsFile(), body);

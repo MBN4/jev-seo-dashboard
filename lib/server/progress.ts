@@ -3,14 +3,16 @@ import { getAuditSummary } from "./audits";
 import { readJob, readJobLog, refreshJob } from "./jobs";
 import { parseEngineLog, summarizeProgress } from "@/lib/progress";
 import { redactPaths } from "./redact";
+import { neutralEngineText } from "@/lib/brand";
 
 export function progressSnapshot(id: string) {
   const summary = getAuditSummary(id);
   if (!summary) return null;
   refreshJob(id);
   const job = readJob(id);
+  // Parse the raw engine wording first (counters depend on it), then neutralise display text.
   const log = job ? redactPaths(readJobLog(id)) : "";
-  const events = parseEngineLog(log);
+  const events = parseEngineLog(log).map((e) => ({ ...e, message: neutralEngineText(e.message) }));
   const progress = job
     ? summarizeProgress(events, job.status)
     : null; // imported audits have no live log
@@ -21,7 +23,7 @@ export function progressSnapshot(id: string) {
     domain: summary.domain,
     startedAt: job?.startedAt ?? summary.startedAt,
     finishedAt: job?.finishedAt ?? summary.finishedAt,
-    error: job?.error ? redactPaths(job.error) : null,
+    error: job?.error ? neutralEngineText(redactPaths(job.error)) : null,
     note: job?.note ?? null,
     options: job?.options ?? summary.options,
     hasResults: summary.hasResults,

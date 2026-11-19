@@ -13,6 +13,7 @@ import { SidebarNav } from "./app-sidebar";
 import { AUDIT_TABS, auditContext, NAV } from "./nav";
 import { ThemeToggle } from "./theme-toggle";
 import { useSidebar } from "./sidebar-state";
+import { BRAND } from "@/lib/brand";
 
 function useCrumbs(pathname: string): Array<{ label: string; href?: string }> {
   const ctx = auditContext(pathname);
@@ -23,7 +24,7 @@ function useCrumbs(pathname: string): Array<{ label: string; href?: string }> {
   if (pathname === "/") return [{ label: "Overview" }];
   if (pathname === "/audits/new") return [{ label: "Audit History", href: "/audits" }, { label: "New Audit" }];
   const item = NAV.find((n) => n.href === pathname || n.fallback === pathname);
-  return [{ label: item?.label ?? "Jev SEO" }];
+  return [{ label: item?.label ?? BRAND.name }];
 }
 
 function RunningIndicator() {

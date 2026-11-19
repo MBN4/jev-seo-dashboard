@@ -50,7 +50,7 @@ export default function TechnicalPage() {
     <div className="space-y-4">
       <SectionCard
         title="Technical findings"
-        description="Every finding produced by the engine's rules, Jev judgments and PageSpeed results, grouped by engine category."
+        description="Every finding produced by the engine's rules, AI judgments and PageSpeed results, grouped by engine category."
         bodyClassName="p-0"
       >
         <div className="flex flex-col gap-3 border-b p-4 lg:flex-row lg:items-center lg:justify-between">
@@ -74,7 +74,7 @@ export default function TechnicalPage() {
               <SelectTrigger className="h-8 w-full sm:w-36" aria-label="Filter by source"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All sources</SelectItem>
-                {data?.facets.origin.map((o) => <SelectItem key={o} value={o}>{o === "jev" ? "Jev AI" : o === "dataforseo" ? "DataForSEO" : "Rules"}</SelectItem>)}
+                {data?.facets.origin.map((o) => <SelectItem key={o} value={o}>{o === "jev" ? "AI judgments" : o === "dataforseo" ? "DataForSEO" : "Rules"}</SelectItem>)}
               </SelectContent>
             </Select>
             <div className="relative">

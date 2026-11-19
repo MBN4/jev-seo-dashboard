@@ -89,12 +89,12 @@ function DefaultsTab() {
         {num("maxPages", "Crawl limit (pages)", 1, 500)}
         {num("maxDepth", "Max depth", 1, 10)}
         {num("timeBudget", "Crawl time budget (s)", 30, 1800)}
-        {num("jevPages", "Pages sent to Jev", 1, 200)}
-        {num("jevBudget", "Jev spend cap (USD)", 0.01, 5, 0.05)}
+        {num("jevPages", "Pages sent to AI", 1, 200)}
+        {num("jevBudget", "AI spend cap (USD)", 0.01, 5, 0.05)}
         {num("psiPages", "PageSpeed pages", 1, 10)}
       </div>
       <div className="mt-4 grid gap-3 lg:grid-cols-2">
-        {sw("jev", "AI evaluation (Jev)", "Needs TYPESAFE_API_KEY")}
+        {sw("jev", "AI content evaluation", "Needs TYPESAFE_API_KEY")}
         {sw("psi", "PageSpeed analysis", "Unkeyed runs may hit HTTP 429")}
         {sw("full", "Advanced analysis (DataForSEO)", "Paid; still asks for confirmation on every audit")}
         <div className="flex items-center justify-between gap-4 rounded-md border p-3">
@@ -129,7 +129,7 @@ function DiagnosticsTab() {
         {[
           ["Backend health", health === "ok" ? "Healthy" : health],
           ["Frontend ↔ backend", health === "unreachable" ? "Disconnected" : "Connected"],
-          ["Jev SEO engine", data.versions.engine ? `v${data.versions.engine}` : "Not found"],
+          ["Audit engine", data.versions.engine ? `v${data.versions.engine}` : "Not found"],
           ["Python", data.versions.python ?? "Unavailable"],
           ["Node.js", data.versions.node],
         ].map(([k, val]) => (

@@ -7,6 +7,7 @@ import { PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Logo } from "./logo";
+import { BRAND } from "@/lib/brand";
 import { NAV, isActive, navHref } from "./nav";
 import { SIDEBAR_DEFAULT, SIDEBAR_MAX, SIDEBAR_MIN, SIDEBAR_RAIL, useSidebar } from "./sidebar-state";
 
@@ -15,7 +16,7 @@ const fade = { initial: { opacity: 0, x: -6 }, animate: { opacity: 1, x: 0 }, ex
 export function SidebarNav({ collapsed = false, onNavigate, layoutGroup = "desktop" }: { collapsed?: boolean; onNavigate?: () => void; layoutGroup?: string }) {
   const pathname = usePathname();
   const reduce = useReducedMotion();
-  const groups = [NAV.slice(0, 3), NAV.slice(3, 8), NAV.slice(8)];
+  const groups = [NAV.slice(0, 3), NAV.slice(3, 9), NAV.slice(9)];
   const titles = ["Workspace", "Analysis", "Manage"];
   return (
     <nav aria-label="Main" className="flex flex-col gap-5">
@@ -172,7 +173,7 @@ export function AppSidebar() {
     >
       <ResizeHandle />
       <div className={cn("flex h-16 items-center gap-2 overflow-hidden border-b border-sidebar-border px-4", collapsed && "justify-center px-0")}>
-        <Link href="/" className="rounded-lg focus-visible:outline-2 focus-visible:outline-sidebar-ring" aria-label="Jev SEO home">
+        <Link href="/" className="rounded-lg focus-visible:outline-2 focus-visible:outline-sidebar-ring" aria-label={`${BRAND.name} home`}>
           <Logo collapsed={collapsed} />
         </Link>
       </div>

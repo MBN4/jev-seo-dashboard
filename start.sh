@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Jev SEO dashboard launcher.
+# SEO dashboard launcher (product name: lib/brand.ts or NEXT_PUBLIC_BRAND_NAME).
 #   ./start.sh          production mode (builds on first run), http://localhost:3000
 #   ./start.sh --dev    development mode with hot reload
 # The dashboard runs the jev-seo engine found at $JEVSEO_DIR (default: ../jev-seo).
@@ -73,7 +73,7 @@ if [ "$MODE" = "prod" ] && [ ! -f .next/BUILD_ID ]; then
   npm run build
 fi
 
-green "Jev SEO dashboard"
+green "${NEXT_PUBLIC_BRAND_NAME:-Rankora} dashboard"
 echo "  Dashboard:  http://localhost:$PORT"
 echo "  API:        http://localhost:$PORT/api  (e.g. /api/system/health)"
 echo "  Engine:     $ENGINE_DIR (python: $PY)"

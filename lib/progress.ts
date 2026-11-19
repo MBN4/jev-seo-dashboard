@@ -13,7 +13,7 @@ export const STAGE_LABELS = [
   "Website crawling",
   "SEO rule checks",
   "DataForSEO",
-  "Jev AI judgments",
+  "AI judgments",
   "PageSpeed Insights",
   "Scoring",
   "Report generation",

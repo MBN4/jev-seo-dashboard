@@ -53,7 +53,7 @@ async function computeDiagnostics() {
   const engineOk = fs.existsSync(path.join(engine, "jevseo", "cli.py"));
   checks.push({
     key: "engine",
-    label: "Jev SEO engine",
+    label: "Audit engine",
     state: engineOk ? "ok" : "error",
     detail: engineOk ? "Engine package found." : "The jevseo package was not found in the configured engine folder.",
     action: engineOk ? undefined : "Set JEVSEO_DIR in .env.local to your jev-seo checkout and restart the dashboard.",

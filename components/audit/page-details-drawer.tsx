@@ -161,7 +161,7 @@ export function PageDetailsDrawer({ auditId, url, onClose }: { auditId: string; 
                       ))}
                     </tbody>
                   </table>
-                ) : <p className="text-sm text-muted-foreground">Jev did not judge this page (no TYPESAFE_API_KEY, page not sent, or the budget cap was reached).</p>}
+                ) : <p className="text-sm text-muted-foreground">The AI model did not judge this page (no TYPESAFE_API_KEY, page not sent, or the budget cap was reached).</p>}
               </TabsContent>
             </Tabs>
           )}

@@ -23,12 +23,14 @@ export interface AppState {
   hidden: Record<string, string>;
   /** auditId -> recommendation key (finding id) -> user workflow state */
   recommendations: Record<string, Record<string, RecommendationState>>;
+  /** auditId -> focus keywords for the extra checks layer */
+  keywords: Record<string, string[]>;
   defaults: AuditOptions;
   updatedAt: string;
 }
 
 function emptyState(): AppState {
-  return { version: 1, hidden: {}, recommendations: {}, defaults: { ...DEFAULT_AUDIT_OPTIONS }, updatedAt: new Date().toISOString() };
+  return { version: 1, hidden: {}, recommendations: {}, keywords: {}, defaults: { ...DEFAULT_AUDIT_OPTIONS }, updatedAt: new Date().toISOString() };
 }
 
 export function readState(): AppState {
@@ -40,6 +42,7 @@ export function readState(): AppState {
       version: 1,
       hidden: typeof raw.hidden === "object" && raw.hidden ? raw.hidden : {},
       recommendations: typeof raw.recommendations === "object" && raw.recommendations ? raw.recommendations : {},
+      keywords: typeof raw.keywords === "object" && raw.keywords ? raw.keywords : {},
       defaults: defaults.success ? defaults.data : base.defaults,
       updatedAt: raw.updatedAt ?? base.updatedAt,
     };

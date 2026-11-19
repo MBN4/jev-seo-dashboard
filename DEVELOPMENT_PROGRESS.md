@@ -68,6 +68,23 @@ The component tests cover: navigation, the audit form (URL validation, defaults,
 - The Next.js dev badge is disabled (`devIndicators: false`) because it covered the sidebar collapse button.
 - Tests: 97/97 (added sidebar resize/collapse/keyboard tests and verify-endpoint tests). Typecheck, lint and production build are clean. A real-browser check covered drag-resize (256 → 340 px), drag-to-collapse, expand on click, scroll-reveal, mobile drawer, and no console errors.
 
+## Update: extra checks layer and rebrand (branch `extra-checks-rebrand`, built on `ui-refresh`)
+
+- **Extra checks** (`lib/server/extra-checks.ts`): 31 checks computed in the dashboard from the saved `audit.json`. The engine is unchanged, and so is its score.
+  - **Focus keywords (Rank Math style):** each keyword is matched to its best page (light plural stemming), then checked in the title, H1, URL, meta description and opening text, plus density (stuffing), thin target page and "no page mentions it".
+  - **Without keywords:** title/H1 mismatch and single-word stuffing.
+  - **URLs:** uppercase, underscores, long, query parameters.
+  - **E-E-A-T and trust:** About, Contact, privacy, terms, contact details; author and dates on articles; Organization schema and sameAs.
+  - **Schema coverage:** BreadcrumbList on deeper pages, Article markup on articles.
+  - **Links:** few internal links, single inlink, articles that cite no external sources.
+  - **Other:** readability (Flesch, English), image lazy loading, X card.
+  - Each check carries a Google Search Central link, or is labelled *heuristic* when it is a plugin convention rather than a documented Google rule.
+  - The tab also lists what cannot be checked from crawl data (image formats, compression, freshness values, interstitials, Search Console data, backlinks, Google Business Profile).
+- **Keywords:** an optional field on New Audit, editable afterwards on the Extra Checks tab (including imported audits). They are stored in `data/state.json`, never sent to the engine. API: `GET /api/audits/{id}/extra`, `GET/PUT /api/audits/{id}/keywords`.
+- **Rebrand:** the product is named **Rankora** (placeholder). The name and tagline live in `lib/brand.ts` and can be overridden with `NEXT_PUBLIC_BRAND_NAME` / `NEXT_PUBLIC_BRAND_TAGLINE`. The logo is a lettermark built from the initials. The AI feature is called "AI judgments", and engine log text is shown with neutral wording (it is parsed before rewording, so the progress counters still work).
+  - Not renamed, on purpose: the internal `JEVSEO_*` environment variables (renaming them would break existing `.env.local` files), and the PDF/XLSX/MD reports, which the engine generates.
+- **Tests:** 112/112, adding 13 extra-check tests (each check fires and passes on crafted pages, keyword API validation) plus component tests for the tab, the keyword field and branding. Typecheck, lint and build are clean. Verified in a real browser against the python.org audit with 4 keywords in light and dark mode; there were no console errors.
+
 ## Remaining tasks
 
 - Push to `MBN4/jev-seo-dashboard` once the empty repository exists.
