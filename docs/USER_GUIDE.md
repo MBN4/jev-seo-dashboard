@@ -63,7 +63,15 @@ The score (0–100) and grade (A ≥ 90, B ≥ 75, C ≥ 60, D ≥ 40, F) are th
 
 ## Understanding findings
 
-**Technical SEO** lists every finding with its severity, rule ID, category, affected URLs, evidence and fix.
+**Technical SEO** lists every finding with its severity, category, affected URLs, evidence and fix. Click a finding to open its explanation:
+
+- **What we found:** one plain sentence, and why it matters to Google.
+- **Notes:** common causes recognised automatically. Examples: Cloudflare's email protection creating a "broken" link on every page, Markdown pasted into a link, a stray `\"` at the end of an href, tracking pixels without alt text, and paginated pages sharing a title.
+- **How to fix it:** numbered steps.
+- **Exactly where:** for broken links, each broken address, its status, the pages that link to it with the link text, and the correct address when the data shows it. Other findings show a table, for example redirect hops, where a noindex comes from, word counts, or missing schema properties.
+- Every address opens in a new tab. **Inspect** opens that crawled page's details on top. **All affected pages** has search, copy and CSV.
+
+The same explanation opens from **Show exactly where and how to fix** in the Google Checklist and on each Recommendation.
 
 - Filter by severity, category or source (rules, AI judgments, DataForSEO), search, and sort.
 - Click a finding to open the detail drawer, which lists all URLs, links to Google's guidance and shows impact and effort.

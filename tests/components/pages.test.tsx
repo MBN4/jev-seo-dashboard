@@ -31,7 +31,10 @@ const F = { id: "no_https", key: "no_https", origin: "rule", category: "security
 describe("technical findings", () => {
   it("sends severity filters to the API and opens the detail drawer", async () => {
     const calls = mockFetch({
-      "GET /api/audits/a/findings/no_https": { ...F, urls: ["https://a.org/"], action: null, source: "https://developers.google.com" },
+      "GET /api/audits/a/findings/no_https": {
+        ...F, urls: ["https://a.org/"], action: null, source: "https://developers.google.com",
+        breakdown: { headline: "Your homepage is not served over HTTPS.", meaning: "HTTPS is a ranking signal.", steps: ["Install a certificate.", "Redirect HTTP to HTTPS."], notes: [], groups: null, table: { columns: [{ key: "page", label: "Page" }], rows: [{ page: { text: "https://a.org/", href: "https://a.org/", page: true } }], total: 1 } },
+      },
       "GET /api/audits/a/findings": findingsPayload([F]),
     });
     render(withAudit(<TechnicalPage />));
@@ -39,8 +42,12 @@ describe("technical findings", () => {
     await userEvent.click(screen.getByRole("button", { name: /High/ }));
     await waitFor(() => expect(calls.some((c) => c.url.includes("severity=high"))).toBe(true));
     await userEvent.click(screen.getByRole("button", { name: "Site not served over HTTPS" }));
-    expect(await screen.findByText("Recommended fix")).toBeInTheDocument();
-    expect(screen.getByText("Use HTTPS")).toBeInTheDocument();
+    expect(await screen.findByText("How to fix it")).toBeInTheDocument();
+    expect(screen.getByText("Your homepage is not served over HTTPS.")).toBeInTheDocument();
+    expect(screen.getByText("Redirect HTTP to HTTPS.")).toBeInTheDocument();
+    const links = screen.getAllByRole("link").filter((a) => a.getAttribute("href") === "https://a.org/");
+    expect(links.length).toBeGreaterThan(0);
+    expect(links[0]).toHaveAttribute("target", "_blank");
   });
 });
 

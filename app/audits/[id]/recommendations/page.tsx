@@ -7,6 +7,7 @@ import { EmptyState } from "@/components/common/empty-state";
 import { ErrorState } from "@/components/common/error-state";
 import { LoadingSkeleton } from "@/components/common/loading-skeleton";
 import { RecommendationCard } from "@/components/audit/recommendation-card";
+import { FindingDetailDrawer } from "@/components/audit/finding-detail-drawer";
 import { useAudit } from "@/components/audit/audit-context";
 import { useApi } from "@/hooks/use-api";
 import { api } from "@/lib/api";
@@ -19,6 +20,7 @@ export default function RecommendationsTab() {
   const [priority, setPriority] = useState<string[]>([]);
   const [quick, setQuick] = useState(false);
   const [q, setQ] = useState("");
+  const [explain, setExplain] = useState<string | null>(null);
   const items = useMemo(() => {
     let r = data?.items ?? [];
     if (status === "open") r = r.filter((x) => x.status !== "completed");
@@ -65,8 +67,9 @@ export default function RecommendationsTab() {
       {items.length === 0 ? (
         <EmptyState icon={ListChecks} title={data.items.length ? "Nothing matches these filters" : "No recommended actions"} description={data.items.length ? "Change the filters to see more." : "The engine produced no actions for this audit."} />
       ) : (
-        <div className="space-y-3">{items.map((r) => <RecommendationCard key={r.key} auditId={audit.id} rec={r} onChange={update} />)}</div>
+        <div className="space-y-3">{items.map((r) => <RecommendationCard key={r.key} auditId={audit.id} rec={r} onChange={update} onExplain={setExplain} />)}</div>
       )}
+      <FindingDetailDrawer auditId={audit.id} findingId={explain} onClose={() => setExplain(null)} />
     </div>
   );
 }

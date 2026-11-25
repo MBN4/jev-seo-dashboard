@@ -23,6 +23,12 @@ Rankora drives an open-source audit engine (credited in [NOTICE.md](NOTICE.md)) 
   - Filters such as *Missing*, *Duplicate*, *Over 60 characters* and *Non-indexable*.
   - An **Issues** view that ranks everything missing across all tabs.
   - CSV export of any tab and filter.
+- **Every warning explained:** open any finding (from Technical SEO, the Google checklist or Recommendations) to see, in plain words:
+  - what was found and why it matters;
+  - numbered steps to fix it;
+  - exactly where it occurs. Broken links are grouped by the broken address, with every page that links to it and the link text. Redirects show the address to link to instead, and redirect chains show each hop.
+  - Every address is clickable, and **Inspect** opens that page's full details. Copy and CSV buttons cover all affected pages.
+  - Common causes are recognised and explained, such as Cloudflare email protection, Markdown pasted into a link, stray quote characters in an href, tracking pixels without alt text, and pagination sharing a title.
 - **Overview:** the score and grade, completeness, severity and category charts, the most important fixes, and score history across audits.
 - **Technical SEO, Pages, AI Content, Performance:** every finding with its evidence and fix, page-by-page analysis, AI content judgments (with a key), and Core Web Vitals (with a PageSpeed key).
 - **Extra Checks:** 31 more checks on the crawl data.

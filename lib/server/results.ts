@@ -1,4 +1,5 @@
 import "server-only";
+import { findingBreakdown } from "./finding-breakdown";
 import { loadAudit } from "./audits";
 import { readState, type RecommendationState } from "./state";
 import type { EngineAudit, EngineFinding, EnginePage, AiAnswer, AiQuestion, PsiRun, Severity } from "@/types/engine";
@@ -131,7 +132,7 @@ export function finding(id: string, findingId: string) {
   const f = a.findings.find((x) => x.id === findingId);
   if (!f) return null;
   const action = a.actions.find((x) => x.id === findingId) ?? null;
-  return { ...f, categoryName: a.scores.category_names?.[f.category] ?? f.category, action };
+  return { ...f, categoryName: a.scores.category_names?.[f.category] ?? f.category, action, breakdown: findingBreakdown(a, f) };
 }
 
 // ---------------------------------------------------------------- pages

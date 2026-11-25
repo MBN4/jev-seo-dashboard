@@ -2,7 +2,10 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { ArrowUpRight, ChevronDown, ExternalLink, Search } from "lucide-react";
+import { ArrowUpRight, ChevronDown, ExternalLink, ScanSearch, Search } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { UrlLink } from "@/components/audit/finding-breakdown-view";
+import { FindingDetailDrawer } from "@/components/audit/finding-detail-drawer";
 import { Input } from "@/components/ui/input";
 import { FilterChip } from "@/components/common/filter-chip";
 import { SeverityBadge } from "@/components/common/severity-badge";
@@ -13,7 +16,6 @@ import { STATUS_META, SplitBar, StatusIcon } from "@/components/audit/checklist-
 import { useAudit } from "@/components/audit/audit-context";
 import { useApi } from "@/hooks/use-api";
 import { api } from "@/lib/api";
-import { shortUrl } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { ItemStatus } from "@/lib/google-checklist";
 import type { GradedItem } from "@/lib/server/checklist";
@@ -28,7 +30,8 @@ const FILTERS: Array<[ItemStatus | "all", string]> = [
 ];
 const TAB: Record<NonNullable<GradedItem["link"]>, string> = { technical: "Technical SEO", extra: "Extra Checks", ai: "AI Content", performance: "Performance" };
 
-function ItemRow({ item, auditId, defaultOpen }: { item: GradedItem; auditId: string; defaultOpen: boolean }) {
+function ItemRow({ item, auditId, defaultOpen, onExplain }: { item: GradedItem; auditId: string; defaultOpen: boolean; onExplain: (id: string) => void }) {
+  const explainable = (item.status === "fail" || item.status === "note") && item.source !== "extra" && item.link !== null;
   const [open, setOpen] = useState(defaultOpen);
   const expandable = item.status !== "pass";
   return (
@@ -59,6 +62,11 @@ function ItemRow({ item, auditId, defaultOpen }: { item: GradedItem; auditId: st
                 <p className="text-xs text-muted-foreground"><span className="font-medium text-foreground">Why Google cares:</span> {item.why}</p>
                 {item.evidence && <p className="rounded-md bg-muted/60 p-2.5 text-xs break-words"><span className="font-medium">What we found:</span> {item.evidence}</p>}
                 {item.fix && <p className="text-sm"><span className="font-medium">How to fix:</span> {item.fix}</p>}
+                {explainable && (
+                  <Button size="sm" className="mt-1 h-8 gap-1.5" onClick={() => onExplain(item.id)}>
+                    <ScanSearch className="size-3.5" /> Show exactly where and how to fix
+                  </Button>
+                )}
                 <div className="flex flex-wrap gap-3 pt-1 text-xs">
                   <a href={item.doc} target="_blank" rel="noreferrer noopener" className="inline-flex items-center gap-1 text-info hover:underline">
                     Google&apos;s guidance <ExternalLink className="size-3" />
@@ -71,13 +79,22 @@ function ItemRow({ item, auditId, defaultOpen }: { item: GradedItem; auditId: st
                 </div>
               </div>
               {item.urls.length > 0 && (
-                <ul className="max-h-44 space-y-0.5 overflow-y-auto rounded-md border p-2 font-mono text-xs">
+                <ul className="max-h-52 space-y-0.5 overflow-y-auto rounded-md border p-2 text-xs">
                   {item.urls.map((u) => (
-                    <li key={u} className="truncate" title={u}>
-                      <a href={u} target="_blank" rel="noreferrer noopener" className="hover:underline">{shortUrl(u)}</a>
+                    <li key={u} className="rounded px-1 py-0.5 hover:bg-muted/60">
+                      <UrlLink url={u} compact className="w-full" />
                     </li>
                   ))}
-                  {item.urlCount > item.urls.length && <li className="text-muted-foreground">+{item.urlCount - item.urls.length} more</li>}
+                  {item.urlCount > item.urls.length && (
+                    <li className="px-1 pt-1 text-muted-foreground">
+                      +{item.urlCount - item.urls.length} more
+                      {explainable && (
+                        <button type="button" onClick={() => onExplain(item.id)} className="ml-1 font-medium text-info hover:underline">
+                          see all
+                        </button>
+                      )}
+                    </li>
+                  )}
                 </ul>
               )}
             </div>
@@ -94,6 +111,7 @@ export default function ChecklistTab() {
   const [filter, setFilter] = useState<ItemStatus | "all">("all");
   const [q, setQ] = useState("");
   const [hash, setHash] = useState("");
+  const [explain, setExplain] = useState<string | null>(null);
   useEffect(() => {
     setHash(window.location.hash.slice(1));
     const on = () => setHash(window.location.hash.slice(1));
@@ -146,10 +164,11 @@ export default function ChecklistTab() {
             </div>
           </header>
           <ul>
-            {s.shown.map((it) => <ItemRow key={it.id} item={it} auditId={audit.id} defaultOpen={hash === it.id} />)}
+            {s.shown.map((it) => <ItemRow key={it.id} item={it} auditId={audit.id} defaultOpen={hash === it.id} onExplain={setExplain} />)}
           </ul>
         </section>
       ))}
+      <FindingDetailDrawer auditId={audit.id} findingId={explain} onClose={() => setExplain(null)} />
     </div>
   );
 }

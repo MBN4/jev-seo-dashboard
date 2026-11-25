@@ -1,5 +1,7 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
+import { UrlLink } from "@/components/audit/finding-breakdown-view";
+import { PageDetailsDrawer } from "@/components/audit/page-details-drawer";
 import { AnimatePresence, motion } from "motion/react";
 import { toast } from "sonner";
 import {
@@ -97,7 +99,7 @@ function KeywordEditor({ auditId, initial, onSaved }: { auditId: string; initial
   );
 }
 
-function FindingRow({ f }: { f: ExtraFinding }) {
+function FindingRow({ f, onInspect }: { f: ExtraFinding; onInspect: (u: string) => void }) {
   const [open, setOpen] = useState(false);
   return (
     <li className="border-b last:border-b-0">
@@ -126,9 +128,12 @@ function FindingRow({ f }: { f: ExtraFinding }) {
                   <p className="text-xs text-muted-foreground">Common SEO-plugin convention, not a documented Google rule.</p>
                 )}
               </div>
-              <ul className="max-h-48 space-y-0.5 overflow-y-auto rounded-md border p-2 font-mono text-xs">
-                {f.urls.map((u) => <li key={u} className="truncate" title={u}><a href={u} target="_blank" rel="noreferrer noopener" className="hover:underline">{shortUrl(u)}</a></li>)}
-              </ul>
+              <div className="space-y-1">
+                <p className="text-xs font-medium text-muted-foreground">Affected pages: open one, or Inspect it to see everything on that page</p>
+                <ul className="max-h-56 space-y-0.5 overflow-y-auto rounded-md border p-2 text-xs">
+                  {f.urls.map((u) => <li key={u} className="rounded px-1 py-0.5 hover:bg-muted/60"><UrlLink url={u} page onInspect={onInspect} compact className="w-full" /></li>)}
+                </ul>
+              </div>
             </div>
           </motion.div>
         )}
@@ -141,6 +146,7 @@ export default function ExtraChecksTab() {
   const { audit } = useAudit();
   const { data, error, reload } = useApi(() => api.extra(audit.id), [audit.id]);
   const [group, setGroup] = useState<ExtraGroup | "all">("all");
+  const [inspect, setInspect] = useState<string | null>(null);
   const grouped = useMemo(() => {
     const m = new Map<ExtraGroup, ExtraFinding[]>();
     for (const f of data?.findings ?? []) m.set(f.group, [...(m.get(f.group) ?? []), f]);
@@ -238,7 +244,7 @@ export default function ExtraChecksTab() {
                   <span className="font-semibold">{GROUPS[g].label}</span>
                   <span className="text-muted-foreground">· {GROUPS[g].hint}</span>
                 </div>
-                <ul>{grouped.get(g)!.map((f) => <FindingRow key={f.id} f={f} />)}</ul>
+                <ul>{grouped.get(g)!.map((f) => <FindingRow key={f.id} f={f} onInspect={setInspect} />)}</ul>
               </div>
             );
           })
@@ -279,6 +285,7 @@ export default function ExtraChecksTab() {
           ))}
         </ul>
       </SectionCard>
+      <PageDetailsDrawer auditId={audit.id} url={inspect} onClose={() => setInspect(null)} />
     </div>
   );
 }

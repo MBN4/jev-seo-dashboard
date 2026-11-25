@@ -1,21 +1,22 @@
 "use client";
 import { useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { ChevronDown, ExternalLink, Loader2, StickyNote, Zap } from "lucide-react";
+import { ChevronDown, ExternalLink, Loader2, ScanSearch, StickyNote, Zap } from "lucide-react";
+import { UrlLink } from "./finding-breakdown-view";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { SeverityBadge } from "@/components/common/severity-badge";
 import { api, ApiError } from "@/lib/api";
-import { shortUrl, formatRelative } from "@/lib/format";
+import { formatRelative } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { Recommendation } from "@/lib/api-types";
 
 const PRIORITY = { P1: "bg-critical-soft text-critical", P2: "bg-warning-soft text-warning-ink", P3: "bg-muted text-muted-foreground" } as const;
 const STATUS_LABEL = { pending: "Pending", in_progress: "In progress", completed: "Completed" } as const;
 
-export function RecommendationCard({ auditId, rec, onChange }: { auditId: string; rec: Recommendation; onChange: (r: Recommendation) => void }) {
+export function RecommendationCard({ auditId, rec, onChange, onExplain }: { auditId: string; rec: Recommendation; onChange: (r: Recommendation) => void; onExplain?: (findingId: string) => void }) {
   const [open, setOpen] = useState(false);
   const [notes, setNotes] = useState(rec.notes);
   const [saving, setSaving] = useState(false);
@@ -46,6 +47,11 @@ export function RecommendationCard({ auditId, rec, onChange }: { auditId: string
             {rec.needsReview > 0 && <span className="rounded bg-warning-soft px-1.5 py-0.5 text-[0.68rem]">Needs review</span>}
           </div>
           <p className="mt-1 text-sm">{rec.fix}</p>
+          {onExplain && (
+            <button type="button" onClick={() => onExplain(rec.key.split("~")[0])} className="mt-2 inline-flex items-center gap-1.5 rounded-md bg-brand-soft px-2.5 py-1 text-xs font-medium text-brand-strong transition-colors hover:bg-brand/20">
+              <ScanSearch className="size-3.5" /> Show exactly where and how to fix
+            </button>
+          )}
           <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
             <span>Impact <strong className="text-foreground tabular">{rec.impact}</strong>/100</span>
             <span>Effort <strong className="text-foreground tabular">{rec.effort}</strong>/4</span>
@@ -72,7 +78,8 @@ export function RecommendationCard({ auditId, rec, onChange }: { auditId: string
             <div><p className="mb-1 text-xs font-semibold text-muted-foreground uppercase">Evidence</p><p className="rounded-md bg-muted/60 p-2.5 text-xs break-words">{rec.evidence}</p></div>
             <div>
               <p className="mb-1 text-xs font-semibold text-muted-foreground uppercase">Affected URLs</p>
-              <ul className="max-h-40 space-y-0.5 overflow-y-auto font-mono text-xs">{rec.urls.map((u) => <li key={u} className="truncate" title={u}>{shortUrl(u)}</li>)}</ul>
+              <ul className="max-h-40 space-y-0.5 overflow-y-auto text-xs">{rec.urls.slice(0, 100).map((u) => <li key={u}><UrlLink url={u} compact className="w-full" /></li>)}</ul>
+              {rec.urls.length > 100 && <p className="mt-1 text-xs text-muted-foreground">+{rec.urls.length - 100} more{onExplain && <> · <button type="button" className="font-medium text-info hover:underline" onClick={() => onExplain(rec.key.split("~")[0])}>see all</button></>}</p>}
             </div>
             {rec.source && <a href={rec.source} target="_blank" rel="noreferrer noopener" className="inline-flex items-center gap-1 text-xs text-info hover:underline">Google guidance <ExternalLink className="size-3" /></a>}
           </div>

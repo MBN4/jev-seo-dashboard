@@ -68,7 +68,7 @@ Query parameters: `q`, `status` (repeatable), `from`, `to` (YYYY-MM-DD), `sort=d
 | `POST /api/audits/{id}/cancel` | Stops only this audit's process group |
 | `GET /api/audits/{id}/results` | Overview: scores, counts, by-severity, by-category, status buckets, top actions (up to 5 sample URLs each), AI/PageSpeed availability |
 | `GET /api/audits/{id}/findings` | Query: `severity`, `category`, `origin` (repeatable), `q`, `sort=severity\|count\|title\|category`, `dir`, `page`, `pageSize`. Returns items, total, facets and `passedRules`. |
-| `GET /api/audits/{id}/findings/{findingId}` | Full finding (all URLs, detail, linked action) |
+| `GET /api/audits/{id}/findings/{findingId}` | Full finding (all URLs, detail, linked action) plus `breakdown: { headline, meaning, steps[], notes[{tone,title,text}], groups[{key,title,badge,explain,suggestion,itemsLabel,items[{url,note}],total}] \| null, table{columns,rows,total} \| null }`: a plain-language explanation rebuilt from the crawl data. For example, broken links are grouped by target, with every page that links there, the link text and the address to use instead. |
 | `GET /api/audits/{id}/pages` | Query: `q`, `status=2xx\|3xx\|4xx\|5xx\|error`, `indexable=yes\|no`, `issues=with\|without`, `sort`, `dir`, `page`, `pageSize` |
 | `GET /api/audits/{id}/pages/detail?url=` | One page: meta, headings, content, links (with status), structured data, findings, AI answers |
 | `GET /api/audits/{id}/ai` | `{ available, skipped, site[], dimensions[], pages[{url, answers, findings}], notJudged, findings }`. Empty when Jev did not run. |
