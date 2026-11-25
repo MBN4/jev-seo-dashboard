@@ -1,5 +1,30 @@
 # User guide
 
+## After an audit: start with the Google checklist
+
+Each audit opens with **Google guidelines**, which shows how the site measures up against Google's own Search guidance:
+
+- an overall score (rules met out of rules checked);
+- a tile per area, such as crawling, indexing, titles, content and E-E-A-T, structured data, page experience, spam policies and AI features;
+- the five fixes to make first.
+
+**Open Google checklist** lists every rule in plain language. Each one is marked:
+
+- **Passed**;
+- **Needs work** (with what was found, how to fix it, the affected URLs and Google's own page);
+- **Not checked** (with the reason, for example "needs a PageSpeed key");
+- **Manual check** (for things no crawler can detect, such as cloaking or manual actions).
+
+## Site Explorer: find what is missing
+
+**Site Explorer** shows every crawled URL, in the style of a desktop crawler:
+
+- **Issues** ranks everything missing across all tabs. Click one to see the URLs.
+- **Tabs** (Page titles, Meta description, H1, Canonicals, Links and more) have filters such as *Missing*, *Duplicate*, *Over 60 characters* or *Non-indexable*.
+- **Rows** open the full page analysis when clicked.
+- **CSV** exports the current tab and filter.
+
+
 ## Creating an audit
 
 1. Open **New Audit**.
@@ -68,7 +93,7 @@ Set a status (*Pending*, *In progress* or *Completed*) and add notes. Both are s
 
 ## Managing history
 
-**Audit History** lists every audit: those launched here and any folder found in `jev-seo-reports/`, including ones made with the CLI. It supports searching by domain, filtering by status and date, sorting and paging.
+**Audit History** lists every audit: those launched here and any audit already in your reports folder, including ones made with the CLI. It supports searching by domain, filtering by status and date, sorting and paging.
 
 - **Remove from history** hides the entry but **does not delete files**. Use *Restore all* to bring entries back.
 - **Rescan reports folder** picks up folders added outside the dashboard.
@@ -92,7 +117,7 @@ In **Settings → API keys**, paste a key and press **Save**.
 
 | Key | Needed for |
 | --- | --- |
-| `TYPESAFE_API_KEY` | AI judgments (TypeSafe Jev model); without it the audit is partial |
+| `TYPESAFE_API_KEY` | AI judgments; without it they are off and the audit is marked partial |
 | `PAGESPEED_API_KEY` | Higher PageSpeed quota. It is free from Google Cloud: enable the *PageSpeed Insights API*, then create an API key. |
 | `DATAFORSEO_USERNAME` / `DATAFORSEO_PASSWORD` | Full mode only (paid) |
 

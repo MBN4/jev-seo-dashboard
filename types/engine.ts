@@ -1,7 +1,7 @@
 /**
- * Types mirroring the jev-seo engine's audit.json (schema_version 1.0).
- * Source of truth: jevseo/cli.py `audit()`, jevseo/score.py, jevseo/jev.py, jevseo/psi.py.
- * Fields the engine may omit are optional; unknown extra fields are tolerated.
+ * Rankora's audit model. It mirrors the audit engine's audit.json (schema_version 1.0) after
+ * lib/server/engine-adapter.ts has translated engine-specific names (AI block, check-id and
+ * action-id prefixes) into Rankora's. Fields the engine may omit are optional.
  */
 
 export type Severity = "critical" | "high" | "medium" | "low" | "info";
@@ -9,7 +9,7 @@ export type Priority = "P1" | "P2" | "P3";
 
 export interface EngineFinding {
   id: string;
-  origin: "rule" | "jev" | "dataforseo" | string;
+  origin: "rule" | "ai" | "dataforseo" | "extra" | string;
   category: string;
   severity: Severity;
   title: string;
@@ -46,8 +46,8 @@ export interface EngineScores {
   completeness: {
     categories_scored: number;
     categories_total: number;
-    jev: boolean;
-    jev_pages_not_judged?: number;
+    ai: boolean;
+    ai_pages_not_judged?: number;
     pagespeed: boolean;
     dataforseo: boolean;
   };
@@ -112,7 +112,7 @@ export interface EnginePage {
   [k: string]: unknown;
 }
 
-export interface JevAnswer {
+export interface AiAnswer {
   type: "choice" | "score" | "noul" | string;
   value: string | number;
   band?: string;
@@ -124,22 +124,22 @@ export interface JevAnswer {
   source?: string;
 }
 
-export interface JevQuestion {
+export interface AiQuestion {
   type: string;
   instructions: string;
   criteria: Record<string, string | boolean> | string[];
 }
 
-export interface EngineJev {
+export interface EngineAi {
   available: boolean;
   skipped?: string;
-  site: Record<string, JevAnswer> | null;
-  pages: Record<string, Record<string, JevAnswer> | null>;
-  pairs: Array<{ a: string; b: string; title_overlap?: number; judgment: JevAnswer | null }>;
+  site: Record<string, AiAnswer> | null;
+  pages: Record<string, Record<string, AiAnswer> | null>;
+  pairs: Array<{ a: string; b: string; title_overlap?: number; judgment: AiAnswer | null }>;
   ledger: Record<string, unknown>;
-  questions: { site?: Record<string, JevQuestion>; page_example?: Record<string, JevQuestion> };
+  questions: { site?: Record<string, AiQuestion>; page_example?: Record<string, AiQuestion> };
   not_judged?: string[];
-  keywords?: Record<string, Record<string, JevAnswer>>;
+  keywords?: Record<string, Record<string, AiAnswer>>;
 }
 
 export interface FieldMetric {
@@ -212,7 +212,7 @@ export interface EngineAudit {
   pages: EnginePage[];
   findings: EngineFinding[];
   passed_rules: string[];
-  jev: EngineJev;
+  ai: EngineAi;
   performance: EnginePerformance | null;
   dataforseo: Record<string, unknown> | null;
   scores: EngineScores;

@@ -2,9 +2,8 @@ import "server-only";
 import { createAuditSchema, DEFAULT_AUDIT_OPTIONS, auditOptionsSchema, type AuditOptions } from "@/lib/schemas";
 import { validateAuditTarget, type Resolver } from "./url-guard";
 import { startJob, JobError } from "./jobs";
-import { readState } from "./state";
+import { readState, updateState } from "./state";
 import { isConfigured } from "./secrets";
-import { updateState } from "./state";
 
 /** Validate a create-audit request end to end and launch the engine. */
 export async function createAudit(body: unknown, resolver?: Resolver) {
@@ -21,8 +20,12 @@ export async function createAudit(body: unknown, resolver?: Resolver) {
   }
   const domain = new URL(target.url).hostname.toLowerCase().replace(/^www\./, "");
   const warnings: string[] = [];
-  if (options.jev && !isConfigured("TYPESAFE_API_KEY")) warnings.push("TYPESAFE_API_KEY is not set: AI judgments will be skipped and the score marked partial.");
-  if (options.psi && !isConfigured("PAGESPEED_API_KEY")) warnings.push("PAGESPEED_API_KEY is not set: PageSpeed runs unkeyed and may be rate limited (HTTP 429).");
+  // No key, no AI stage: turn it off up front instead of letting the engine log a warning.
+  if (options.ai && !isConfigured("TYPESAFE_API_KEY")) {
+    options.ai = false;
+    warnings.push("AI judgments are off: no TYPESAFE_API_KEY is set. The rest of the audit runs normally.");
+  }
+  if (options.psi && !isConfigured("PAGESPEED_API_KEY")) warnings.push("PageSpeed runs without a key and is often rate limited (HTTP 429). Add a free key in Settings for reliable results.");
   const job = startJob(target.url, domain, options);
   const kws = [...new Set((req.keywords ?? []).map((k) => k.trim()).filter(Boolean))];
   if (kws.length) await updateState((s) => void (s.keywords[job.id] = kws));

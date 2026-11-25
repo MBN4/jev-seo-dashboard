@@ -6,6 +6,9 @@ import { engineDir, enginePython, ensureDir, jobsDir, maxAuditSeconds, maxConcur
 import { engineSecretEnv } from "./secrets";
 import { writeAtomic } from "./state";
 import { isValidAuditId, REPORT_FILES } from "./paths";
+import { aiStageArgs, migrateOptionKeys } from "./engine-adapter";
+import { prebuildBranded } from "./branding";
+import { ENGINE_ENV_FILE_VAR, ENGINE_LOG_PREFIX, ENGINE_MODULE } from "@/lib/engine-protocol";
 import type { AuditOptions } from "@/lib/schemas";
 import type { AuditStatus } from "@/types/api";
 
@@ -37,8 +40,8 @@ interface Registry {
   timers: Map<string, NodeJS.Timeout>;
 }
 
-const g = globalThis as unknown as { __jevseoJobs?: Registry };
-const registry: Registry = (g.__jevseoJobs ??= { children: new Map(), timers: new Map() });
+const g = globalThis as unknown as { __rankoraJobs?: Registry };
+const registry: Registry = (g.__rankoraJobs ??= { children: new Map(), timers: new Map() });
 
 const TERMINAL: AuditStatus[] = ["completed", "failed", "cancelled", "interrupted"];
 export const isTerminal = (s: AuditStatus) => TERMINAL.includes(s);
@@ -56,7 +59,9 @@ function jobFile(id: string) {
 export function readJob(id: string): Job | null {
   if (!isValidAuditId(id)) return null;
   try {
-    return JSON.parse(fs.readFileSync(jobFile(id), "utf8")) as Job;
+    const job = JSON.parse(fs.readFileSync(jobFile(id), "utf8")) as Job;
+    job.options = migrateOptionKeys(job.options as unknown as Record<string, unknown>) as unknown as AuditOptions;
+    return job;
   } catch {
     return null;
   }
@@ -86,7 +91,7 @@ export function readJobLog(id: string): string {
 /** Build the exact engine argument list. Every value is validated by zod before this point. */
 export function engineArgs(url: string, outDir: string, o: AuditOptions): string[] {
   const args = [
-    "-m", "jevseo", "run", url,
+    "-m", ENGINE_MODULE, "run", url,
     "--out", outDir,
     "--max-pages", String(o.maxPages),
     "--max-depth", String(o.maxDepth),
@@ -94,8 +99,7 @@ export function engineArgs(url: string, outDir: string, o: AuditOptions): string
     "--render", o.render,
     "--formats", o.formats.join(","),
   ];
-  if (o.jev) args.push("--jev-pages", String(o.jevPages), "--jev-budget", String(o.jevBudget));
-  else args.push("--no-jev");
+  args.push(...aiStageArgs(o));
   if (o.psi) args.push("--psi-pages", String(o.psiPages));
   else args.push("--no-psi");
   if (o.full) args.push("--full", "--dfs-budget", String(o.dfsBudget), "--location-code", String(o.locationCode), "--language", o.language);
@@ -119,10 +123,10 @@ function pidAlive(pid: number | null): boolean {
   } catch {
     return false;
   }
-  // Guard against PID reuse after a restart: the process must still be a jevseo run.
+  // Guard against PID reuse after a restart: the process must still be an engine run.
   try {
     const cmd = fs.readFileSync(`/proc/${pid}/cmdline`, "utf8");
-    return cmd.includes("jevseo");
+    return cmd.includes(ENGINE_MODULE);
   } catch {
     return true; // no /proc (non-Linux): trust kill(0)
   }
@@ -137,10 +141,10 @@ export function runningJobs(): Job[] {
 function lastErrorLines(log: string): string | null {
   const lines = log.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
   const refusing = lines.find((l) => /Refusing to crawl/.test(l));
-  if (refusing) return refusing.replace(/^\[jevseo [\d:]+\]\s*/, "");
+  if (refusing) return refusing.replace(ENGINE_LOG_PREFIX, "");
   const tail = lines.slice(-1)[0];
   if (!tail) return null;
-  return tail.replace(/^\[jevseo [\d:]+\]\s*/, "").slice(0, 500);
+  return tail.replace(ENGINE_LOG_PREFIX, "").slice(0, 500);
 }
 
 function finalize(id: string, code: number | null, signal: NodeJS.Signals | null) {
@@ -162,6 +166,8 @@ function finalize(id: string, code: number | null, signal: NodeJS.Signals | null
     job.status = "completed";
     const missing = job.options.formats.filter((f) => !fs.existsSync(path.join(folder, REPORT_FILES[f].filename)));
     if (missing.length) job.note = `Audit finished but these reports are missing: ${missing.join(", ")}.`;
+    // Prepare the branded report copies in the background so downloads are instant.
+    setImmediate(() => prebuildBranded(id));
   } else {
     job.status = "failed";
     job.error = job.error ?? lastErrorLines(readJobLog(id)) ?? `Engine exited with code ${code ?? signal}.`;
@@ -234,7 +240,7 @@ export function startJob(url: string, domain: string, options: AuditOptions): Jo
         PATH: process.env.PATH ?? "/usr/bin:/bin",
         HOME: process.env.HOME ?? "",
         LANG: process.env.LANG ?? "C.UTF-8",
-        ...(process.env.JEVSEO_ENV_FILE ? { JEVSEO_ENV_FILE: process.env.JEVSEO_ENV_FILE } : {}),
+        ...(process.env[ENGINE_ENV_FILE_VAR] ? { [ENGINE_ENV_FILE_VAR]: process.env[ENGINE_ENV_FILE_VAR] as string } : {}),
         ...(process.env.PLAYWRIGHT_BROWSERS_PATH ? { PLAYWRIGHT_BROWSERS_PATH: process.env.PLAYWRIGHT_BROWSERS_PATH } : {}),
         ...pickEnv(["TYPESAFE_API_KEY", "PAGESPEED_API_KEY", "DATAFORSEO_USERNAME", "DATAFORSEO_PASSWORD", "HTTPS_PROXY", "HTTP_PROXY", "NO_PROXY", "https_proxy", "http_proxy", "no_proxy", "REQUESTS_CA_BUNDLE", "SSL_CERT_FILE"]),
         ...engineSecretEnv(),
@@ -252,7 +258,7 @@ export function startJob(url: string, domain: string, options: AuditOptions): Jo
   child.on("error", (err) => {
     const j = readJob(id);
     if (j && !isTerminal(j.status)) {
-      j.error = `Could not start the engine (${enginePython()}): ${err.message}. Check JEVSEO_PYTHON and JEVSEO_DIR in Settings > Diagnostics.`;
+      j.error = `Could not start the engine (${enginePython()}): ${err.message}. Check RANKORA_ENGINE_PYTHON and RANKORA_ENGINE_DIR (see Settings > Diagnostics).`;
       saveJob(j);
     }
     finalize(id, null, null);

@@ -26,7 +26,7 @@ All routes are served by the dashboard at `http://localhost:3000/api`. Responses
 ### `POST /api/audits`
 
 ```json
-{ "url": "https://example.com", "keywords": ["seo audit tool"], "options": { "maxPages": 30, "jev": true, "psi": true, "psiPages": 3, "full": false, "render": "auto", "formats": ["pdf","xlsx","md"] }, "confirmPaid": false }
+{ "url": "https://example.com", "keywords": ["seo audit tool"], "options": { "maxPages": 30, "ai": true, "psi": true, "psiPages": 3, "full": false, "render": "auto", "formats": ["pdf","xlsx","md"] }, "confirmPaid": false }
 ```
 
 → `202 {"id":"example.com-2026-11-18-1058","status":"running","url":"https://example.com/","domain":"example.com","warnings":["PAGESPEED_API_KEY is not set: …"]}`
@@ -39,7 +39,7 @@ Option keys and bounds (each maps to a CLI flag):
 | `maxDepth` | 1–10 | `--max-depth` |
 | `timeBudget` | 30–5400 | `--time-budget` |
 | `render` | auto, always, never | `--render` |
-| `jev` / `jevPages` / `jevBudget` | | `--no-jev` / `--jev-pages` / `--jev-budget` |
+| `ai` / `aiPages` / `aiBudget` | | AI judgments on/off, pages sent, spend cap. Switched off automatically when no `TYPESAFE_API_KEY` is set. |
 | `psi` / `psiPages` | | `--no-psi` / `--psi-pages` |
 | `full` / `dfsBudget` / `locationCode` / `language` | `full` needs `confirmPaid: true` and DataForSEO keys | `--full` and related |
 | `formats` | | `--formats` |
@@ -52,7 +52,7 @@ Query parameters: `q`, `status` (repeatable), `from`, `to` (YYYY-MM-DD), `sort=d
 
 ```json
 { "items": [ { "id": "iana.org-2026-11-18-0812", "domain": "iana.org", "status": "completed", "origin": "dashboard",
-  "score": 60, "grade": "C", "partial": ["Jev judgments unavailable, …"], "pagesCrawled": 4, "findingsTotal": 12,
+  "score": 60, "grade": "C", "partial": ["AI judgments unavailable, …"], "pagesCrawled": 4, "findingsTotal": 12,
   "severity": {"critical":0,"high":1,"medium":4,"low":6,"info":1}, "rulesEvaluated": 52, "reports": ["pdf","xlsx","md","json","digest"], "hasResults": true, … } ],
   "total": 3, "page": 1, "pageSize": 20 }
 ```
@@ -66,7 +66,7 @@ Query parameters: `q`, `status` (repeatable), `from`, `to` (YYYY-MM-DD), `sort=d
 | `GET /api/audits/{id}/progress` | Snapshot: `{ status, error, note, startedAt, finishedAt, progress: { stages[7]: {state, detail, counter}, completedStages, currentStage, pagesCrawled, warnings, errors }, events: [...last 300], eventCount }` |
 | `GET /api/audits/{id}/events` | SSE: `event: snapshot` (same body as `/progress`) on change, `: ping` every 15 s, `event: end` on a terminal status, `retry: 3000` |
 | `POST /api/audits/{id}/cancel` | Stops only this audit's process group |
-| `GET /api/audits/{id}/results` | Overview: scores, counts, by-severity, by-category, status buckets, top actions, Jev/PSI availability |
+| `GET /api/audits/{id}/results` | Overview: scores, counts, by-severity, by-category, status buckets, top actions (up to 5 sample URLs each), AI/PageSpeed availability |
 | `GET /api/audits/{id}/findings` | Query: `severity`, `category`, `origin` (repeatable), `q`, `sort=severity\|count\|title\|category`, `dir`, `page`, `pageSize`. Returns items, total, facets and `passedRules`. |
 | `GET /api/audits/{id}/findings/{findingId}` | Full finding (all URLs, detail, linked action) |
 | `GET /api/audits/{id}/pages` | Query: `q`, `status=2xx\|3xx\|4xx\|5xx\|error`, `indexable=yes\|no`, `issues=with\|without`, `sort`, `dir`, `page`, `pageSize` |
@@ -75,10 +75,13 @@ Query parameters: `q`, `status` (repeatable), `from`, `to` (YYYY-MM-DD), `sort=d
 | `GET /api/audits/{id}/performance` | `{ skipped, keyed, runs[{strategy, outcome: ok\|rate_limited\|failed, scores?, lab?, field_url?, field_origin?}], ttfb[], perfFindings[] }` |
 | `GET /api/audits/{id}/recommendations` | Engine actions merged with the user's status and notes |
 | `PATCH /api/audits/{id}/recommendations/{key}` | Body `{ "status": "pending\|in_progress\|completed", "notes": "…" }` |
+| `GET /api/audits/{id}/checklist` | Google guidelines checklist graded from this audit: `{ score, totals{pass,fail,note,not_checked,manual,checked,total}, topFailures[], sections[{key,title,summary,doc,score,counts,items[{id,rule,why,source,doc,status,severity,reason,evidence,fix,urls,urlCount,link}]}] }` |
+| `GET /api/audits/{id}/explorer` | Site Explorer overview: `{ totalUrls, tabs[{key,label,count,filters[{key,label,kind,help,count}]}], issues[{tab,filter,label,kind,help,count,share}] }` |
+| `GET /api/audits/{id}/explorer/{tab}` | Query: `filter`, `q`, `sort`, `dir`, `page`, `pageSize` (max 500). Returns `{ columns, rows, total, filter }`. Add `format=csv` for a CSV of every matching row (formula injection neutralised). Tabs: `internal`, `response`, `titles`, `meta`, `h1`, `h2`, `images`, `canonicals`, `directives`, `links`, `structured`, `content`, `security`, `hreflang`, `social`. |
 | `GET /api/audits/{id}/extra` | Extra checks layer: `{ findings[{id, group, severity, title, fix, source, heuristic, urls, count, evidence}], passed[], skipped[], keywords[], keywordReport[{keyword, targetUrl, checks{title,h1,url,meta,intro}, densityPct, wordCount}], readability[], notCheckable[], checksTotal }`. Computed from the saved audit.json; does not change the engine score. |
 | `GET/PUT /api/audits/{id}/keywords` | Focus keywords for the extra checks. PUT body `{ "keywords": ["…"] }` (max 10, each ≤ 80 chars); an empty list clears them. Works for imported audits too. |
-| `GET /api/audits/{id}/reports` | `[{ type, label, filename, size, modifiedAt }]` |
-| `GET /api/audits/{id}/reports/{pdf\|xlsx\|md\|json\|digest}[?inline=1]` | Streams the original file. `inline` is allowed for pdf and md. |
+| `GET /api/audits/{id}/reports` | `{ items: [{ type, label, filename, size, modifiedAt }], branded: { ready, building } }`. Starts building branded copies if needed. |
+| `GET /api/audits/{id}/reports/{pdf\|xlsx\|md\|json\|digest}[?inline=1]` | Branded copy of the report (built on first request if needed; the engine original is never served). `json` is Rankora's own export. `inline` is allowed for pdf and md. |
 
 ### Import and history
 

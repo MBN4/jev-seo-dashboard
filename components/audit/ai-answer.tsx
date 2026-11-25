@@ -1,8 +1,8 @@
 import { cn } from "@/lib/utils";
-import type { JevAnswer, JevQuestion } from "@/types/engine";
+import type { AiAnswer, AiQuestion } from "@/types/engine";
 
-/** Human-readable rendering of one typed Jev answer, using the engine's own criteria text. */
-export function describeAnswer(a: JevAnswer, q?: JevQuestion | null): { value: string; criterion: string | null } {
+/** Human-readable rendering of one typed AI answer, using the engine's own criteria text. */
+export function describeAnswer(a: AiAnswer, q?: AiQuestion | null): { value: string; criterion: string | null } {
   if (a.type === "noul") {
     const v = Number(a.value);
     const crit = q && !Array.isArray(q.criteria) ? (v >= 0.5 ? q.criteria["true"] : q.criteria["false"]) : null;
@@ -27,7 +27,7 @@ export function BandBadge({ band }: { band?: string }) {
 }
 
 /** Score answers (0..1) get a small bar; others show their value. */
-export function AnswerValue({ a }: { a: JevAnswer }) {
+export function AnswerValue({ a }: { a: AiAnswer }) {
   if (a.type === "score" || a.type === "noul") {
     const v = Math.max(0, Math.min(1, Number(a.value)));
     return (

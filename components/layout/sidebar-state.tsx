@@ -46,20 +46,20 @@ export function SidebarProvider({ children }: { children: React.ReactNode }) {
   const [dragging, setDragging] = useState(false);
 
   useEffect(() => {
-    setW(clampWidth(load("jevseo.sidebar.width", SIDEBAR_DEFAULT)));
-    setC(load("jevseo.sidebar.collapsed", false));
+    setW(clampWidth(load("rankora.sidebar.width", SIDEBAR_DEFAULT)));
+    setC(load("rankora.sidebar.collapsed", false));
   }, []);
 
   const setWidth = useCallback((w: number) => {
     const c = clampWidth(w);
     setW(c);
-    save("jevseo.sidebar.width", c);
+    save("rankora.sidebar.width", c);
   }, []);
   const setCollapsed = useCallback((c: boolean) => {
     setC(c);
-    save("jevseo.sidebar.collapsed", c);
+    save("rankora.sidebar.collapsed", c);
   }, []);
-  const toggle = useCallback(() => setC((c) => (save("jevseo.sidebar.collapsed", !c), !c)), []);
+  const toggle = useCallback(() => setC((c) => (save("rankora.sidebar.collapsed", !c), !c)), []);
 
   // Ctrl/Cmd + B toggles the sidebar, like most editors.
   useEffect(() => {

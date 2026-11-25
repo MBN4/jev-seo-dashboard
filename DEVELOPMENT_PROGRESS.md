@@ -94,6 +94,33 @@ The component tests cover: navigation, the audit form (URL validation, defaults,
 - **Rebrand fix:** engine-written explanations (partial-audit reasons, score notes, finding titles and fixes) are reworded in memory, so "Jev" no longer appears in the UI. audit.json on disk is unchanged.
 - **Tests:** 121/121 passing, including the sitemap parser, index and gzip handling, the same-site filter, blocking redirects into private networks, the homepage fallback, and the counter UI.
 
+## Update: Rankora (Google checklist, Site Explorer, full rebrand, your sites)
+
+- **Google guidelines checklist** (`lib/google-checklist.ts`, `lib/server/checklist.ts`):
+  - Covers 102 checks across 13 Google Search Central areas: the 52 engine rules, 31 extra checks, 13 AI checks, 6 DataForSEO checks, Core Web Vitals and Lighthouse, plus 4 manual-only spam checks.
+  - Each check is written as a plain-language rule, with why it matters and a link to Google's page.
+  - It is graded from real results. A check whose data source was missing is marked **Not checked**, with the reason, and never counted as a pass.
+  - Shown first on every audit and on the main Overview, with its own tab.
+- **Site Explorer** (`lib/server/explorer.ts`): 15 crawler-style tabs with Missing / Duplicate / Too long / Too short style filters, an Issues view ranked by type, sorting, search, pagination, and CSV export protected against formula injection. Rows open the page analysis drawer.
+- **Full rebrand to Rankora:**
+  - Engine-facing names live only in `lib/engine-protocol.ts` and `lib/server/engine-adapter.ts`.
+  - The adapter renames the AI block, check IDs (`ai_*`) and action IDs (`RK-001`) and rewords engine text. A test checks that the translated audit contains no upstream name in any letter case.
+  - Settings use `RANKORA_*`, with `JEVSEO_*` still accepted. Saved option names are migrated.
+  - Package, local-storage keys, logs and docs are renamed. The engine is credited in `NOTICE.md`.
+- **Branded reports** (`scripts/brand_report.py`, `lib/server/branding.ts`):
+  - PDF, Excel, Markdown and digest copies carry the Rankora name, `RK-` action IDs and the green palette (hue rotation across CSS, SVG charts, spreadsheet colours and PNGs).
+  - Copies are built after each audit, cached, and rebuilt when the source or brand changes. Each format is independent.
+  - The unbranded original is never served. The JSON download is Rankora's own export.
+- **Warnings fixed at the source:**
+  - With no AI key, the AI stage is switched off before the engine starts, so there's no warning. PageSpeed defaults to off without a key.
+  - The progress page groups warnings by cause ("6 of 6 PageSpeed requests were rate limited", with one fix button) and shows missing keys as information.
+- **Your four sites:** real full audits of mycoldinbox.com (49 pages), inboxwarm.ai (464), clustox.com (732) and emailverify.io (1,620).
+  - They ship as `seed/*.tar.xz` (18 MB) and are unpacked on first start without overwriting anything. The New Audit URL placeholder rotates through them.
+- **Large-site performance:** a 1,620-page audit is 119 MB of JSON.
+  - Parsed audits are cached within a memory budget, list summaries are saved to disk, extra checks are memoised, and overview payloads are trimmed (166 KB down to about 5 KB).
+- **Fixes found along the way:** a bare `python3` engine setting was resolved as a file path; one failing report format blocked the others; the Ctrl+B handler crashed on non-element targets; homepage links with `#` fragments were skipped.
+- **Tests:** 137 passing, adding the adapter, checklist, explorer, branding, seed, grouped-notice and keyless-stage tests. Typecheck, lint and production build are clean. Visual check in dark and light mode found no console errors.
+
 ## Remaining tasks
 
 - Push to `MBN4/jev-seo-dashboard` once the empty repository exists.

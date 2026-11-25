@@ -20,11 +20,14 @@ import { api } from "@/lib/api";
 import { useApi } from "@/hooks/use-api";
 import { formatDate, formatNumber } from "@/lib/format";
 import type { HistoryData, OverviewData } from "@/lib/api-types";
+import type { Checklist } from "@/lib/server/checklist";
+import { ChecklistOverview } from "@/components/audit/checklist-overview";
 
 export default function OverviewPage() {
   const audits = useApi(() => api.listAudits({ pageSize: 100 }), []);
   const latest = useMemo(() => audits.data?.items.find((a) => a.hasResults && a.status === "completed") ?? null, [audits.data]);
   const [ov, setOv] = useState<OverviewData | null>(null);
+  const [checklist, setChecklist] = useState<Checklist | null>(null);
   const [hist, setHist] = useState<HistoryData | null>(null);
   const [ovErr, setOvErr] = useState<Error | null>(null);
 
@@ -32,6 +35,7 @@ export default function OverviewPage() {
     if (!latest) return;
     setOv(null);
     api.overview(latest.id).then(setOv).catch(setOvErr);
+    api.checklist(latest.id).then(setChecklist).catch(() => setChecklist(null));
     api.history(latest.domain).then(setHist).catch(() => setHist(null));
   }, [latest]);
 
@@ -64,7 +68,7 @@ export default function OverviewPage() {
             icon={Radar}
             title="No completed audits yet"
             description={
-              <>Run your first audit to see scores, findings and recommendations here. Existing folders in <code className="rounded bg-muted px-1">jev-seo-reports/</code> are picked up automatically.</>
+              <>Run your first audit to see scores, findings and recommendations here. Audits already in your reports folder are picked up automatically.</>
             }
             action={
               <Button asChild>
@@ -101,6 +105,7 @@ export default function OverviewPage() {
         </div>
       </SectionCard>
 
+      {checklist && <ChecklistOverview data={checklist} auditId={latest.id} />}
       {ovErr && <ErrorState error={ovErr} />}
       {!ov ? (
         <LoadingSkeleton variant="cards" />
@@ -124,7 +129,7 @@ export default function OverviewPage() {
             <SectionCard title="Findings by severity" description="All findings in the latest audit">
               <IssueDistributionChart counts={ov.bySeverity} />
             </SectionCard>
-            <SectionCard title="Findings by category" description="Engine categories (jevseo/checks.py)">
+            <SectionCard title="Findings by category" description="Grouped by audit area">
               {ov.byCategory.length ? <CategoryChart data={ov.byCategory} /> : <EmptyState compact icon={CheckCircle2} title="No findings" />}
             </SectionCard>
             <SectionCard title="SEO score history" description={`Completed audits of ${latest.domain}`}>

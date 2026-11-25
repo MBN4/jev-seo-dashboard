@@ -8,6 +8,7 @@ import { SeverityBadge } from "@/components/common/severity-badge";
 import { ErrorState } from "@/components/common/error-state";
 import { LoadingSkeleton } from "@/components/common/loading-skeleton";
 import { SeoScoreCard } from "@/components/audit/seo-score-card";
+import { ChecklistOverview } from "@/components/audit/checklist-overview";
 import { useAudit } from "@/components/audit/audit-context";
 import { IssueDistributionChart } from "@/components/charts/issue-distribution-chart";
 import { CategoryChart } from "@/components/charts/category-chart";
@@ -20,6 +21,7 @@ import { formatNumber } from "@/lib/format";
 export default function AuditOverviewPage() {
   const { audit } = useAudit();
   const { data: ov, error, reload } = useApi(() => api.overview(audit.id), [audit.id]);
+  const checklist = useApi(() => api.checklist(audit.id), [audit.id]);
   if (error) return <ErrorState error={error} onRetry={reload} />;
   if (!ov) return <LoadingSkeleton />;
   const s = ov.bySeverity;
@@ -41,6 +43,7 @@ export default function AuditOverviewPage() {
           </Button>
         </div>
       )}
+      {checklist.data ? <ChecklistOverview data={checklist.data} auditId={audit.id} /> : <LoadingSkeleton variant="panel" />}
       <div className="grid gap-4 lg:grid-cols-3">
         <SeoScoreCard scores={ov.scores} />
         <div className="grid grid-cols-2 content-start gap-4 lg:col-span-2 xl:grid-cols-4">
@@ -51,7 +54,7 @@ export default function AuditOverviewPage() {
           <MetricCard index={4} label="Passed checks" value={ov.counts.passedRules} icon={CheckCircle2} tone="success" />
           <MetricCard index={5} label="Recommended actions" value={ov.counts.actions} icon={ListChecks} />
           <MetricCard index={6} label="Quick wins" value={ov.counts.quickWins} hint="High impact, low effort" icon={Zap} tone="info" />
-          <MetricCard index={7} label="AI pages judged" value={ov.jev.available ? ov.jev.judged : "—"} hint={ov.jev.available ? `${ov.jev.notJudged} not judged` : "AI judgments not available"} icon={Bot} />
+          <MetricCard index={7} label="AI pages judged" value={ov.ai.available ? ov.ai.judged : "—"} hint={ov.ai.available ? `${ov.ai.notJudged} not judged` : "AI judgments not available"} icon={Bot} />
         </div>
       </div>
 

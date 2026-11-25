@@ -40,7 +40,7 @@ export function AuditStageIndicator({ stage, last }: { stage: StageView; last?: 
           <div className="mt-1.5 max-w-sm">
             <div className="flex justify-between text-[0.7rem] text-muted-foreground">
               <span>
-                {counter.kind === "pages" ? "URLs crawled" : counter.kind === "jev" ? "Pages judged" : "PageSpeed runs"}
+                {counter.kind === "pages" ? "URLs crawled" : counter.kind === "ai" ? "Pages judged" : "PageSpeed runs"}
               </span>
               <span className="tabular">
                 {counter.current} {counter.totalIsCap ? "of up to" : "of"} {counter.total}

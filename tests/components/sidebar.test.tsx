@@ -23,7 +23,7 @@ describe("resizable, collapsible sidebar", () => {
     expect(btn).toHaveAttribute("aria-expanded", "true");
     fireEvent.click(btn);
     expect(screen.getByRole("button", { name: "Expand sidebar" })).toHaveAttribute("aria-expanded", "false");
-    expect(localStorage.getItem("jevseo.sidebar.collapsed")).toBe("true");
+    expect(localStorage.getItem("rankora.sidebar.collapsed")).toBe("true");
     fireEvent.keyDown(window, { key: "b", ctrlKey: true });
     expect(screen.getByRole("button", { name: "Collapse sidebar" })).toBeInTheDocument();
   });
@@ -40,7 +40,7 @@ describe("resizable, collapsible sidebar", () => {
     expect(handle).toHaveAttribute("aria-valuenow", String(SIDEBAR_MAX));
     fireEvent.doubleClick(handle);
     expect(handle).toHaveAttribute("aria-valuenow", String(SIDEBAR_DEFAULT));
-    expect(localStorage.getItem("jevseo.sidebar.width")).toBe(String(SIDEBAR_DEFAULT));
+    expect(localStorage.getItem("rankora.sidebar.width")).toBe(String(SIDEBAR_DEFAULT));
   });
 
   it("collapses when the handle is pushed below the minimum width", () => {

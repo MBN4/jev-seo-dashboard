@@ -68,7 +68,7 @@ export default function AuditLayout({ children, params }: { children: React.Reac
             </Button>
           )}
         </div>
-        <nav aria-label="Audit sections" className="-mx-4 overflow-x-auto border-b px-4 sm:mx-0 sm:px-0 [scrollbar-width:none]">
+        <nav aria-label="Audit sections" className="-mx-4 overflow-x-auto border-b px-4 [mask-image:linear-gradient(to_right,black_calc(100%-48px),transparent)] [scrollbar-width:none] sm:mx-0 sm:px-0 sm:pr-10">
           <ul className="flex min-w-max gap-1">
             {AUDIT_TABS.map((t) => {
               const href = t.key === "overview" ? base : `${base}/${t.key}`;

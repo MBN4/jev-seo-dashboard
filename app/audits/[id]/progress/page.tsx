@@ -11,6 +11,7 @@ import { ErrorState } from "@/components/common/error-state";
 import { LoadingSkeleton } from "@/components/common/loading-skeleton";
 import { ConfirmationDialog } from "@/components/common/confirmation-dialog";
 import { AuditProgressTracker, useElapsed } from "@/components/audit/audit-progress-tracker";
+import { NoticeList } from "@/components/audit/notice-list";
 import { useAuditProgress } from "@/hooks/use-audit-progress";
 import { api, ApiError } from "@/lib/api";
 import { formatDuration, formatNumber } from "@/lib/format";
@@ -121,22 +122,9 @@ export default function ProgressPage({ params }: { params: Promise<{ id: string 
             )}
             <p className="mt-2 text-[0.7rem] text-muted-foreground">Live updates: {running ? (transport === "sse" ? "streaming" : transport === "polling" ? "polling every 2 s" : "connecting") : "finished"}</p>
           </SectionCard>
-          {p && (p.warnings.length > 0 || p.errors.length > 0) && (
-            <SectionCard title="Warnings and errors">
-              <ul className="space-y-2 text-xs">
-                {p.errors.slice(-8).map((e) => (
-                  <li key={`e${e.seq}`} className="flex gap-2 text-critical"><OctagonX className="mt-0.5 size-3.5 shrink-0" />{e.message}</li>
-                ))}
-                {p.warnings.slice(-8).map((w) => (
-                  <li key={`w${w.seq}`} className="flex gap-2 text-muted-foreground">
-                    <AlertTriangle className="mt-0.5 size-3.5 shrink-0 text-warning" />
-                    <span>
-                      {w.message}
-                      {/429/.test(w.message) && <span className="block text-[0.7rem]">Google rate limit. Add a PAGESPEED_API_KEY in Settings to raise the quota.</span>}
-                    </span>
-                  </li>
-                ))}
-              </ul>
+          {p && p.notices.length > 0 && (
+            <SectionCard title="Warnings and notices" description="Grouped by cause, each with its fix">
+              <NoticeList notices={p.notices} />
             </SectionCard>
           )}
         </div>

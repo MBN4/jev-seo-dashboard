@@ -53,7 +53,7 @@ function HistoryInner() {
   const rescan = async (restoreAll = false) => {
     try {
       const r = await api.importAudits({ restoreAll });
-      toast.success(`${r.discovered} audit folder(s) found in jev-seo-reports/${r.restored.length ? `, ${r.restored.length} restored` : ""}.`);
+      toast.success(`${r.discovered} audit folder(s) found in the reports folder${r.restored.length ? `, ${r.restored.length} restored` : ""}.`);
       reload();
       hidden.reload();
     } catch (e) {
@@ -66,7 +66,7 @@ function HistoryInner() {
     <div className="space-y-6">
       <PageHeader
         title="Audit History"
-        description="Every audit launched from the dashboard plus every folder found in jev-seo-reports/."
+        description="Every audit launched from Rankora, plus any audit already in your reports folder."
         actions={
           <>
             <Button variant="outline" onClick={() => rescan(false)}><FolderSync className="size-4" /> Rescan reports folder</Button>
@@ -95,7 +95,7 @@ function HistoryInner() {
             <EmptyState
               icon={History}
               title={filtered ? "No audits match these filters" : "No audits yet"}
-              description={filtered ? "Clear the search or filters." : "Run an audit, or put existing engine output folders in jev-seo-reports/ and rescan."}
+              description={filtered ? "Clear the search or filters." : "Run an audit, or copy existing audit folders into your reports folder and rescan."}
               action={!filtered && <Button asChild><Link href="/audits/new">Start an audit</Link></Button>}
             />
           ) : (
@@ -115,7 +115,7 @@ function HistoryInner() {
         open={Boolean(removing)}
         onOpenChange={(o) => !o && setRemoving(null)}
         title={`Remove ${removing?.domain ?? ""} from history?`}
-        description={<><p>The entry disappears from the dashboard. The report folder in <code>jev-seo-reports/</code> is <strong className="text-foreground">not deleted</strong>, and you can restore the entry later.</p></>}
+        description={<><p>The entry disappears from the dashboard. Its report files are <strong className="text-foreground">not deleted</strong>, and you can restore the entry later.</p></>}
         confirmLabel="Remove from history"
         destructive
         onConfirm={confirmRemove}

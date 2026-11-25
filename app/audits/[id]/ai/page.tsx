@@ -9,7 +9,7 @@ import { EmptyState } from "@/components/common/empty-state";
 import { ErrorState } from "@/components/common/error-state";
 import { LoadingSkeleton } from "@/components/common/loading-skeleton";
 import { SeverityBadge } from "@/components/common/severity-badge";
-import { AnswerValue, BandBadge, describeAnswer } from "@/components/audit/jev-answer";
+import { AnswerValue, BandBadge, describeAnswer } from "@/components/audit/ai-answer";
 import { PageDetailsDrawer } from "@/components/audit/page-details-drawer";
 import { useAudit } from "@/components/audit/audit-context";
 import { useApi } from "@/hooks/use-api";

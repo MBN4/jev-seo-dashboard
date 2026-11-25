@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 /**
- * Audit options. Every field maps 1:1 to a real `jevseo run` flag (jevseo/cli.py audit_opts).
+ * Audit options. Every field maps 1:1 to an audit engine CLI flag (see lib/engine-protocol.ts).
  * Bounds keep requests reasonable; engine defaults are used as the dashboard defaults.
  */
 export const auditOptionsSchema = z.object({
@@ -9,9 +9,9 @@ export const auditOptionsSchema = z.object({
   maxDepth: z.number().int().min(1).max(10), // --max-depth (5)
   timeBudget: z.number().int().min(30).max(5400), // --time-budget seconds (600)
   render: z.enum(["auto", "always", "never"]), // --render (auto)
-  jev: z.boolean(), // inverse of --no-jev
-  jevPages: z.number().int().min(1).max(200), // --jev-pages (60)
-  jevBudget: z.number().min(0.01).max(5), // --jev-budget USD (0.25)
+  ai: z.boolean(), // AI judgments on/off
+  aiPages: z.number().int().min(1).max(200), // pages sent to the AI model (60)
+  aiBudget: z.number().min(0.01).max(5), // hard AI spend cap in USD (0.25)
   psi: z.boolean(), // inverse of --no-psi
   psiPages: z.number().int().min(1).max(10), // --psi-pages (3)
   full: z.boolean(), // --full (DataForSEO, paid)
@@ -28,9 +28,9 @@ export const DEFAULT_AUDIT_OPTIONS: AuditOptions = {
   maxDepth: 5,
   timeBudget: 600,
   render: "auto",
-  jev: true,
-  jevPages: 60,
-  jevBudget: 0.25,
+  ai: true,
+  aiPages: 60,
+  aiBudget: 0.25,
   psi: true,
   psiPages: 3,
   full: false,

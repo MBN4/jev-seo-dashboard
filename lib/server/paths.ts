@@ -35,7 +35,7 @@ export const REPORT_FILES: Record<ReportType, { filename: string; label: string;
   pdf: { filename: "report.pdf", label: "PDF report", mime: "application/pdf" },
   xlsx: { filename: "report.xlsx", label: "Excel action tracker", mime: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" },
   md: { filename: "report.md", label: "Markdown report", mime: "text/markdown; charset=utf-8" },
-  json: { filename: "audit.json", label: "Raw audit data (JSON)", mime: "application/json" },
+  json: { filename: "audit.json", label: "Audit data (JSON)", mime: "application/json" },
   digest: { filename: "digest.md", label: "Evidence digest", mime: "text/markdown; charset=utf-8" },
 };
 

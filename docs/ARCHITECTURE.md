@@ -1,86 +1,102 @@
 # Architecture
 
-## Overview
-
 ```
-┌──────────────────────── Browser ────────────────────────┐
-│ Next.js App Router pages (React, Tailwind, shadcn/ui,   │
-│ Recharts, TanStack Table, React Hook Form + Zod)        │
-│   └─ lib/api.ts  typed client ──fetch/EventSource──┐    │
-└────────────────────────────────────────────────────┼────┘
-                                                     ▼
-┌──────────────── Next.js server (Node, :3000) ───────────────────────────┐
-│ middleware.ts   Host allow-list + cross-site write refusal (CSRF)       │
-│ app/api/**      route handlers (validation with Zod, uniform errors)    │
-│ lib/server/                                                             │
-│   url-guard.ts   URL syntax + DNS resolution + private/metadata blocks  │
-│   jobs.ts        spawn engine (argv array, no shell, own process group),│
-│                  log to file, cancel, timeout, restart recovery         │
-│   audits.ts      discover report folders, parse audit.json (LRU cache)  │
-│   results.ts     paginated projections for each view                    │
-│   progress.ts    snapshot = job + parsed engine log (paths redacted)    │
-│   state.ts       data/state.json (history visibility, rec. status, …)   │
-│   secrets.ts     data/secrets.env (600); status/mask only to clients    │
-│   diagnostics.ts `jevseo doctor`, Chromium probe, directory checks      │
-└───────────────┬─────────────────────────────────────────▲───────────────┘
-                │ spawn: <venv>/python -m jevseo run URL   │ read
-                │        --out <reports>/<id> --max-pages… │
-                ▼                                          │
-┌──────────── jev-seo engine (unchanged) ──────────┐       │
-│ crawl → 52 rules → DataForSEO → AI   → PageSpeed  │       │
-│ → scoring → render (PDF / XLSX / MD)             │───────┘ jev-seo-reports/<domain>-<stamp>/
-└──────────────────────────────────────────────────┘          audit.json, digest.md, report.*
+┌──────────────────────────── Browser ─────────────────────────────┐
+│ Next.js App Router pages (React, Tailwind, shadcn/ui, Recharts,   │
+│ TanStack Table, React Hook Form + Zod, motion)                    │
+│   └─ lib/api.ts typed client ── fetch / EventSource ──┐           │
+└────────────────────────────────────────────────────────┼──────────┘
+                                                         ▼
+┌──────────────────── Rankora server (Node, :3000) ─────────────────┐
+│ middleware.ts        Host allow-list + cross-site write refusal   │
+│ instrumentation.ts   on start: unpack seed audits                 │
+│ app/api/**           route handlers (Zod validation, uniform errors)
+│ lib/server/                                                       │
+│   url-guard.ts       URL syntax + DNS + private/metadata blocks   │
+│   jobs.ts            spawn engine (argv array, own process group),│
+│                      log to file, cancel, timeout, restart recovery
+│   engine-adapter.ts  engine audit.json -> Rankora model           │
+│   audits.ts          discover audits, parse with byte-budget LRU, │
+│                      summaries persisted to data/summaries.json   │
+│   results.ts         paginated projections per view               │
+│   checklist.ts       Google guidelines checklist grading          │
+│   explorer.ts        Site Explorer tabs / filters / CSV           │
+│   extra-checks.ts    31 extra checks (memoised per audit)         │
+│   branding.ts        branded report copies (scripts/brand_report.py)
+│   site-size.ts       page count from robots.txt + sitemaps        │
+│   progress.ts        live snapshot from the engine log            │
+│   state.ts, secrets.ts, diagnostics.ts, seeds.ts, verify.ts       │
+└───────────┬───────────────────────────────────────▲───────────────┘
+            │ spawn: <engine python> -m <engine> run │ read
+            ▼                                        │
+┌──────── audit engine (open source, unmodified) ────┴──┐
+│ crawl → 52 rules → DataForSEO → AI → PageSpeed        │──► <reports>/<site>-<date>/
+│ → scoring → render (PDF / XLSX / MD)                  │     audit.json, report.*
+└───────────────────────────────────────────────────────┘
 ```
 
-## Why Next.js only (no Python web server)
+## The engine boundary
 
-The engine is a CLI with no web API, and the brief was to build the frontend without changing the Python engine. The Node server therefore acts as a thin backend. It runs the same command a user would type, `python -m jevseo run`, and reads the same files. Nothing in the engine is re-implemented:
+The engine is a Python CLI with no web API. Rankora treats it as a black box with a small, documented interface, kept in two files:
 
-- Scores, grades, findings, actions, AI answers and PageSpeed data come straight from `audit.json`.
-- Reports are the engine's own files, served unchanged.
+- **`lib/engine-protocol.ts`** holds the engine's command name, log line format, CLI flags and raw data key names. It is the only place those appear.
+- **`lib/server/engine-adapter.ts`** translates each raw `audit.json` into Rankora's model when the file is loaded, in memory only:
+  - the AI block becomes `ai`;
+  - AI check IDs get the `ai_` prefix;
+  - action IDs become `RK-001`;
+  - engine-written explanations are reworded so the upstream name never appears in the UI.
 
-## Engine integration
+Replacing the engine with your own later means re-implementing that contract (the same CLI arguments and the same `audit.json` shape) or changing those two files.
 
-| Engine fact (from the source) | How the dashboard uses it |
+| Engine behaviour | How Rankora uses it |
 | --- | --- |
-| `jevseo/cli.py` `run` = `audit` + `render` | One subprocess per audit. |
-| Flags `--max-pages --max-depth --time-budget --render --no-jev --jev-pages --jev-budget --no-psi --psi-pages --full --dfs-budget --location-code --language --formats --out` | Every New Audit option maps to exactly one flag (`engineArgs()` in `lib/server/jobs.ts`). |
-| Default folder `jev-seo-reports/<host>-<YYYY-MM-DD-HHMM>` | The dashboard passes `--out` with the same naming and adds `-2`, `-3` instead of ever reusing a folder. The folder name is the audit ID. |
-| Progress: `[jevseo mm:ss] == n/7 Stage: detail` on stderr | Parsed by `lib/progress.ts` into stage states and measured counters (`crawled x/y URLs`, `Jev: i/n pages judged`, `PageSpeed k/n`). |
-| `bin/jevseo` uses `python3` from `PATH` | The dashboard calls the venv interpreter directly with `PYTHONPATH=<engine>`, so the right environment is always used. |
-| Keys from env, then `$JEVSEO_ENV_FILE`, `./.env`, repo `.env`, `~/Desktop/Keys/.env` | Dashboard-stored keys are injected as env vars (highest priority). Other sources keep working. |
-| `jevseo doctor` prints JSON | Reused for diagnostics. |
-| The SSRF guard `public_host()` checks every redirect hop | The dashboard also checks before spawning (defence in depth). |
+| `run` = crawl, check, judge, score, render | One subprocess per audit. Every New Audit option maps to one flag (`engineArgs()` in `lib/server/jobs.ts`). |
+| Progress lines `[<engine> mm:ss] == n/7 Stage` | Parsed by `lib/progress.ts` into stage states, measured counters and grouped notices. |
+| Output folder `<host>-<YYYY-MM-DD-HHMM>` | Rankora passes `--out` with the same naming and never reuses a folder. The folder name is the audit ID. |
+| Keys from env, then its own `.env` files | Keys saved in Rankora are injected as environment variables (highest priority). |
+| `doctor` prints JSON | Reused for Settings → Diagnostics. |
 
 ## Audit lifecycle
 
-1. `POST /api/audits` validates the body with Zod and merges the saved defaults.
-2. The URL goes through the syntax check and DNS resolution, and every address must be public.
-3. Paid mode requires `confirmPaid` and DataForSEO keys.
+1. `POST /api/audits` validates the request and merges the saved defaults.
+2. The URL is checked for syntax and its DNS is resolved; every address must be public.
+3. Paid mode needs confirmation and keys. With no AI key, the AI stage is switched off up front.
 4. The concurrency and duplicate checks run.
-5. `startJob` creates `data/jobs/<id>/job.json` and `engine.log`, then spawns the engine detached in its own process group, with stdout and stderr appended to the log file and a minimal environment (PATH, HOME, proxy and CA variables, keys).
-6. Progress: `GET /events` (SSE) re-reads the log every second and sends a snapshot when it changes. The browser falls back to polling `GET /progress`.
-7. On exit, code 0 with `audit.json` present means **completed**. A non-zero code means **failed**, with the engine's last line (for example "Refusing to crawl …"). A cancel request means **cancelled**.
-8. Cancel sends `SIGTERM` to the job's process group, then `SIGKILL` after 5 s. Only that audit is affected.
-9. Restart recovery: on the next read, a "running" job whose PID is gone (or no longer a jevseo process) is resolved from disk. It becomes **completed** if all reports exist, otherwise **interrupted**. A job whose engine is still alive keeps streaming from its log file.
-10. Results are read from the report folder. While a job runs, its half-written folder is never parsed.
+5. `startJob` writes `data/jobs/<id>/job.json` and spawns the engine detached in its own process group, appending its output to `engine.log`.
+6. Progress is served by `GET /events` (SSE, every second) or by polling `GET /progress`.
+7. The exit code decides **completed**, **failed** or **cancelled**. On completion, the branded reports are built in the background.
+8. Cancel sends `SIGTERM` to the process group, then `SIGKILL` after 5 s.
+9. Restart recovery: a running job whose process is gone is resolved from what is on disk. A process that is still alive keeps streaming from its log.
 
-## Storage (files only, by design)
+## Storage (files only)
 
-| File | Content | Notes |
-| --- | --- | --- |
-| `<reports>/<id>/audit.json` etc. | Engine output | Source of truth; never written by the dashboard |
-| `data/state.json` | `hidden` audit IDs, recommendation `{status, notes, updatedAt}` per audit and finding, audit defaults | Atomic writes (temp file + rename), serialized updates, corrupt files are backed up and reset |
-| `data/secrets.env` | API keys | Mode 600, git-ignored, never returned by the API |
-| `data/jobs/<id>/job.json`, `engine.log` | Job metadata and raw engine output | Used for progress and recovery |
+| Location | Content |
+| --- | --- |
+| `<reports>/<id>/` | Engine output. Source of truth, never modified by Rankora. |
+| `data/state.json` | Hidden audit IDs, recommendation status and notes, focus keywords, audit defaults |
+| `data/secrets.env` | API keys (mode 600, never returned by the API) |
+| `data/jobs/<id>/` | Job metadata and raw engine log |
+| `data/branded/<id>/` | Branded report copies, rebuilt when the source or brand changes |
+| `data/summaries.json` | Audit list summaries, reused while `audit.json` is unchanged |
+| `seed/*.tar.xz` | Bundled audits of your sites, unpacked on first start |
 
-SQLite was considered and declined in favour of files. Because the report folders are the history, any audit the CLI writes (including the existing InboxWarm folder) appears automatically with no import step and no risk of the index drifting from the files.
+## Branded reports
 
-## Frontend
+`scripts/brand_report.py` runs with the engine's Python, which already has WeasyPrint. It builds the branded copies from the engine's originals:
 
-- `app/layout.tsx` wraps the app in `AppShell` (collapsible sidebar on desktop, a Sheet drawer on mobile, and a header with breadcrumbs, domain search, a live "Auditing …" indicator and settings).
-- `app/audits/[id]/layout.tsx` loads the audit summary once, provides it through context, and renders the tab bar. Each tab fetches only its own projection.
-- Sidebar analysis links stay scoped to the audit being viewed. Elsewhere they go to `/technical` etc., which redirect to the latest completed audit.
-- Design tokens are in `app/globals.css`: a deep-slate sidebar, light workspace, green brand accent, and red/orange/amber/blue for severity, always paired with an icon and label.
-</gr_insert>
-<gr_insert after="1065" cat="add_content" conf="lo" orig="EOF">
+- **Branding:** it rewrites upstream names in visible text and changes action IDs to `RK-`.
+- **Colours:** it rotates the magenta palette to the brand green by changing hue and keeping lightness. This covers CSS, the inline SVG charts, spreadsheet colours and embedded PNGs.
+- **PDF:** it re-renders the PDF from the engine's `report.html`.
+
+Each format is independent: if one fails, the others are still produced, and an unbranded original is never served in its place.
+
+## Performance on large sites
+
+A 1,620-page audit is about 119 MB of JSON. Rankora handles it as follows:
+
+- Parsed audits are cached within a memory budget (`RANKORA_AUDIT_CACHE_MB`).
+- The audit list uses the summaries saved in `data/summaries.json`.
+- Extra checks and Site Explorer rows are computed once per parsed audit.
+- Every list endpoint is paginated.
+
+Measured on the 1,620-page audit (warm cache): History in 15 ms, the Google checklist in 15 ms, an explorer filter in 24 ms.

@@ -3,8 +3,9 @@ import { execFile } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { promisify } from "node:util";
-import { dataDir, engineDir, enginePython, maxConcurrentAudits, reportsDir } from "./config";
+import { engineDir, enginePython, maxConcurrentAudits, reportsDir } from "./config";
 import { secretStatuses } from "./secrets";
+import { ENGINE_MARKER, ENGINE_MODULE } from "@/lib/engine-protocol";
 import { stateWritable } from "./state";
 
 const run = promisify(execFile);
@@ -29,7 +30,7 @@ async function py(args: string[], timeoutMs = 20000) {
 
 /** Cheap check used by the header badge and /api/system/health. */
 export function health() {
-  const engine = fs.existsSync(path.join(engineDir(), "jevseo", "cli.py"));
+  const engine = fs.existsSync(path.join(engineDir(), ...ENGINE_MARKER));
   return {
     status: engine ? "ok" : "degraded",
     engineFound: engine,
@@ -50,20 +51,20 @@ export async function diagnostics(force = false) {
 async function computeDiagnostics() {
   const checks: DiagnosticCheck[] = [];
   const engine = engineDir();
-  const engineOk = fs.existsSync(path.join(engine, "jevseo", "cli.py"));
+  const engineOk = fs.existsSync(path.join(engine, ...ENGINE_MARKER));
   checks.push({
     key: "engine",
     label: "Audit engine",
     state: engineOk ? "ok" : "error",
-    detail: engineOk ? "Engine package found." : "The jevseo package was not found in the configured engine folder.",
-    action: engineOk ? undefined : "Set JEVSEO_DIR in .env.local to your jev-seo checkout and restart the dashboard.",
+    detail: engineOk ? "Engine package found." : "The audit engine was not found in the configured engine folder.",
+    action: engineOk ? undefined : "Set RANKORA_ENGINE_DIR in .env.local to your audit engine folder and restart the dashboard.",
   });
 
   let doctor: Record<string, string> | null = null;
   let pythonVersion: string | null = null;
   let doctorError: string | null = null;
   try {
-    const { stdout } = await py(["-m", "jevseo", "doctor"]);
+    const { stdout } = await py(["-m", ENGINE_MODULE, "doctor"]);
     doctor = JSON.parse(stdout);
     pythonVersion = doctor?.python ?? null;
   } catch (err) {
@@ -73,8 +74,8 @@ async function computeDiagnostics() {
     key: "python",
     label: "Python interpreter",
     state: doctor ? "ok" : "error",
-    detail: doctor ? `Python ${pythonVersion} (engine virtualenv)` : `Could not run "jevseo doctor": ${doctorError}`,
-    action: doctor ? undefined : "Create the engine virtualenv and install requirements (see docs/INSTALLATION.md), or set JEVSEO_PYTHON.",
+    detail: doctor ? `Python ${pythonVersion} (engine virtualenv)` : `Could not run the engine's self-check: ${doctorError}`,
+    action: doctor ? undefined : "Create the engine virtualenv and install requirements (see docs/INSTALLATION.md), or set RANKORA_ENGINE_PYTHON.",
   });
 
   const deps = ["requests", "bs4", "lxml", "matplotlib", "jinja2", "weasyprint", "openpyxl"];
@@ -125,7 +126,7 @@ async function computeDiagnostics() {
     const n = fs.readdirSync(reports).length;
     reportsState = { key: "reports", label: "Report directory", state: "ok", detail: `Writable; ${n} item(s) present.` };
   } catch (err) {
-    reportsState = { key: "reports", label: "Report directory", state: "error", detail: (err as Error).message, action: "Set JEVSEO_REPORTS_DIR to a writable folder." };
+    reportsState = { key: "reports", label: "Report directory", state: "error", detail: (err as Error).message, action: "Set RANKORA_REPORTS_DIR to a writable folder." };
   }
   checks.push(reportsState);
 
@@ -151,12 +152,6 @@ async function computeDiagnostics() {
       python: pythonVersion,
       node: process.version,
       dashboard: process.env.npm_package_version ?? "0.1.0",
-    },
-    paths: {
-      // Shown as configured names only; no absolute server paths leave the server.
-      engine: path.basename(engine),
-      reports: path.basename(reports),
-      data: path.basename(dataDir()),
     },
     limits: { maxConcurrentAudits: maxConcurrentAudits() },
     rendering: { playwright: playwrightPkg, chromium: chromium.ok },

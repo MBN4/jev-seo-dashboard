@@ -10,7 +10,7 @@ const RICH = "rich.example.org-2026-01-01-0000";
 beforeAll(() => {
   sb = makeSandbox();
   installAudit(sb.reports, ID);
-  // A test-only variant with Jev and PageSpeed blocks shaped exactly like the engine's output.
+  // A test-only variant with AI-judgment and PageSpeed blocks shaped exactly like the engine's output.
   installAudit(sb.reports, RICH, (a) => {
     a.site.domain = "rich.example.org";
     a.site.input_url = "https://rich.example.org";
@@ -86,14 +86,14 @@ describe("result endpoints", () => {
     expect(missing.status).toBe(404);
   });
 
-  it("reports Jev as unavailable instead of inventing judgments", async () => {
+  it("reports AI judgments as unavailable instead of inventing them", async () => {
     const { GET } = await import("@/app/api/audits/[id]/ai/route");
     const body = await (await GET(jsonReq("", "GET"), ctx({ id: ID }))).json();
     expect(body.available).toBe(false);
     expect(body.pages).toEqual([]);
   });
 
-  it("exposes real Jev dimensions when the engine produced them", async () => {
+  it("exposes real AI dimensions when the engine produced them", async () => {
     const { GET } = await import("@/app/api/audits/[id]/ai/route");
     const body = await (await GET(jsonReq("", "GET"), ctx({ id: RICH }))).json();
     expect(body.available).toBe(true);
@@ -130,15 +130,35 @@ describe("recommendations", () => {
 });
 
 describe("report downloads", () => {
-  it("serves the original files with download headers", async () => {
-    const { GET } = await import("@/app/api/audits/[id]/reports/[type]/route");
-    const res = await GET(jsonReq("", "GET"), ctx({ id: ID, type: "pdf" }));
-    expect(res.status).toBe(200);
-    expect(res.headers.get("content-type")).toBe("application/pdf");
-    expect(res.headers.get("content-disposition")).toContain("attachment");
-    expect(await res.text()).toBe("test report.pdf");
-    const inline = await GET(new Request("http://localhost/x?inline=1"), ctx({ id: ID, type: "pdf" }));
-    expect(inline.headers.get("content-disposition")).toContain("inline");
+  it("serves branded copies, never the engine originals", async () => {
+    // Branding runs scripts/brand_report.py with the engine Python; plain python3 handles the
+    // text formats here (it has no WeasyPrint, which lets us test the PDF failure path too).
+    const prev = process.env.RANKORA_ENGINE_PYTHON;
+    process.env.RANKORA_ENGINE_PYTHON = "python3";
+    fs.writeFileSync(path.join(sb.reports, ID, "report.md"), "# Jev SEO audit\nJEV-001 found by Jev.");
+    try {
+      const { GET } = await import("@/app/api/audits/[id]/reports/[type]/route");
+      const md = await GET(jsonReq("", "GET"), ctx({ id: ID, type: "md" }));
+      expect(md.status).toBe(200);
+      expect(md.headers.get("content-disposition")).toMatch(/attachment; filename="rankora-.*report\.md"/);
+      expect(await md.text()).toBe("# Rankora SEO audit\nRK-001 found by AI.");
+      const inline = await GET(new Request("http://localhost/x?inline=1"), ctx({ id: ID, type: "md" }));
+      expect(inline.headers.get("content-disposition")).toContain("inline");
+      const json = await GET(jsonReq("", "GET"), ctx({ id: ID, type: "json" }));
+      const text = await json.text();
+      expect(JSON.parse(text).exported_by).toBe("Rankora");
+      expect(text.replace(/"text_excerpt":"[^"]*"/g, "")).not.toMatch(/\bjev\b|JEV-/i);
+      // No report.html -> no branded PDF can be made; the unbranded original is never served instead.
+      const pdf = await GET(jsonReq("", "GET"), ctx({ id: ID, type: "pdf" }));
+      expect(pdf.status).toBe(404);
+      fs.writeFileSync(path.join(sb.reports, ID, "report.html"), "<html>Jev</html>");
+      const pdf2 = await GET(jsonReq("", "GET"), ctx({ id: ID, type: "pdf" }));
+      expect(pdf2.status).toBe(500); // WeasyPrint missing in this interpreter
+      expect(await pdf2.text()).not.toContain("test report.pdf");
+    } finally {
+      process.env.RANKORA_ENGINE_PYTHON = prev;
+      fs.rmSync(path.join(sb.reports, ID, "report.html"), { force: true });
+    }
   });
 
   it("refuses traversal, unknown types, unregistered folders and symlink escapes", async () => {
@@ -169,5 +189,17 @@ describe("audit creation", () => {
     const pub = async () => ["93.184.216.34"];
     await expect(createAudit({ url: "https://example.com", options: { full: true } }, pub)).rejects.toThrow(/Confirm the spend/);
     await expect(createAudit({ url: "https://example.com", options: { full: true }, confirmPaid: true }, pub)).rejects.toThrow(/DATAFORSEO_USERNAME/);
+  });
+});
+
+describe("keyless stages", () => {
+  it("turns AI judgments off before starting when no key is configured", async () => {
+    const { createAudit } = await import("@/lib/server/audit-service");
+    const { readJob } = await import("@/lib/server/jobs");
+    const { job, warnings } = await createAudit({ url: "https://keyless.example.org", options: { ai: true, psi: false } }, async () => ["93.184.216.34"]);
+    expect(readJob(job.id)!.options.ai).toBe(false);
+    expect(warnings.join(" ")).toMatch(/AI judgments are off/);
+    const { waitFor } = await import("../helpers");
+    await waitFor(() => readJob(job.id)?.status !== "running");
   });
 });

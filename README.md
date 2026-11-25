@@ -1,92 +1,98 @@
-# Rankora — SEO audit dashboard
+# Rankora
 
-A local web dashboard for SEO audits, built on the open-source [jev-seo](https://github.com/agricidaniel/jev-seo) audit engine (MIT). Start audits from the browser, watch the engine's real progress, explore findings, pages, AI judgments and Core Web Vitals, track fixes, and download the engine's own PDF, Excel and Markdown reports.
-
-**The engine is not modified.** The dashboard runs the unchanged `jevseo` CLI as a subprocess and reads the `audit.json` it writes. The 52 rules, scoring and report generators are exactly the engine's own, and the CLI keeps working on its own.
+**Rankora is a local SEO audit workspace.** Audit any public website from your browser, see exactly which of Google's guidelines it meets and which it breaks, explore every crawled URL to find what is missing, track fixes, and download branded PDF, Excel and Markdown reports.
 
 ```
-Browser ──► Next.js (UI + /api routes, port 3000) ──spawn──► python -m jevseo run … (your engine venv)
-                     │                                                    │
-                     └──────── reads ◄── jev-seo-reports/<domain>-<stamp>/audit.json, report.pdf/.xlsx/.md
+Browser ──► Rankora (Next.js UI + API, port 3000) ──runs──► audit engine (Python, separate process)
+                     │                                              │
+                     └───── reads ◄── reports folder: <site>-<date>/audit.json + report files
 ```
 
-## Features
+Rankora drives an open-source audit engine (credited in [NOTICE.md](NOTICE.md)) as an unmodified separate process, and adds everything around it: the interface, the Google checklist, the Site Explorer, 31 extra checks, branded reports, history and settings.
 
-- **Overview dashboard:** the latest audit's score, grade and completeness, severity and category charts, score history (from saved audits only), crawl statistics and recent audits.
-- **Count pages:** before an audit, reads the site's robots.txt and XML sitemaps (sitemap indexes and `.gz` included, no crawl) to report how many pages it has. One click sets the crawl limit, up to 2,000 pages. Audits that hit their page limit show a banner with a one-click re-run at a higher limit.
-- **New audit:** URL validation in the browser and on the server, including the SSRF guard. Every option maps to a real engine flag: max pages and depth, time budget, JS rendering, AI judgments, PageSpeed, DataForSEO and formats, plus optional focus keywords. A summary shows missing dependencies, and paid mode needs explicit confirmation.
-- **Live progress:** Server-Sent Events from the engine's own `== n/7` stage lines and counters (URLs crawled, pages judged, PageSpeed runs), plus warnings, errors, the engine log and cancellation. Progress survives page reloads and dashboard restarts.
-- **Results workspace:** Overview, Technical SEO (filters, search, sort, pagination, detail drawer), Pages (sortable table and lazy-loaded page analysis), AI Content (real AI answers only), Performance (mobile and desktop, with 429 and missing data shown as such), Recommendations (status and notes stored separately from audit data) and Reports.
-- **Extra checks:** 31 dashboard-side checks on the saved crawl data, beyond the engine's 52 rules. They are reported separately and never change the engine's score.
-  - Rank Math-style focus-keyword placement: title, H1, URL, meta, intro and density.
-  - E-E-A-T and trust signals: About, Contact, privacy and terms pages, authors and dates on articles, Organization schema with sameAs.
-  - URL structure, Breadcrumb and Article schema coverage, internal linking, readability, keyword stuffing, image lazy loading and social cards.
-  - A list of what cannot be checked from crawl data.
-- **History:** search, status and date filters, sorting, pagination, and removal from history that never deletes files. Existing folders in `jev-seo-reports/`, such as an InboxWarm audit, are picked up automatically.
-- **Reports center:** original engine files with secure downloads and in-browser PDF preview.
-- **Settings:** write-only, masked API keys (stored in `data/secrets.env`, mode 600) with a **Verify** button for PageSpeed and DataForSEO (one live test request), audit defaults, and system diagnostics (engine `doctor`, Python, Playwright/Chromium, directories, keys).
-- **Interface:** light, dark and system themes, and a sidebar you can drag to resize, click (or press Ctrl+B) to collapse to an icon rail, and double-click to reset. Smooth motion (page transitions, animated score gauge, count-up metrics, animated charts) automatically switches off when the OS asks for reduced motion.
+## What you get after an audit
+
+- **Google guidelines checklist:** shown first. Every check is mapped to the Google Search Central guidance it comes from. The areas are:
+  - crawling, indexing, titles and snippets, keywords
+  - helpful content and E-E-A-T, links, images, structured data
+  - page experience, international, spam policies, AI features, visibility
+
+  Each rule is written in plain language and marked **Passed**, **Needs work**, **Not checked** (with the reason) or **Manual check**. Each failure shows what was found, how to fix it, the affected URLs and a link to Google's own page.
+- **Site Explorer:** a spreadsheet-style view of every crawled URL, in the style of a desktop crawler.
+  - Tabs: Response codes, Page titles, Meta description, H1, H2, Images, Canonicals, Directives, Links, Structured data, Content, Security, Hreflang, Social.
+  - Filters such as *Missing*, *Duplicate*, *Over 60 characters* and *Non-indexable*.
+  - An **Issues** view that ranks everything missing across all tabs.
+  - CSV export of any tab and filter.
+- **Overview:** the score and grade, completeness, severity and category charts, the most important fixes, and score history across audits.
+- **Technical SEO, Pages, AI Content, Performance:** every finding with its evidence and fix, page-by-page analysis, AI content judgments (with a key), and Core Web Vitals (with a PageSpeed key).
+- **Extra Checks:** 31 more checks on the crawl data.
+  - Focus-keyword placement in the Rank Math style.
+  - E-E-A-T signals: About, Contact, privacy and terms pages, authors, dates, Organization schema.
+  - URL structure, breadcrumb and article schema, internal linking, readability, keyword stuffing, lazy loading.
+- **Recommendations:** ranked actions with your own status and notes.
+- **Reports:** Rankora-branded PDF, Excel, Markdown and JSON, with an in-browser PDF preview.
+
+## Before and during an audit
+
+- **Count pages:** reads the site's sitemaps (no crawl) to tell you how many pages it has, then sets the crawl limit to match, up to 2,000.
+- **Live progress:** the engine's real stages, URLs crawled, pages judged and PageSpeed runs. Warnings are grouped by cause, each with its fix, so six rate-limited requests are one notice, not six.
+- **No keyless warnings:** AI judgments stay off until a key is added, and PageSpeed is off by default without one.
+- **Your sites:** audits of emailverify.io, clustox.com, mycoldinbox.com and inboxwarm.ai ship with Rankora and appear on first start. The New Audit placeholder rotates through them. The list is in `lib/brand.ts`.
+
+## Interface
+
+Light, dark and system themes. The sidebar can be resized by dragging and collapsed with a click or **Ctrl+B**. Motion is smooth and switches off automatically when your system asks for reduced motion. The layout is responsive down to phone size.
 
 ## Quick start (Ubuntu 20.04+)
 
-```bash
-# 1. engine (skip if you already have it with a working venv)
-git clone https://github.com/agricidaniel/jev-seo ~/jev-seo
-cd ~/jev-seo && uv venv .venv -p 3.12 && uv pip install -p .venv/bin/python -r requirements.txt
+You need the audit engine with its Python environment (see [docs/INSTALLATION.md](docs/INSTALLATION.md)) and Node.js 18.18 or newer. Then:
 
-# 2. dashboard
-git clone https://github.com/MBN4/jev-seo-dashboard ~/jev-seo-dashboard
-cd ~/jev-seo-dashboard
-echo "JEVSEO_DIR=$HOME/jev-seo" > .env.local
-./start.sh            # first run installs and builds, then serves http://localhost:3000
+```bash
+git clone https://github.com/MBN4/rankora ~/rankora
+cd ~/rankora
+echo "RANKORA_ENGINE_DIR=$HOME/path/to/engine" > .env.local
+./start.sh
 ```
 
-Open **http://localhost:3000**, go to **New Audit**, enter a URL and press **Start audit**.
+Open **http://localhost:3000**. `start.sh` installs dependencies and rebuilds only when something changed (for example after `git pull`).
 
 | What | Where |
 | --- | --- |
-| Dashboard | http://localhost:3000 |
+| App | http://localhost:3000 |
 | API | http://localhost:3000/api (for example `/api/system/health`) |
 | Development mode | `./start.sh --dev` |
 
-Full instructions: [docs/INSTALLATION.md](docs/INSTALLATION.md). Using the app: [docs/USER_GUIDE.md](docs/USER_GUIDE.md). Internals: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). Endpoints: [docs/API.md](docs/API.md).
-
-## Branding
-
-The product name and tagline come from `lib/brand.ts`. To change them without editing code, add these lines to `.env.local` and rebuild (`npm run build`):
-
-```
-NEXT_PUBLIC_BRAND_NAME=Your Name
-NEXT_PUBLIC_BRAND_TAGLINE=SEO audit workspace
-```
-
-The logo is a lettermark built from the name's initials. The PDF, Excel and Markdown reports are produced by the engine and keep the engine's own design.
+More detail: [Installation](docs/INSTALLATION.md) · [User guide](docs/USER_GUIDE.md) · [Architecture](docs/ARCHITECTURE.md) · [API](docs/API.md)
 
 ## Configuration
 
-`.env.local` (see `.env.example`):
+`.env.local` (see `.env.example`). Older `JEVSEO_*` names for the same settings still work.
 
 | Variable | Default | Purpose |
 | --- | --- | --- |
-| `JEVSEO_DIR` | `../jev-seo` | Engine checkout |
-| `JEVSEO_PYTHON` | `$JEVSEO_DIR/.venv/bin/python` | Interpreter with the engine requirements |
-| `JEVSEO_REPORTS_DIR` | `$JEVSEO_DIR/jev-seo-reports` | Audit folders (same place the CLI writes) |
-| `JEVSEO_DATA_DIR` | `./data` | Dashboard state, secrets, job logs |
-| `JEVSEO_MAX_CONCURRENT` | `1` | Simultaneous audits (max 4) |
-| `JEVSEO_MAX_AUDIT_SECONDS` | `3600` | Hard limit per audit process |
-| `JEVSEO_ALLOWED_HOSTS` | (localhost only) | Extra hostnames allowed to reach the dashboard |
+| `RANKORA_ENGINE_DIR` | `../jev-seo` | Audit engine folder |
+| `RANKORA_ENGINE_PYTHON` | `<engine>/.venv/bin/python` | Python with the engine's requirements (a path, or a command such as `python3`) |
+| `RANKORA_REPORTS_DIR` | the engine's output folder | Where audit folders live |
+| `RANKORA_DATA_DIR` | `./data` | Rankora state, secrets, job logs, branded reports |
+| `RANKORA_MAX_CONCURRENT` | `1` | Simultaneous audits (max 4) |
+| `RANKORA_MAX_AUDIT_SECONDS` | `7200` | Hard limit per audit process |
+| `RANKORA_ALLOWED_HOSTS` | localhost only | Extra hostnames allowed to reach the app |
+| `RANKORA_AUDIT_CACHE_MB` | `350` | Memory budget for parsed audits (large crawls are 100+ MB) |
+| `NEXT_PUBLIC_BRAND_NAME` / `NEXT_PUBLIC_BRAND_TAGLINE` | `Rankora` / `SEO audit workspace` | Product name and tagline (rebuild after changing) |
 
-API keys (`TYPESAFE_API_KEY`, `PAGESPEED_API_KEY`, `DATAFORSEO_USERNAME`, `DATAFORSEO_PASSWORD`) are set in **Settings → API keys**. Keys already present in the engine's `.env` or your environment are detected and used. Every key is optional:
+API keys are entered in **Settings → API keys**, and each one has a **Verify** button. All of them are optional:
 
-- Without the TypeSafe key, the audit is marked partial.
-- Without a PageSpeed key, runs are unkeyed and often rate limited.
-- DataForSEO keys are needed only for paid full mode.
+| Key | Without it |
+| --- | --- |
+| `TYPESAFE_API_KEY` | AI judgments are off and the score is marked partial |
+| `PAGESPEED_API_KEY` | No Core Web Vitals. Get a free key in Google Cloud Console (enable *PageSpeed Insights API*, then Credentials, then API key). |
+| `DATAFORSEO_USERNAME` / `DATAFORSEO_PASSWORD` | No paid rankings and backlinks mode |
 
 ## Development
 
 ```bash
-npm run dev        # http://127.0.0.1:3000 with hot reload
-npm test           # 91 Vitest tests: backend routes/services + React components
+npm run dev      # hot reload on http://127.0.0.1:3000
+npm test         # Vitest: API routes, services, checks, branding, components
 npm run typecheck && npm run lint && npm run build
 ```
 
@@ -94,13 +100,12 @@ npm run typecheck && npm run lint && npm run build
 
 | Symptom | Fix |
 | --- | --- |
-| `jev-seo engine not found` | Set `JEVSEO_DIR` in `.env.local`. |
-| `Engine Python … missing packages` | `$JEVSEO_DIR/.venv/bin/python -m pip install -r $JEVSEO_DIR/requirements.txt` |
-| Performance shows "Rate limited (HTTP 429)" | Google's unkeyed quota is shared by everyone. Create a free key (Google Cloud Console → enable *PageSpeed Insights API* → Credentials → API key), paste it in Settings → API keys, press **Verify**, then re-run the audit. |
-| AI Content says "not available" | Add `TYPESAFE_API_KEY` in Settings and run a new audit. |
-| Chromium unavailable (Ubuntu 20.04) | Optional. Crawling works without it; JavaScript-only pages are read as raw HTML. |
-| "Only 1 audit(s) can run at once" | Wait, cancel the running audit, or raise `JEVSEO_MAX_CONCURRENT`. |
-| Audit shows "Interrupted" | The engine process stopped while the dashboard was down. Start a new audit. |
-| 403 "Host not allowed" | Open the dashboard via `localhost`, or add your hostname to `JEVSEO_ALLOWED_HOSTS`. |
+| "Audit engine not found" | Set `RANKORA_ENGINE_DIR` in `.env.local`. |
+| "Engine Python … missing packages" | `<engine>/.venv/bin/python -m pip install -r <engine>/requirements.txt` |
+| Performance shows "rate limited (HTTP 429)" | Add a free `PAGESPEED_API_KEY` in Settings, press **Verify**, re-run the audit. |
+| Branded PDF "could not be prepared" | The engine Python needs WeasyPrint (it is in the engine's requirements). Check Settings → Diagnostics. |
+| "Only 1 audit can run at once" | Wait, cancel the running audit, or raise `RANKORA_MAX_CONCURRENT`. |
+| Audit shows "Interrupted" | The engine process stopped while Rankora was down. Start a new audit. |
+| 403 "Host not allowed" | Open the app via `localhost`, or add your hostname to `RANKORA_ALLOWED_HOSTS`. |
 
-Settings → Diagnostics runs all of these checks and suggests the fix.
+Settings → Diagnostics runs these checks and suggests the fix.

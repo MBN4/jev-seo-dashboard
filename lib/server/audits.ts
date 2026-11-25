@@ -1,12 +1,13 @@
 import "server-only";
 import fs from "node:fs";
 import path from "node:path";
-import { reportsDir } from "./config";
+import { dataDir, reportsDir } from "./config";
 import { auditFolder, isValidAuditId, REPORT_FILES } from "./paths";
 import { listJobIds, readJob, refreshJob, type Job } from "./jobs";
-import { readState } from "./state";
+import { readState, writeAtomic } from "./state";
 import { redactPaths } from "./redact";
-import { neutralEngineText } from "@/lib/brand";
+import { normalizeAudit } from "./engine-adapter";
+import { brandedFile, brandedReady, type BrandedType } from "./branding";
 import type { EngineAudit, Severity } from "@/types/engine";
 import type { AuditSummary, ReportFile, ReportType, SeverityCounts } from "@/types/api";
 
@@ -20,30 +21,14 @@ interface CacheEntry {
   size: number;
   audit: EngineAudit;
 }
-const g = globalThis as unknown as { __jevseoAuditCache?: Map<string, CacheEntry> };
-const cache: Map<string, CacheEntry> = (g.__jevseoAuditCache ??= new Map());
-const CACHE_LIMIT = 6;
+const g = globalThis as unknown as { __rankoraAuditCache?: Map<string, CacheEntry> };
+const cache: Map<string, CacheEntry> = (g.__rankoraAuditCache ??= new Map());
+/** Keep parsed audits in memory up to this much source JSON (large crawls can be 100+ MB each). */
+const CACHE_BYTES = Number(process.env.RANKORA_AUDIT_CACHE_MB ?? 350) * 1024 * 1024;
 
 export class AuditLoadError extends Error {}
 
 /** Parse audit.json once per file version; small LRU so large audits are not re-read per request. */
-/**
- * Engine-written explanations name the upstream project ("Jev judgments unavailable").
- * Reword them in memory for display; audit.json on disk is never modified.
- */
-function neutralizeDisplayText(a: EngineAudit) {
-  const n = (t: string | undefined) => (typeof t === "string" ? neutralEngineText(t) : t);
-  a.scores.partial = a.scores.partial?.map((t) => neutralEngineText(t));
-  a.scores.caps = a.scores.caps?.map((t) => neutralEngineText(t));
-  if (a.scores.notes) for (const k of Object.keys(a.scores.notes)) a.scores.notes[k] = neutralEngineText(a.scores.notes[k]);
-  for (const f of [...a.findings, ...a.actions]) {
-    f.title = n(f.title) as string;
-    f.fix = n(f.fix) as string;
-    f.evidence = n(f.evidence) as string;
-  }
-  if (a.jev?.skipped) a.jev.skipped = neutralEngineText(a.jev.skipped);
-}
-
 export function loadAudit(id: string): EngineAudit | null {
   const folder = auditFolder(id);
   if (!folder) return null;
@@ -62,16 +47,21 @@ export function loadAudit(id: string): EngineAudit | null {
   }
   let audit: EngineAudit;
   try {
-    audit = JSON.parse(fs.readFileSync(file, "utf8"));
+    audit = normalizeAudit(JSON.parse(fs.readFileSync(file, "utf8")));
   } catch {
     throw new AuditLoadError(`audit.json in ${id} could not be read as JSON (it may be incomplete).`);
   }
   if (!audit || typeof audit !== "object" || !audit.scores || !Array.isArray(audit.pages) || !Array.isArray(audit.findings)) {
-    throw new AuditLoadError(`audit.json in ${id} does not look like a jev-seo audit.`);
+    throw new AuditLoadError(`audit.json in ${id} does not look like an audit file.`);
   }
-  neutralizeDisplayText(audit);
   cache.set(id, { mtimeMs: st.mtimeMs, size: st.size, audit });
-  while (cache.size > CACHE_LIMIT) cache.delete(cache.keys().next().value as string);
+  // Evict least-recently-used audits until the budget fits (always keep the one just loaded).
+  let total = [...cache.values()].reduce((n, e) => n + e.size, 0);
+  for (const key of [...cache.keys()]) {
+    if (total <= CACHE_BYTES || key === id) break;
+    total -= cache.get(key)!.size;
+    cache.delete(key);
+  }
   return audit;
 }
 
@@ -79,8 +69,36 @@ interface SummaryCacheEntry {
   mtimeMs: number;
   summary: Omit<AuditSummary, "status" | "origin" | "error" | "reports">;
 }
-const gs = globalThis as unknown as { __jevseoSummaryCache?: Map<string, SummaryCacheEntry> };
-const summaryCache: Map<string, SummaryCacheEntry> = (gs.__jevseoSummaryCache ??= new Map());
+const gs = globalThis as unknown as { __rankoraSummaryCache?: Map<string, SummaryCacheEntry> };
+const summaryCache: Map<string, SummaryCacheEntry> = (gs.__rankoraSummaryCache ??= loadSummaryFile());
+
+/**
+ * Summaries are also kept on disk (data/summaries.json), so listing audits after a restart never
+ * has to parse large audit files again; an entry is reused only while audit.json is unchanged.
+ */
+function summaryFile() {
+  return path.join(dataDir(), "summaries.json");
+}
+function loadSummaryFile(): Map<string, SummaryCacheEntry> {
+  try {
+    return new Map(Object.entries(JSON.parse(fs.readFileSync(summaryFile(), "utf8")) as Record<string, SummaryCacheEntry>));
+  } catch {
+    return new Map();
+  }
+}
+let saveTimer: NodeJS.Timeout | null = null;
+function persistSummaries() {
+  if (saveTimer) return;
+  saveTimer = setTimeout(() => {
+    saveTimer = null;
+    try {
+      writeAtomic(summaryFile(), JSON.stringify(Object.fromEntries(summaryCache)));
+    } catch {
+      /* cache only */
+    }
+  }, 500);
+  saveTimer.unref?.();
+}
 
 function severityCounts(audit: EngineAudit): SeverityCounts {
   const c: SeverityCounts = { critical: 0, high: 0, medium: 0, low: 0, info: 0 };
@@ -101,7 +119,11 @@ export function availableReports(id: string): ReportFile[] {
   for (const [type, spec] of Object.entries(REPORT_FILES) as Array<[ReportType, (typeof REPORT_FILES)[ReportType]]>) {
     try {
       const st = fs.statSync(path.join(folder, spec.filename));
-      if (st.isFile()) out.push({ type, label: spec.label, filename: spec.filename, size: st.size, modifiedAt: st.mtime.toISOString() });
+      if (!st.isFile()) continue;
+      // Report sizes are those of the branded copies users download, once they exist.
+      const branded = type !== "json" && brandedReady(id) ? brandedFile(id, type as BrandedType) : null;
+      const shown = branded ? fs.statSync(branded) : st;
+      out.push({ type, label: spec.label, filename: spec.filename, size: shown.size, modifiedAt: st.mtime.toISOString() });
     } catch {
       /* not generated */
     }
@@ -150,7 +172,7 @@ function fromAudit(id: string): SummaryCacheEntry["summary"] | null {
     rulesEvaluated: rulesEvaluated(a),
     options: {
       maxPages: opts.max_pages as number,
-      jev: opts.no_jev === undefined ? undefined : !opts.no_jev,
+      ai: opts.ai === undefined ? undefined : Boolean(opts.ai),
       psi: opts.no_psi === undefined ? undefined : !opts.no_psi,
       full: opts.full as boolean,
       render: opts.render as "auto" | "always" | "never",
@@ -158,6 +180,7 @@ function fromAudit(id: string): SummaryCacheEntry["summary"] | null {
     hasResults: true,
   };
   summaryCache.set(id, { mtimeMs, summary });
+  persistSummaries();
   return summary;
 }
 

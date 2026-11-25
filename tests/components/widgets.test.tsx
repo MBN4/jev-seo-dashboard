@@ -30,7 +30,7 @@ describe("dashboard widgets", () => {
   it("renders the engine score, grade, completeness and partial reasons", () => {
     render(
       <SeoScoreCard
-        scores={{ overall: 60, grade: "C", partial: ["Jev judgments unavailable"], caps: [], categories: {}, category_names: {}, weights: {}, completeness: { categories_scored: 7, categories_total: 9, jev: false, pagespeed: false, dataforseo: false } }}
+        scores={{ overall: 60, grade: "C", partial: ["AI judgments unavailable"], caps: [], categories: {}, category_names: {}, weights: {}, completeness: { categories_scored: 7, categories_total: 9, ai: false, pagespeed: false, dataforseo: false } }}
       />,
     );
     expect(screen.getByRole("img", { name: /60 out of 100, grade C/ })).toBeInTheDocument();
@@ -64,7 +64,7 @@ describe("history table", () => {
 
 describe("recommendations", () => {
   const rec: Recommendation = {
-    key: "meta_missing", actionId: "JEV-002", priority: "P2", impact: 45, effort: 1, quickWin: true, importance: null, origin: "rule", category: "onpage", categoryName: "On-page",
+    key: "meta_missing", actionId: "RK-002", priority: "P2", impact: 45, effort: 1, quickWin: true, importance: null, origin: "rule", category: "onpage", categoryName: "On-page",
     severity: "medium", title: "Pages without a meta description", fix: "Write descriptions.", source: null, evidence: "3 pages", count: 3, urls: ["https://example.org/a"], needsReview: 0, heuristic: false,
     status: "pending", notes: "", updatedAt: null,
   };

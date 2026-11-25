@@ -26,7 +26,12 @@ describe("new audit form", () => {
     render(<NewAuditPage />);
     expect(await screen.findByLabelText("Maximum pages")).toHaveValue(60);
     expect(screen.getByText("Engine default: 60 · up to 2,000")).toBeInTheDocument();
-    expect(screen.getByText(/TYPESAFE_API_KEY missing/)).toBeInTheDocument();
+    // No AI key: the stage is off and cannot be switched on, instead of producing a warning later.
+    expect(screen.getByText(/AI judgments off \(no key\)/)).toBeInTheDocument();
+    expect(screen.getByRole("switch", { name: /AI content evaluation/ })).toBeDisabled();
+    expect(screen.getByRole("switch", { name: /AI content evaluation/ })).not.toBeChecked();
+    // PageSpeed key is configured in this fixture, so PageSpeed stays on.
+    expect(screen.getByRole("switch", { name: /PageSpeed Insights/ })).toBeChecked();
     await waitFor(() => expect(screen.getByText(/Chromium: unavailable/)).toBeInTheDocument());
   });
 
@@ -43,7 +48,7 @@ describe("new audit form", () => {
     const btn = screen.getByRole("button", { name: /start audit/i });
     await userEvent.click(btn);
     await waitFor(() => expect(push).toHaveBeenCalledWith("/audits/example.org-2026-01-01-0000/progress"));
-    expect(posted).toMatchObject({ url: "example.org", keywords: ["seo audit", "site speed"], options: { maxPages: 60, jev: true, psi: true, full: false } });
+    expect(posted).toMatchObject({ url: "example.org", keywords: ["seo audit", "site speed"], options: { maxPages: 60, ai: false, psi: true, full: false } });
     expect((posted as { options: Record<string, unknown> }).options).not.toHaveProperty("keywordsText");
   });
 

@@ -49,7 +49,7 @@ describe("settings and credentials", () => {
     const { PUT } = await import("@/app/api/settings/route");
     expect((await PUT(jsonReq("/api/settings", "PUT", { defaults: { maxPages: 0 } }))).status).toBe(400);
     const ok = await (await PUT(jsonReq("/api/settings", "PUT", { defaults: { maxPages: 25, psi: false } }))).json();
-    expect(ok.defaults).toMatchObject({ maxPages: 25, psi: false, jev: true });
+    expect(ok.defaults).toMatchObject({ maxPages: 25, psi: false, ai: true });
   });
 });
 

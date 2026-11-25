@@ -24,7 +24,7 @@ describe("engine log parser", () => {
     expect(p.currentStage).toBe(4);
     expect(p.completedStages).toBe(3);
     expect(p.pagesCrawled).toBe(60);
-    expect(p.stages[3].counter).toEqual({ kind: "jev", current: 10, total: 20 });
+    expect(p.stages[3].counter).toEqual({ kind: "ai", current: 10, total: 20 });
   });
 
   it("marks a stage skipped when the engine reports a missing key", () => {
@@ -57,5 +57,24 @@ ModuleNotFoundError: No module named 'matplotlib'`);
   it("finishes all active stages on completion", () => {
     const p = summarizeProgress(parseEngineLog("[jevseo 00:00] == 7/7 Render: pdf"), "completed");
     expect(p.stages[6].state).toBe("done");
+  });
+});
+
+describe("grouped notices", () => {
+  it("folds repeated PageSpeed 429s into one actionable notice and treats a missing key as info", async () => {
+    const { groupNotices } = await import("@/lib/progress");
+    const ev = parseEngineLog(`[jevseo 00:01] TYPESAFE_API_KEY not found: Jev judgments skipped; semantic sections will be marked not assessed.
+[jevseo 00:02] PageSpeed 1/6: desktop https://a.io/ (HTTP 429)
+[jevseo 00:02] PageSpeed 2/6: mobile https://a.io/docs (HTTP 429)
+[jevseo 00:02] PageSpeed 3/6: mobile https://a.io/ (HTTP 429)
+[jevseo 00:02] PageSpeed 4/6: desktop https://a.io/docs (HTTP 429)
+[jevseo 00:02] PageSpeed 5/6: desktop https://a.io/blog (HTTP 429)
+[jevseo 00:02] PageSpeed 6/6: mobile https://a.io/blog (HTTP 429)
+[jevseo 00:02] PageSpeed Insights: 0/6 runs succeeded`);
+    const n = groupNotices(ev);
+    expect(n).toHaveLength(2);
+    expect(n[0]).toMatchObject({ key: "psi-429", level: "warning", count: 6, title: "6 of 6 PageSpeed requests were rate limited by Google (HTTP 429)", fix: { href: "/settings" } });
+    expect(n[0].items).toContain("desktop https://a.io/");
+    expect(n[1]).toMatchObject({ key: "ai-off", level: "info" });
   });
 });

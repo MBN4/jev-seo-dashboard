@@ -24,7 +24,7 @@ export function FindingDetailDrawer({ auditId, findingId, onClose }: { auditId: 
               <div className="flex flex-wrap gap-2">
                 <SeverityBadge severity={f.severity} />
                 <span className="rounded-md bg-muted px-1.5 py-0.5 text-xs">{f.categoryName}</span>
-                <span className="rounded-md bg-muted px-1.5 py-0.5 text-xs">Source: {f.origin === "jev" ? "AI judgment" : f.origin === "dataforseo" ? "DataForSEO" : "Rule"}</span>
+                <span className="rounded-md bg-muted px-1.5 py-0.5 text-xs">Source: {f.origin === "ai" ? "AI judgment" : f.origin === "dataforseo" ? "DataForSEO" : "Rule"}</span>
                 {f.heuristic && <span className="rounded-md bg-warning-soft px-1.5 py-0.5 text-xs">Heuristic</span>}
                 {f.action && <span className="rounded-md bg-muted px-1.5 py-0.5 font-mono text-xs">{f.action.action_id} · {f.action.priority}</span>}
               </div>

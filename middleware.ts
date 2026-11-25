@@ -7,7 +7,7 @@ import { NextResponse, type NextRequest } from "next/server";
 const DEFAULT_HOSTS = ["localhost", "127.0.0.1", "[::1]", "::1"];
 
 function allowedHosts(): string[] {
-  const extra = (process.env.JEVSEO_ALLOWED_HOSTS ?? "").split(",").map((s) => s.trim().toLowerCase()).filter(Boolean);
+  const extra = (process.env.RANKORA_ALLOWED_HOSTS ?? process.env.JEVSEO_ALLOWED_HOSTS ?? "").split(",").map((s) => s.trim().toLowerCase()).filter(Boolean);
   return [...DEFAULT_HOSTS, ...extra];
 }
 
@@ -22,7 +22,7 @@ export function middleware(req: NextRequest) {
   const hosts = allowedHosts();
   const host = hostname(req.headers.get("host"));
   if (!host || !hosts.includes(host)) {
-    return NextResponse.json({ error: { status: 403, message: "Host not allowed. Add it to JEVSEO_ALLOWED_HOSTS to expose the dashboard." } }, { status: 403 });
+    return NextResponse.json({ error: { status: 403, message: "Host not allowed. Add it to RANKORA_ALLOWED_HOSTS to expose the dashboard." } }, { status: 403 });
   }
   if (!["GET", "HEAD", "OPTIONS"].includes(req.method)) {
     const origin = req.headers.get("origin");

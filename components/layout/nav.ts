@@ -1,6 +1,6 @@
-import { BarChart3, Bot, ClipboardList, FileText, Gauge, History, LayoutDashboard, ListChecks, PlusCircle, SearchCheck, Settings, Wrench } from "lucide-react";
+import { BadgeCheck, BarChart3, Bot, Table2, ClipboardList, FileText, Gauge, History, LayoutDashboard, ListChecks, PlusCircle, SearchCheck, Settings, Wrench } from "lucide-react";
 
-export type AuditTab = "overview" | "technical" | "extra" | "pages" | "ai" | "performance" | "recommendations" | "reports";
+export type AuditTab = "overview" | "checklist" | "explorer" | "technical" | "extra" | "pages" | "ai" | "performance" | "recommendations" | "reports";
 
 export interface NavItem {
   label: string;
@@ -16,6 +16,8 @@ export const NAV: NavItem[] = [
   { label: "Overview", icon: LayoutDashboard, href: "/" },
   { label: "New Audit", icon: PlusCircle, href: "/audits/new" },
   { label: "Audit History", icon: History, href: "/audits" },
+  { label: "Google Checklist", icon: BadgeCheck, tab: "checklist", fallback: "/google-checklist" },
+  { label: "Site Explorer", icon: Table2, tab: "explorer", fallback: "/site-explorer" },
   { label: "Technical SEO", icon: Wrench, tab: "technical", fallback: "/technical" },
   { label: "Extra Checks", icon: SearchCheck, tab: "extra", fallback: "/extra-checks" },
   { label: "Page Analysis", icon: ClipboardList, tab: "pages", fallback: "/page-analysis" },
@@ -28,6 +30,8 @@ export const NAV: NavItem[] = [
 
 export const AUDIT_TABS: Array<{ key: AuditTab; label: string; icon: typeof BarChart3 }> = [
   { key: "overview", label: "Overview", icon: BarChart3 },
+  { key: "checklist", label: "Google Checklist", icon: BadgeCheck },
+  { key: "explorer", label: "Site Explorer", icon: Table2 },
   { key: "technical", label: "Technical SEO", icon: Wrench },
   { key: "extra", label: "Extra Checks", icon: SearchCheck },
   { key: "pages", label: "Pages", icon: ClipboardList },

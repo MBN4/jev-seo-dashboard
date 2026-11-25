@@ -12,7 +12,7 @@ export const summary = (over: Partial<AuditSummary> = {}): AuditSummary => ({
 export const settings = {
   defaults: DEFAULT_AUDIT_OPTIONS,
   secrets: [
-    { key: "TYPESAFE_API_KEY", configured: false, source: null, hint: null, usedFor: "Jev" },
+    { key: "TYPESAFE_API_KEY", configured: false, source: null, hint: null, usedFor: "AI judgments" },
     { key: "PAGESPEED_API_KEY", configured: true, source: "dashboard", hint: "••••abcd", usedFor: "PSI" },
     { key: "DATAFORSEO_USERNAME", configured: false, source: null, hint: null, usedFor: "DFS" },
     { key: "DATAFORSEO_PASSWORD", configured: false, source: null, hint: null, usedFor: "DFS" },

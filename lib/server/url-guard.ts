@@ -6,7 +6,7 @@ import { checkUrlSyntax, type UrlCheck } from "@/lib/url";
 /**
  * Server-side SSRF guard for audit targets.
  *
- * The engine applies its own guard too (jevseo/crawl.py `public_host`, re-checked on
+ * The engine applies its own guard too (`public_host` in its crawler, re-checked on
  * every redirect hop), so this is defence in depth: refuse before a process is spawned.
  */
 

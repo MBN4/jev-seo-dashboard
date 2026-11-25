@@ -7,7 +7,7 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * Jev SEO design tokens. Light and dark are each tuned separately (not an automatic flip).
+ * Rankora design tokens. Light and dark are each tuned separately (not an automatic flip).
  * Accent: emerald "search green". Status: red (critical), orange (high), amber (warning), blue (info).
  */
 @theme inline {

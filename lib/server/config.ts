@@ -1,14 +1,22 @@
 import "server-only";
 import fs from "node:fs";
 import path from "node:path";
+import { ENGINE_REPORTS_FOLDER } from "@/lib/engine-protocol";
 
 /**
- * Where the dashboard finds the jev-seo engine and where it keeps its own state.
- * Everything is overridable through environment variables (see .env.example).
+ * Where Rankora finds the audit engine and where it keeps its own state.
+ * Everything is overridable through environment variables (see .env.example). Settings use the
+ * RANKORA_ prefix; the older JEVSEO_ names are still accepted so existing .env.local files work.
  */
 function resolveDir(p: string): string {
   if (p.startsWith("~/")) p = path.join(process.env.HOME ?? "", p.slice(2));
   return path.resolve(p);
+}
+
+/** Read RANKORA_<name>, falling back to the legacy variable name. */
+export function setting(name: string, legacy?: string): string | undefined {
+  const v = process.env[`RANKORA_${name}`] ?? (legacy ? process.env[legacy] : undefined);
+  return v && v.trim() ? v.trim() : undefined;
 }
 
 function firstExisting(candidates: string[]): string | undefined {
@@ -22,12 +30,14 @@ function firstExisting(candidates: string[]): string | undefined {
 }
 
 export function engineDir(): string {
-  return resolveDir(process.env.JEVSEO_DIR ?? path.join(process.cwd(), "..", "jev-seo"));
+  return resolveDir(setting("ENGINE_DIR", "JEVSEO_DIR") ?? path.join(process.cwd(), "..", "jev-seo"));
 }
 
-/** Python interpreter that runs `-m jevseo`. Prefers the engine's own virtualenv. */
+/** Python interpreter that runs the engine. Prefers the engine's own virtualenv. */
 export function enginePython(): string {
-  if (process.env.JEVSEO_PYTHON) return resolveDir(process.env.JEVSEO_PYTHON);
+  const configured = setting("ENGINE_PYTHON", "JEVSEO_PYTHON");
+  // A bare command (e.g. "python3") is looked up on PATH; anything with a slash is a path.
+  if (configured) return configured.includes("/") ? resolveDir(configured) : configured;
   const dir = engineDir();
   return (
     firstExisting([
@@ -39,12 +49,12 @@ export function enginePython(): string {
 }
 
 export function reportsDir(): string {
-  return resolveDir(process.env.JEVSEO_REPORTS_DIR ?? path.join(engineDir(), "jev-seo-reports"));
+  return resolveDir(setting("REPORTS_DIR", "JEVSEO_REPORTS_DIR") ?? path.join(engineDir(), ENGINE_REPORTS_FOLDER));
 }
 
 /** Dashboard-owned state: app-state JSON, secrets file, job logs. Never inside report folders. */
 export function dataDir(): string {
-  return resolveDir(process.env.JEVSEO_DATA_DIR ?? path.join(process.cwd(), "data"));
+  return resolveDir(setting("DATA_DIR", "JEVSEO_DATA_DIR") ?? path.join(process.cwd(), "data"));
 }
 
 export function jobsDir(): string {
@@ -60,14 +70,14 @@ export function stateFile(): string {
 }
 
 export function maxConcurrentAudits(): number {
-  const n = Number(process.env.JEVSEO_MAX_CONCURRENT ?? 1);
+  const n = Number(setting("MAX_CONCURRENT", "JEVSEO_MAX_CONCURRENT") ?? 1);
   return Number.isFinite(n) && n >= 1 ? Math.min(Math.floor(n), 4) : 1;
 }
 
 /** Hard ceiling for one audit process (engine crawl budget is separate). */
 export function maxAuditSeconds(): number {
   // Must exceed the largest crawl time budget (5400 s) plus scoring and report generation.
-  const n = Number(process.env.JEVSEO_MAX_AUDIT_SECONDS ?? 7200);
+  const n = Number(setting("MAX_AUDIT_SECONDS", "JEVSEO_MAX_AUDIT_SECONDS") ?? 7200);
   return Number.isFinite(n) && n >= 60 ? n : 7200;
 }
 

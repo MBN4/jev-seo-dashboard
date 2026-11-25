@@ -66,7 +66,7 @@ function DefaultsTab() {
       <Input id={`d-${k}`} type="number" min={min} max={max} step={step} value={v[k] as number} onChange={(e) => setV({ ...v, [k]: e.target.valueAsNumber })} className="h-8" />
     </div>
   );
-  const sw = (k: "jev" | "psi" | "full", label: string, desc: string) => (
+  const sw = (k: "ai" | "psi" | "full", label: string, desc: string) => (
     <div className="flex items-start justify-between gap-4 rounded-md border p-3">
       <div><Label htmlFor={`d-${k}`} className="text-sm">{label}</Label><p className="text-xs text-muted-foreground">{desc}</p></div>
       <Switch id={`d-${k}`} checked={v[k]} onCheckedChange={(c) => setV({ ...v, [k]: c })} />
@@ -84,17 +84,17 @@ function DefaultsTab() {
     }
   };
   return (
-    <SectionCard title="Audit defaults" description="Pre-filled on the New Audit form. Each maps to a jevseo command-line flag.">
+    <SectionCard title="Audit defaults" description="Pre-filled on the New Audit form. Each maps to an audit engine option.">
       <div className="grid gap-4 sm:grid-cols-3">
         {num("maxPages", "Crawl limit (pages)", 1, 2000)}
         {num("maxDepth", "Max depth", 1, 10)}
         {num("timeBudget", "Crawl time budget (s)", 30, 5400)}
-        {num("jevPages", "Pages sent to AI", 1, 200)}
-        {num("jevBudget", "AI spend cap (USD)", 0.01, 5, 0.05)}
+        {num("aiPages", "Pages sent to AI", 1, 200)}
+        {num("aiBudget", "AI spend cap (USD)", 0.01, 5, 0.05)}
         {num("psiPages", "PageSpeed pages", 1, 10)}
       </div>
       <div className="mt-4 grid gap-3 lg:grid-cols-2">
-        {sw("jev", "AI content evaluation", "Needs TYPESAFE_API_KEY")}
+        {sw("ai", "AI content evaluation", "Needs TYPESAFE_API_KEY")}
         {sw("psi", "PageSpeed analysis", "Unkeyed runs may hit HTTP 429")}
         {sw("full", "Advanced analysis (DataForSEO)", "Paid; still asks for confirmation on every audit")}
         <div className="flex items-center justify-between gap-4 rounded-md border p-3">
@@ -142,7 +142,7 @@ function DiagnosticsTab() {
         actions={<Button variant="outline" size="sm" onClick={() => setRefresh((r) => r + 1)} disabled={loading}><RefreshCw className={loading ? "size-3.5 animate-spin" : "size-3.5"} /> Re-run</Button>}
       >
         <ul className="grid gap-2 lg:grid-cols-2">{data.checks.map((c) => <SystemStatusCard key={c.key} check={c} />)}</ul>
-        <p className="mt-3 text-xs text-muted-foreground">Engine folder: <code>{data.paths.engine}</code> · reports: <code>{data.paths.reports}</code> · max concurrent audits: {data.limits.maxConcurrentAudits}. Paths are configured with JEVSEO_DIR / JEVSEO_REPORTS_DIR in <code>.env.local</code>.</p>
+        <p className="mt-3 text-xs text-muted-foreground">Max concurrent audits: {data.limits.maxConcurrentAudits}. The engine and reports folders are set with <code>RANKORA_ENGINE_DIR</code> and <code>RANKORA_REPORTS_DIR</code> in <code>.env.local</code>.</p>
       </SectionCard>
     </div>
   );

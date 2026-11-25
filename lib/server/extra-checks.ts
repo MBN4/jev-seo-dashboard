@@ -306,7 +306,21 @@ export interface ExtraResult {
 
 const SEV_ORDER: Severity[] = ["critical", "high", "medium", "low", "info"];
 
+const memo = new WeakMap<EngineAudit, Map<string, ExtraResult>>();
+
+/** Cached per parsed audit and keyword set (the parsed audit is itself cached per file version). */
 export function runExtraChecks(audit: EngineAudit, keywordsIn: string[] = []): ExtraResult {
+  const key = keywordsIn.map((k) => k.trim().toLowerCase()).sort().join("\u0000");
+  let byKey = memo.get(audit);
+  if (!byKey) memo.set(audit, (byKey = new Map()));
+  const hit = byKey.get(key);
+  if (hit) return hit;
+  const result = computeExtraChecks(audit, keywordsIn);
+  byKey.set(key, result);
+  return result;
+}
+
+function computeExtraChecks(audit: EngineAudit, keywordsIn: string[] = []): ExtraResult {
   const keywords = [...new Set(keywordsIn.map((k) => k.trim()).filter(Boolean))].slice(0, 10);
   const all = htmlPages(audit);
   const pages = all.filter(indexable);

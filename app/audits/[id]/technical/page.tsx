@@ -74,7 +74,7 @@ export default function TechnicalPage() {
               <SelectTrigger className="h-8 w-full sm:w-36" aria-label="Filter by source"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All sources</SelectItem>
-                {data?.facets.origin.map((o) => <SelectItem key={o} value={o}>{o === "jev" ? "AI judgments" : o === "dataforseo" ? "DataForSEO" : "Rules"}</SelectItem>)}
+                {data?.facets.origin.map((o) => <SelectItem key={o} value={o}>{o === "ai" ? "AI judgments" : o === "dataforseo" ? "DataForSEO" : "Rules"}</SelectItem>)}
               </SelectContent>
             </Select>
             <div className="relative">

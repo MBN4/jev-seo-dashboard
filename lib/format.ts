@@ -44,7 +44,7 @@ export function shortUrl(url: string): string {
   }
 }
 
-/** Tone from the engine's own grade letter (jevseo/score.py: A>=90, B>=75, C>=60, D>=40, F). */
+/** Tone from the engine's own grade letter (A>=90, B>=75, C>=60, D>=40, F). */
 export function gradeTone(grade: string | null | undefined): "good" | "ok" | "poor" | "bad" | "none" {
   switch (grade) {
     case "A":

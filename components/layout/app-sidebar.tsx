@@ -16,7 +16,7 @@ const fade = { initial: { opacity: 0, x: -6 }, animate: { opacity: 1, x: 0 }, ex
 export function SidebarNav({ collapsed = false, onNavigate, layoutGroup = "desktop" }: { collapsed?: boolean; onNavigate?: () => void; layoutGroup?: string }) {
   const pathname = usePathname();
   const reduce = useReducedMotion();
-  const groups = [NAV.slice(0, 3), NAV.slice(3, 9), NAV.slice(9)];
+  const groups = [NAV.slice(0, 3), NAV.slice(3, 11), NAV.slice(11)];
   const titles = ["Workspace", "Analysis", "Manage"];
   return (
     <nav aria-label="Main" className="flex flex-col gap-5">

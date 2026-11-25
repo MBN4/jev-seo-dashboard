@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# SEO dashboard launcher (product name: lib/brand.ts or NEXT_PUBLIC_BRAND_NAME).
-#   ./start.sh          production mode (builds on first run), http://localhost:3000
+# Rankora launcher.
+#   ./start.sh          production mode, http://localhost:3000 (installs and rebuilds when needed)
 #   ./start.sh --dev    development mode with hot reload
-# The dashboard runs the jev-seo engine found at $JEVSEO_DIR (default: ../jev-seo).
+# Settings come from .env.local (see .env.example). Older JEVSEO_* names are still accepted.
 set -euo pipefail
 cd "$(dirname "$(readlink -f "$0")")"
 
@@ -14,7 +14,7 @@ red() { printf '\033[31m%s\033[0m\n' "$*"; }
 green() { printf '\033[32m%s\033[0m\n' "$*"; }
 dim() { printf '\033[2m%s\033[0m\n' "$*"; }
 
-# Settings from .env.local (JEVSEO_DIR, JEVSEO_PYTHON, ...) without overriding the shell.
+# Settings from .env.local without overriding the shell.
 if [ -f .env.local ]; then
   while IFS='=' read -r k v; do
     [[ "$k" =~ ^[A-Z_][A-Z0-9_]*$ ]] || continue
@@ -22,7 +22,7 @@ if [ -f .env.local ]; then
   done < <(grep -E '^[A-Z_][A-Z0-9_]*=' .env.local)
 fi
 
-ENGINE_DIR="${JEVSEO_DIR:-$(pwd)/../jev-seo}"
+ENGINE_DIR="${RANKORA_ENGINE_DIR:-${JEVSEO_DIR:-$(pwd)/../jev-seo}}"
 ENGINE_DIR="$(cd "$ENGINE_DIR" 2>/dev/null && pwd || echo "$ENGINE_DIR")"
 fail=0
 
@@ -33,16 +33,17 @@ fi
 NODE_MAJOR="$(node -p 'process.versions.node.split(".")[0]')"
 if [ "$NODE_MAJOR" -lt 18 ]; then red "Node $(node -v) is too old; Next.js 15 needs Node 18.18 or newer."; exit 1; fi
 
-# 2. Engine
+# 2. Audit engine
 if [ ! -f "$ENGINE_DIR/jevseo/cli.py" ]; then
-  red "jev-seo engine not found at: $ENGINE_DIR"
-  echo "  Clone it next to this folder, or set JEVSEO_DIR in .env.local, e.g.:"
-  echo "    echo 'JEVSEO_DIR=$HOME/jev-seo' >> .env.local"
+  red "Audit engine not found at: $ENGINE_DIR"
+  echo "  Set its folder in .env.local, e.g.:"
+  echo "    echo 'RANKORA_ENGINE_DIR=$HOME/path/to/engine' >> .env.local"
+  echo "  (see docs/INSTALLATION.md)"
   fail=1
 fi
 
 # 3. Python environment used by the engine
-PY="${JEVSEO_PYTHON:-}"
+PY="${RANKORA_ENGINE_PYTHON:-${JEVSEO_PYTHON:-}}"
 if [ -z "$PY" ]; then
   for c in "$ENGINE_DIR/.venv/bin/python" "$ENGINE_DIR/venv/bin/python"; do [ -x "$c" ] && PY="$c" && break; done
 fi
@@ -50,7 +51,7 @@ if [ -z "$PY" ]; then
   red "No Python virtualenv found for the engine ($ENGINE_DIR/.venv)."
   echo "  Create one (uv works on Ubuntu 20.04):"
   echo "    cd $ENGINE_DIR && uv venv .venv -p 3.12 && uv pip install -p .venv/bin/python -r requirements.txt"
-  echo "  or set JEVSEO_PYTHON in .env.local to the interpreter you already use."
+  echo "  or set RANKORA_ENGINE_PYTHON in .env.local to the interpreter you already use."
   fail=1
 elif ! PYTHONPATH="$ENGINE_DIR" "$PY" -c "import requests, bs4, lxml, matplotlib, jinja2, weasyprint, openpyxl" 2>/dev/null; then
   red "Engine Python ($PY) is missing packages. Run:"
@@ -58,26 +59,26 @@ elif ! PYTHONPATH="$ENGINE_DIR" "$PY" -c "import requests, bs4, lxml, matplotlib
   fail=1
 fi
 [ "$fail" = 1 ] && exit 1
-export JEVSEO_DIR="$ENGINE_DIR" JEVSEO_PYTHON="$PY"
+export RANKORA_ENGINE_DIR="$ENGINE_DIR" RANKORA_ENGINE_PYTHON="$PY"
 if ! PYTHONPATH="$ENGINE_DIR" "$PY" -c "import playwright" 2>/dev/null; then
   dim "Note: Playwright not installed; JavaScript rendering is off. Standard crawling works normally."
 fi
 
-# 4. Frontend dependencies and build
-if [ ! -d node_modules ]; then
-  echo "Installing dashboard dependencies (first run)..."
+# 4. Dependencies and build: (re)install / rebuild only when something changed, e.g. after git pull.
+if [ ! -d node_modules ] || [ package-lock.json -nt node_modules/.package-lock.json ]; then
+  echo "Installing dependencies..."
   npm ci --no-audit --no-fund
 fi
-if [ "$MODE" = "prod" ] && [ ! -f .next/BUILD_ID ]; then
-  echo "Building the dashboard (first run, about a minute)..."
-  npm run build
+if [ "$MODE" = "prod" ]; then
+  if [ ! -f .next/BUILD_ID ] || [ -n "$(find app components lib hooks types middleware.ts next.config.ts package.json .env.local -newer .next/BUILD_ID -print -quit 2>/dev/null)" ]; then
+    echo "Building (about a minute)..."
+    npm run build
+  fi
 fi
 
-green "${NEXT_PUBLIC_BRAND_NAME:-Rankora} dashboard"
+green "${NEXT_PUBLIC_BRAND_NAME:-Rankora}"
 echo "  Dashboard:  http://localhost:$PORT"
 echo "  API:        http://localhost:$PORT/api  (e.g. /api/system/health)"
-echo "  Engine:     $ENGINE_DIR (python: $PY)"
-echo "  Reports:    ${JEVSEO_REPORTS_DIR:-$ENGINE_DIR/jev-seo-reports}"
 dim "Press Ctrl+C to stop. Running audits are separate processes and finish on their own."
 
 if [ "$MODE" = "dev" ]; then

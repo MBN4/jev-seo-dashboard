@@ -40,7 +40,7 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# Jev SEO dashboard: local state and secrets never go to Git
+# Rankora: local state and secrets never go to Git
 /data/
 *.secrets.env
 secrets.env

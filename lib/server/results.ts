@@ -1,7 +1,7 @@
 import "server-only";
 import { loadAudit } from "./audits";
 import { readState, type RecommendationState } from "./state";
-import type { EngineAudit, EngineFinding, EnginePage, JevAnswer, JevQuestion, PsiRun, Severity } from "@/types/engine";
+import type { EngineAudit, EngineFinding, EnginePage, AiAnswer, AiQuestion, PsiRun, Severity } from "@/types/engine";
 import type { Paginated } from "@/types/api";
 
 /**
@@ -41,7 +41,11 @@ export function overview(id: string) {
     const k = p.status == null ? "error" : `${Math.floor(p.status / 100)}xx`;
     statusBuckets[k] = (statusBuckets[k] ?? 0) + 1;
   }
-  const top = [...a.actions].sort((x, y) => x.priority.localeCompare(y.priority) || y.impact - x.impact).slice(0, 6);
+  // Overview shows titles and counts only; a few sample URLs keep the payload small on big sites.
+  const top = [...a.actions]
+    .sort((x, y) => x.priority.localeCompare(y.priority) || y.impact - x.impact)
+    .slice(0, 6)
+    .map((x) => ({ ...x, urls: x.urls.slice(0, 5) }));
   return {
     site: {
       domain: a.site.domain,
@@ -72,7 +76,7 @@ export function overview(id: string) {
     byCategory: Object.entries(byCategory).map(([key, v]) => ({ key, name: a.scores.category_names?.[key] ?? key, ...v })),
     statusBuckets,
     topActions: top,
-    jev: { available: Boolean(a.jev?.available), skipped: a.jev?.skipped ?? null, judged: Object.values(a.jev?.pages ?? {}).filter(Boolean).length, notJudged: a.jev?.not_judged?.length ?? 0, cost: (a.jev?.ledger as Record<string, unknown>)?.cost_usd ?? null },
+    ai: { available: Boolean(a.ai?.available), skipped: a.ai?.skipped ?? null, judged: Object.values(a.ai?.pages ?? {}).filter(Boolean).length, notJudged: a.ai?.not_judged?.length ?? 0, cost: (a.ai?.ledger as Record<string, unknown>)?.cost_usd ?? null },
     psi: a.performance ? { runs: a.performance.runs.length, ok: a.performance.runs.filter((r) => !r.error).length, keyed: a.performance.keyed } : null,
     dataforseo: a.dataforseo ? { available: Boolean((a.dataforseo as Record<string, unknown>).available) } : null,
   };
@@ -153,7 +157,7 @@ export interface PageRow {
   inSitemap: boolean | null;
   ttfbMs: number | null;
   rendered: boolean;
-  jevJudged: boolean;
+  aiJudged: boolean;
 }
 
 function indexability(p: EnginePage): { ok: boolean | null; note: string | null } {
@@ -187,7 +191,7 @@ export interface PageQuery {
 export function pages(id: string, query: PageQuery) {
   const a = requireAudit(id);
   const issues = issueIndex(a);
-  const judged = a.jev?.pages ?? {};
+  const judged = a.ai?.pages ?? {};
   let rows: PageRow[] = a.pages.map((p) => {
     const ix = indexability(p);
     return {
@@ -211,7 +215,7 @@ export function pages(id: string, query: PageQuery) {
       inSitemap: p.in_sitemap ?? null,
       ttfbMs: p.ttfb_ms ?? null,
       rendered: Boolean(p.rendered),
-      jevJudged: Boolean(judged[p.url]),
+      aiJudged: Boolean(judged[p.url]),
     };
   });
   if (query.q) {
@@ -240,7 +244,7 @@ export function pageDetail(id: string, url: string) {
   const related = a.findings
     .filter((f) => f.urls.includes(url))
     .map((f) => ({ id: f.id, title: f.title, severity: f.severity, category: f.category, origin: f.origin, fix: f.fix, evidence: f.evidence }));
-  const jev = a.jev?.pages?.[url] ?? null;
+  const ai = a.ai?.pages?.[url] ?? null;
   const ix = indexability(p);
   return {
     url: p.url,
@@ -294,11 +298,11 @@ export function pageDetail(id: string, url: string) {
     structured: { types: p.schema_types ?? [], errors: p.schema_errors ?? [] },
     mixedContent: p.mixed_content ?? [],
     findings: related,
-    jev,
+    ai,
   };
 }
 
-// ---------------------------------------------------------------- Jev AI content
+// ---------------------------------------------------------------- AI content judgments
 
 const DIMENSION_LABELS: Record<string, string> = {
   page_type: "Page type",
@@ -327,29 +331,29 @@ export function dimensionLabel(key: string) {
 
 export function aiContent(id: string) {
   const a = requireAudit(id);
-  const j = a.jev;
+  const j = a.ai;
   const pages = Object.entries(j?.pages ?? {});
   const dims = new Set<string>();
   for (const [, ans] of pages) if (ans) Object.keys(ans).forEach((k) => dims.add(k));
-  const questions: Record<string, JevQuestion> = { ...(j?.questions?.site ?? {}), ...(j?.questions?.page_example ?? {}) };
-  const jevFindings = a.findings.filter((f) => f.origin === "jev");
+  const questions: Record<string, AiQuestion> = { ...(j?.questions?.site ?? {}), ...(j?.questions?.page_example ?? {}) };
+  const aiFindings = a.findings.filter((f) => f.origin === "ai");
   const titles = new Map(a.pages.map((p) => [p.url, p.title ?? null]));
   return {
     available: Boolean(j?.available),
     skipped: j?.skipped ?? null,
     ledger: j?.ledger ?? {},
-    site: j?.site ? Object.entries(j.site).map(([key, ans]) => ({ key, label: dimensionLabel(key), answer: ans as JevAnswer, question: questions[key] ?? null })) : [],
+    site: j?.site ? Object.entries(j.site).map(([key, ans]) => ({ key, label: dimensionLabel(key), answer: ans as AiAnswer, question: questions[key] ?? null })) : [],
     dimensions: [...dims].map((key) => ({ key, label: dimensionLabel(key), question: questions[key] ?? null })),
     pages: pages.map(([url, ans]) => ({
       url,
       title: titles.get(url) ?? null,
       judged: Boolean(ans),
       answers: ans ?? {},
-      findings: jevFindings.filter((f) => f.urls.includes(url)).map((f) => ({ id: f.id, title: f.title, severity: f.severity, fix: f.fix, evidence: f.evidence })),
+      findings: aiFindings.filter((f) => f.urls.includes(url)).map((f) => ({ id: f.id, title: f.title, severity: f.severity, fix: f.fix, evidence: f.evidence })),
     })),
     notJudged: j?.not_judged ?? [],
     pairs: (j?.pairs ?? []).filter((p) => p.judgment),
-    findings: jevFindings,
+    findings: aiFindings,
     contentScore: a.scores.categories?.content ?? null,
     contentNote: a.scores.notes?.content ?? null,
   };

@@ -11,8 +11,8 @@ beforeAll(() => (sb = makeSandbox()));
 afterAll(() => sb.cleanup());
 
 describe("engine argument building", () => {
-  it("maps every option to a real jevseo flag as separate argv entries", () => {
-    const args = engineArgs("https://example.com/", "/out/x", { ...DEFAULT_AUDIT_OPTIONS, jev: false, psi: true, full: true, formats: ["pdf"] });
+  it("maps every option to a real engine flag as separate argv entries", () => {
+    const args = engineArgs("https://example.com/", "/out/x", { ...DEFAULT_AUDIT_OPTIONS, ai: false, psi: true, full: true, formats: ["pdf"] });
     expect(args.slice(0, 6)).toEqual(["-m", "jevseo", "run", "https://example.com/", "--out", "/out/x"]);
     expect(args).toContain("--no-jev");
     expect(args).toContain("--full");

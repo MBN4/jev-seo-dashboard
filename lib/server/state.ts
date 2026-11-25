@@ -3,6 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { dataDir, ensureDir, stateFile } from "./config";
 import { DEFAULT_AUDIT_OPTIONS, auditOptionsSchema, type AuditOptions } from "@/lib/schemas";
+import { migrateOptionKeys } from "./engine-adapter";
 
 /**
  * Dashboard-owned state, stored as one JSON file in the data directory.
@@ -37,7 +38,7 @@ export function readState(): AppState {
   try {
     const raw = JSON.parse(fs.readFileSync(stateFile(), "utf8"));
     const base = emptyState();
-    const defaults = auditOptionsSchema.safeParse({ ...base.defaults, ...(raw.defaults ?? {}) });
+    const defaults = auditOptionsSchema.safeParse({ ...base.defaults, ...(migrateOptionKeys(raw.defaults) ?? {}) });
     return {
       version: 1,
       hidden: typeof raw.hidden === "object" && raw.hidden ? raw.hidden : {},

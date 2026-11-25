@@ -89,7 +89,7 @@ export function writeDashboardSecrets(update: Partial<Record<SecretKey, string |
   fs.chmodSync(secretsFile(), 0o600);
 }
 
-/** Same lookup order the engine uses (jevseo/env.py), with the dashboard store first. */
+/** Same lookup order the engine uses, with the dashboard store first. */
 export function secretStatuses(): SecretStatus[] {
   const dash = readDashboardSecrets();
   const engineEnv = parseEnvFile(path.join(engineDir(), ".env"));

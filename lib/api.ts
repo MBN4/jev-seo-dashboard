@@ -2,6 +2,18 @@ import type { AuditOptions } from "@/lib/schemas";
 import type { RecommendationStatus } from "@/lib/server/state";
 import type { ExtraResult } from "@/lib/server/extra-checks";
 import type { SiteSize } from "@/lib/server/site-size";
+import type { Checklist } from "@/lib/server/checklist";
+import type { Column, ExplorerOverview, FilterKind, Row } from "@/lib/server/explorer";
+
+export interface ExplorerRowsResult {
+  tab: string;
+  columns: Column[];
+  filter: { key: string; label: string; help: string; kind: FilterKind } | null;
+  total: number;
+  page: number;
+  pageSize: number;
+  rows: Row[];
+}
 import type {
   AiData, AuditList, AuditSummary, Diagnostics, FindingDetail, FindingsData, HistoryData, OverviewData,
   PageDetailData, PagesData, PerformanceData, ProgressSnapshot, Recommendation, ReportFile, SettingsData,
@@ -64,9 +76,13 @@ export const api = {
   updateRecommendation: (id: string, key: string, body: { status?: RecommendationStatus; notes?: string }) =>
     request<{ key: string; status: RecommendationStatus; notes: string; updatedAt: string }>(`/api/audits/${enc(id)}/recommendations/${enc(key)}`, { method: "PATCH", body: JSON.stringify(body) }),
   siteSize: (url: string) => request<SiteSize>(`/api/site-size`, { method: "POST", body: JSON.stringify({ url }) }),
+  explorer: (id: string) => request<ExplorerOverview>(`/api/audits/${enc(id)}/explorer`),
+  explorerRows: (id: string, tab: string, q: Query) => request<ExplorerRowsResult>(`/api/audits/${enc(id)}/explorer/${enc(tab)}${qs(q)}`),
+  explorerCsvUrl: (id: string, tab: string, q: Query) => `/api/audits/${enc(id)}/explorer/${enc(tab)}${qs({ ...q, format: "csv" })}`,
+  checklist: (id: string) => request<Checklist>(`/api/audits/${enc(id)}/checklist`),
   extra: (id: string) => request<ExtraResult>(`/api/audits/${enc(id)}/extra`),
   setKeywords: (id: string, keywords: string[]) => request<{ keywords: string[] }>(`/api/audits/${enc(id)}/keywords`, { method: "PUT", body: JSON.stringify({ keywords }) }),
-  reports: (id: string) => request<{ items: ReportFile[] }>(`/api/audits/${enc(id)}/reports`),
+  reports: (id: string) => request<{ items: ReportFile[]; branded: { ready: boolean; building: boolean } }>(`/api/audits/${enc(id)}/reports`),
   reportUrl: (id: string, type: string, inline = false) => `/api/audits/${enc(id)}/reports/${enc(type)}${inline ? "?inline=1" : ""}`,
   history: (domain?: string) => request<HistoryData>(`/api/history${qs({ domain })}`),
   settings: () => request<SettingsData>(`/api/settings`),

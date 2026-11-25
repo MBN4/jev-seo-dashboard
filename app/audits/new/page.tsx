@@ -5,7 +5,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
-import { AlertTriangle, CheckCircle2, Globe, Loader2, Play, XCircle } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Globe, Info, Loader2, Play, XCircle } from "lucide-react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,6 +20,7 @@ import { OptionRow } from "@/components/audit/option-row";
 import { SiteSizeCounter } from "@/components/audit/site-size-counter";
 import { api, ApiError } from "@/lib/api";
 import { checkUrlSyntax } from "@/lib/url";
+import { SAMPLE_SITES } from "@/lib/brand";
 import { auditOptionsSchema, DEFAULT_AUDIT_OPTIONS, type AuditOptions } from "@/lib/schemas";
 import type { Diagnostics, SettingsData } from "@/lib/api-types";
 
@@ -60,6 +62,12 @@ export default function NewAuditPage() {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
+  // The URL placeholder cycles through your own sites.
+  const [placeholderIdx, setPlaceholderIdx] = useState(0);
+  useEffect(() => {
+    const t = setInterval(() => setPlaceholderIdx((i) => (i + 1) % SAMPLE_SITES.length), 2800);
+    return () => clearInterval(t);
+  }, []);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -82,6 +90,9 @@ export default function NewAuditPage() {
         ...s.defaults,
         ...(preMax ? { maxPages: preMax, timeBudget: Math.max(s.defaults.timeBudget, Math.min(5400, Math.max(600, Math.ceil((preMax * 2) / 60) * 60))) } : {}),
         full: false,
+        // Without keys these stages only produce warnings, so start them off (users can still turn PageSpeed on).
+        ...(s.secrets.find((x) => x.key === "TYPESAFE_API_KEY")?.configured ? {} : { ai: false }),
+        ...(s.secrets.find((x) => x.key === "PAGESPEED_API_KEY")?.configured ? {} : { psi: false }),
       });
     }).catch(() => setSettings({ secrets: [], defaults: DEFAULT_AUDIT_OPTIONS }));
     api.diagnostics().then(setDiag).catch(() => setDiag(null));
@@ -93,15 +104,17 @@ export default function NewAuditPage() {
   const chromium = diag?.rendering.chromium ?? false;
 
   const notes = useMemo(() => {
-    const n: Array<{ tone: "ok" | "warn" | "error"; text: string }> = [];
-    if (v.jev) n.push(has("TYPESAFE_API_KEY") ? { tone: "ok", text: "AI judgments: TYPESAFE_API_KEY configured." } : { tone: "warn", text: "TYPESAFE_API_KEY missing: AI judgments will be skipped and the score marked partial." });
-    if (v.psi) n.push(has("PAGESPEED_API_KEY") ? { tone: "ok", text: "PageSpeed: API key configured." } : { tone: "warn", text: "No PAGESPEED_API_KEY: unkeyed requests are often rate limited (HTTP 429)." });
+    const n: Array<{ tone: "ok" | "warn" | "error" | "info"; text: string }> = [];
+    if (v.ai) n.push({ tone: "ok", text: "AI judgments: TYPESAFE_API_KEY configured." });
+    else if (!has("TYPESAFE_API_KEY")) n.push({ tone: "info", text: "AI judgments off (no key). The audit is complete otherwise; the score is marked partial." });
+    if (v.psi) n.push(has("PAGESPEED_API_KEY") ? { tone: "ok", text: "PageSpeed: API key configured." } : { tone: "warn", text: "PageSpeed without a key: Google usually refuses unkeyed requests (HTTP 429)." });
+    else if (!has("PAGESPEED_API_KEY")) n.push({ tone: "info", text: "PageSpeed off (no key). Add a free key in Settings for Core Web Vitals." });
     if (v.full) n.push(dfsReady ? { tone: "warn", text: `DataForSEO full mode is billed per call (hard cap $${v.dfsBudget}).` } : { tone: "error", text: "DataForSEO credentials missing: full mode cannot run." });
     if (v.render === "always" && !chromium) n.push({ tone: "warn", text: "Chromium is not available: pages will be analysed from raw HTML." });
-    if (v.render === "auto") n.push({ tone: chromium ? "ok" : "warn", text: chromium ? "JavaScript rendering available when a page needs it." : "JavaScript rendering unavailable (no Chromium); raw HTML is used. Standard crawling is unaffected." });
+    if (v.render === "auto") n.push({ tone: chromium ? "ok" : "info", text: chromium ? "JavaScript rendering available when a page needs it." : "JavaScript rendering unavailable (no Chromium); raw HTML is used. Standard crawling is unaffected." });
     return n;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [v.jev, v.psi, v.full, v.render, v.dfsBudget, settings, chromium, dfsReady]);
+  }, [v.ai, v.psi, v.full, v.render, v.dfsBudget, settings, chromium, dfsReady]);
 
   const launch = async (values: FormValues, confirmPaid = false) => {
     setSubmitting(true);
@@ -110,7 +123,7 @@ export default function NewAuditPage() {
     const keywords = splitKeywords(keywordsText);
     try {
       const res = await api.createAudit({ url, options: options as AuditOptions, confirmPaid, ...(keywords.length ? { keywords } : {}) });
-      res.warnings.forEach((w) => toast.warning(w));
+      res.warnings.forEach((w) => toast.message(w));
       toast.success("Audit started");
       router.push(`/audits/${encodeURIComponent(res.id)}/progress`);
     } catch (e) {
@@ -144,7 +157,7 @@ export default function NewAuditPage() {
               <Label htmlFor="url">Website URL</Label>
               <div className="relative">
                 <Globe className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
-                <Input id="url" placeholder="https://example.com" autoComplete="url" autoFocus className="h-10 pl-9" aria-invalid={Boolean(err.url)} aria-describedby="url-help url-error" {...register("url")} />
+                <Input id="url" placeholder={SAMPLE_SITES[placeholderIdx]} autoComplete="url" autoFocus className="h-10 pl-9" aria-invalid={Boolean(err.url)} aria-describedby="url-help url-error" {...register("url")} />
               </div>
               <p id="url-help" className="text-xs text-muted-foreground">The homepage of a public site. A bare domain works too. Local and private network addresses are refused.</p>
               {err.url && <p id="url-error" role="alert" className="text-xs text-critical">{err.url.message}</p>}
@@ -210,16 +223,22 @@ export default function NewAuditPage() {
           <SectionCard title="Analysis" description="Optional data sources. Each one degrades gracefully when unavailable.">
             <div className="space-y-3">
               <OptionRow
-                id="jev"
+                id="ai"
                 title="AI content evaluation"
-                checked={v.jev}
-                onChange={(c) => setValue("jev", c)}
-                badge={!has("TYPESAFE_API_KEY") && <span className="rounded bg-warning-soft px-1.5 py-0.5 text-[0.68rem] font-medium text-warning-ink">Key missing</span>}
-                description={<>Asks the AI model typed questions about each page: intent, helpfulness, specificity, trust, title and meta fit. Requires <code>TYPESAFE_API_KEY</code>; about one cent per site.</>}
+                checked={v.ai}
+                onChange={(c) => setValue("ai", c)}
+                disabled={!has("TYPESAFE_API_KEY")}
+                badge={!has("TYPESAFE_API_KEY") && <span className="rounded bg-muted px-1.5 py-0.5 text-[0.68rem] font-medium text-muted-foreground">Needs key</span>}
+                description={
+                  <>
+                    Asks the AI model typed questions about each page: intent, helpfulness, specificity, trust, title and meta fit. About one cent per site.{" "}
+                    {!has("TYPESAFE_API_KEY") && <Link href="/settings" className="font-medium text-info hover:underline">Add TYPESAFE_API_KEY in Settings to turn this on.</Link>}
+                  </>
+                }
               >
                 <div className="grid gap-4 sm:grid-cols-2">
-                  <NumberField id="jevPages" label="Pages sent to AI" min={1} max={200} value={v.jevPages} onChange={(n) => setValue("jevPages", n, { shouldValidate: true })} error={err.jevPages?.message} />
-                  <NumberField id="jevBudget" label="Hard spend cap (USD)" step={0.05} min={0.01} max={5} value={v.jevBudget} onChange={(n) => setValue("jevBudget", n, { shouldValidate: true })} error={err.jevBudget?.message} />
+                  <NumberField id="aiPages" label="Pages sent to AI" min={1} max={200} value={v.aiPages} onChange={(n) => setValue("aiPages", n, { shouldValidate: true })} error={err.aiPages?.message} />
+                  <NumberField id="aiBudget" label="Hard spend cap (USD)" step={0.05} min={0.01} max={5} value={v.aiBudget} onChange={(n) => setValue("aiBudget", n, { shouldValidate: true })} error={err.aiBudget?.message} />
                 </div>
               </OptionRow>
               <OptionRow
@@ -227,8 +246,15 @@ export default function NewAuditPage() {
                 title="PageSpeed Insights"
                 checked={v.psi}
                 onChange={(c) => setValue("psi", c)}
-                badge={!has("PAGESPEED_API_KEY") && <span className="rounded bg-muted px-1.5 py-0.5 text-[0.68rem] font-medium text-muted-foreground">Unkeyed</span>}
-                description="Core Web Vitals field data and a Lighthouse lab run, mobile and desktop. Google's free quota is small without a PAGESPEED_API_KEY, so runs may return HTTP 429."
+                badge={!has("PAGESPEED_API_KEY") && <span className="rounded bg-muted px-1.5 py-0.5 text-[0.68rem] font-medium text-muted-foreground">No key</span>}
+                description={
+                  <>
+                    Core Web Vitals field data and a Lighthouse lab run, mobile and desktop.{" "}
+                    {!has("PAGESPEED_API_KEY") && (
+                      <>Off by default without a key: Google&apos;s shared free quota usually refuses requests (HTTP 429). <Link href="/settings" className="font-medium text-info hover:underline">Add a free PAGESPEED_API_KEY</Link> for reliable results.</>
+                    )}
+                  </>
+                }
               >
                 <NumberField id="psiPages" label="Pages measured" hint="Each page = 2 requests (mobile + desktop)" min={1} max={10} value={v.psiPages} onChange={(n) => setValue("psiPages", n, { shouldValidate: true })} error={err.psiPages?.message} />
               </OptionRow>
@@ -262,7 +288,7 @@ export default function NewAuditPage() {
                 ["Focus keywords", splitKeywords(v.keywordsText).length ? `${splitKeywords(v.keywordsText).length} set` : "none"],
                 ["Pages / depth", `${v.maxPages} pages, depth ${v.maxDepth}`],
                 ["Rendering", v.render],
-                ["AI judgments", v.jev ? `on, ${v.jevPages} pages, cap $${v.jevBudget}` : "off"],
+                ["AI judgments", v.ai ? `on, ${v.aiPages} pages, cap $${v.aiBudget}` : "off"],
                 ["PageSpeed", v.psi ? `on, ${v.psiPages} page(s)` : "off"],
                 ["DataForSEO", v.full ? `on, cap $${v.dfsBudget}` : "off"],
                 ["Reports", v.formats.map((f) => f.toUpperCase()).join(", ")],
@@ -276,7 +302,7 @@ export default function NewAuditPage() {
             <ul className="mt-4 space-y-2 border-t pt-3 text-xs">
               {notes.map((n) => (
                 <li key={n.text} className="flex gap-2">
-                  {n.tone === "ok" ? <CheckCircle2 className="mt-0.5 size-3.5 shrink-0 text-brand" aria-hidden /> : n.tone === "warn" ? <AlertTriangle className="mt-0.5 size-3.5 shrink-0 text-warning" aria-hidden /> : <XCircle className="mt-0.5 size-3.5 shrink-0 text-critical" aria-hidden />}
+                  {n.tone === "ok" ? <CheckCircle2 className="mt-0.5 size-3.5 shrink-0 text-brand" aria-hidden /> : n.tone === "warn" ? <AlertTriangle className="mt-0.5 size-3.5 shrink-0 text-warning" aria-hidden /> : n.tone === "info" ? <Info className="mt-0.5 size-3.5 shrink-0 text-info" aria-hidden /> : <XCircle className="mt-0.5 size-3.5 shrink-0 text-critical" aria-hidden />}
                   <span className="text-muted-foreground">{n.text}</span>
                 </li>
               ))}

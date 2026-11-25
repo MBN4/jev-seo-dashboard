@@ -5,7 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SeverityBadge } from "@/components/common/severity-badge";
 import { LoadingSkeleton } from "@/components/common/loading-skeleton";
 import { ErrorState } from "@/components/common/error-state";
-import { AnswerValue, BandBadge, describeAnswer } from "./jev-answer";
+import { AnswerValue, BandBadge, describeAnswer } from "./ai-answer";
 import { useApi } from "@/hooks/use-api";
 import { api } from "@/lib/api";
 import { formatBytes, shortUrl } from "@/lib/format";
@@ -149,10 +149,10 @@ export function PageDetailsDrawer({ auditId, url, onClose }: { auditId: string; 
                 ) : <p className="text-sm text-muted-foreground">No findings reference this page.</p>}
               </TabsContent>
               <TabsContent value="ai">
-                {p.jev ? (
+                {p.ai ? (
                   <table className="w-full text-sm">
                     <tbody className="divide-y">
-                      {Object.entries(p.jev).map(([k, a]) => (
+                      {Object.entries(p.ai).map(([k, a]) => (
                         <tr key={k}>
                           <td className="py-2 pr-3 text-muted-foreground">{DIM_LABEL[k] ?? k}</td>
                           <td className="py-2 pr-3"><AnswerValue a={a} /><p className="text-[0.7rem] text-muted-foreground">{describeAnswer(a).value}</p></td>

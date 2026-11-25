@@ -3,7 +3,7 @@ import { ScoreGauge } from "@/components/charts/score-gauge";
 import { GrowBar } from "@/components/motion/primitives";
 import type { EngineScores } from "@/types/engine";
 
-/** Score + grade + completeness exactly as the engine computed them (jevseo/score.py). */
+/** Score + grade + completeness exactly as the engine computed them (not recalculated by the dashboard). */
 export function SeoScoreCard({ scores }: { scores: EngineScores }) {
   const c = scores.completeness;
   const pct = c ? Math.round((c.categories_scored / c.categories_total) * 100) : null;
@@ -23,7 +23,7 @@ export function SeoScoreCard({ scores }: { scores: EngineScores }) {
               </div>
               <ul className="mt-2 flex flex-wrap gap-1.5 text-[0.7rem]">
                 {[
-                  ["AI judgments", c.jev],
+                  ["AI judgments", c.ai],
                   ["PageSpeed", c.pagespeed],
                   ["DataForSEO", c.dataforseo],
                 ].map(([label, ok]) => (
