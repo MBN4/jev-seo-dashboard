@@ -13,6 +13,7 @@ Browser ──► Next.js (UI + /api routes, port 3000) ──spawn──► pyt
 ## Features
 
 - **Overview dashboard:** the latest audit's score, grade and completeness, severity and category charts, score history (from saved audits only), crawl statistics and recent audits.
+- **Count pages:** before an audit, reads the site's robots.txt and XML sitemaps (sitemap indexes and `.gz` included, no crawl) to report how many pages it has. One click sets the crawl limit, up to 2,000 pages. Audits that hit their page limit show a banner with a one-click re-run at a higher limit.
 - **New audit:** URL validation in the browser and on the server, including the SSRF guard. Every option maps to a real engine flag: max pages and depth, time budget, JS rendering, AI judgments, PageSpeed, DataForSEO and formats, plus optional focus keywords. A summary shows missing dependencies, and paid mode needs explicit confirmation.
 - **Live progress:** Server-Sent Events from the engine's own `== n/7` stage lines and counters (URLs crawled, pages judged, PageSpeed runs), plus warnings, errors, the engine log and cancellation. Progress survives page reloads and dashboard restarts.
 - **Results workspace:** Overview, Technical SEO (filters, search, sort, pagination, detail drawer), Pages (sortable table and lazy-loaded page analysis), AI Content (real AI answers only), Performance (mobile and desktop, with 429 and missing data shown as such), Recommendations (status and notes stored separately from audit data) and Reports.

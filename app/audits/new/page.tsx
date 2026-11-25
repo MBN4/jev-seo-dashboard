@@ -16,6 +16,7 @@ import { SectionCard } from "@/components/common/section-card";
 import { ConfirmationDialog } from "@/components/common/confirmation-dialog";
 import { LoadingSkeleton } from "@/components/common/loading-skeleton";
 import { OptionRow } from "@/components/audit/option-row";
+import { SiteSizeCounter } from "@/components/audit/site-size-counter";
 import { api, ApiError } from "@/lib/api";
 import { checkUrlSyntax } from "@/lib/url";
 import { auditOptionsSchema, DEFAULT_AUDIT_OPTIONS, type AuditOptions } from "@/lib/schemas";
@@ -71,7 +72,17 @@ export default function NewAuditPage() {
   useEffect(() => {
     api.settings().then((s) => {
       setSettings(s);
-      reset({ url: form.getValues("url"), keywordsText: form.getValues("keywordsText"), ...s.defaults, full: false });
+      // Prefill from links such as "Re-run with a higher limit" (?url=…&maxPages=…).
+      const q = new URLSearchParams(window.location.search);
+      const qMax = Number(q.get("maxPages"));
+      const preMax = Number.isInteger(qMax) && qMax >= 1 && qMax <= 2000 ? qMax : null;
+      reset({
+        url: q.get("url")?.slice(0, 2048) || form.getValues("url"),
+        keywordsText: form.getValues("keywordsText"),
+        ...s.defaults,
+        ...(preMax ? { maxPages: preMax, timeBudget: Math.max(s.defaults.timeBudget, Math.min(5400, Math.max(600, Math.ceil((preMax * 2) / 60) * 60))) } : {}),
+        full: false,
+      });
     }).catch(() => setSettings({ secrets: [], defaults: DEFAULT_AUDIT_OPTIONS }));
     api.diagnostics().then(setDiag).catch(() => setDiag(null));
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -137,6 +148,17 @@ export default function NewAuditPage() {
               </div>
               <p id="url-help" className="text-xs text-muted-foreground">The homepage of a public site. A bare domain works too. Local and private network addresses are refused.</p>
               {err.url && <p id="url-error" role="alert" className="text-xs text-critical">{err.url.message}</p>}
+              <div className="pt-1">
+                <SiteSizeCounter
+                  url={v.url}
+                  currentMax={v.maxPages}
+                  onApply={(pages, budget) => {
+                    setValue("maxPages", pages, { shouldValidate: true });
+                    if (budget > v.timeBudget) setValue("timeBudget", budget, { shouldValidate: true });
+                    toast.success(`Crawl limit set to ${pages.toLocaleString()} pages`);
+                  }}
+                />
+              </div>
             </div>
             <div className="mt-4 space-y-1.5">
               <Label htmlFor="keywordsText">Focus keywords <span className="font-normal text-muted-foreground">(optional)</span></Label>
@@ -148,9 +170,9 @@ export default function NewAuditPage() {
 
           <SectionCard title="Crawl" description="Maps to the engine's --max-pages, --max-depth and --time-budget.">
             <div className="grid gap-4 sm:grid-cols-3">
-              <NumberField id="maxPages" label="Maximum pages" hint="Engine default: 60" min={1} max={500} value={v.maxPages} onChange={(n) => setValue("maxPages", n, { shouldValidate: true })} error={err.maxPages?.message} />
+              <NumberField id="maxPages" label="Maximum pages" hint="Engine default: 60 · up to 2,000" min={1} max={2000} value={v.maxPages} onChange={(n) => setValue("maxPages", n, { shouldValidate: true })} error={err.maxPages?.message} />
               <NumberField id="maxDepth" label="Maximum depth" hint="Engine default: 5" min={1} max={10} value={v.maxDepth} onChange={(n) => setValue("maxDepth", n, { shouldValidate: true })} error={err.maxDepth?.message} />
-              <NumberField id="timeBudget" label="Crawl time budget (s)" hint="Engine default: 600" min={30} max={1800} value={v.timeBudget} onChange={(n) => setValue("timeBudget", n, { shouldValidate: true })} error={err.timeBudget?.message} />
+              <NumberField id="timeBudget" label="Crawl time budget (s)" hint="Engine default: 600 · up to 5,400" min={30} max={5400} value={v.timeBudget} onChange={(n) => setValue("timeBudget", n, { shouldValidate: true })} error={err.timeBudget?.message} />
             </div>
             <div className="mt-4 grid gap-4 sm:grid-cols-2">
               <div className="space-y-1">

@@ -85,6 +85,15 @@ The component tests cover: navigation, the audit form (URL validation, defaults,
   - Not renamed, on purpose: the internal `JEVSEO_*` environment variables (renaming them would break existing `.env.local` files), and the PDF/XLSX/MD reports, which the engine generates.
 - **Tests:** 112/112, adding 13 extra-check tests (each check fires and passes on crafted pages, keyword API validation) plus component tests for the tab, the keyword field and branding. Typecheck, lint and build are clean. Verified in a real browser against the python.org audit with 4 keywords in light and dark mode; there were no console errors.
 
+## Update: page counting and larger crawls
+
+- **Count pages** (New Audit) via `POST /api/site-size`: robots.txt → declared sitemaps (or `/sitemap.xml`, `/sitemap_index.xml`, `/wp-sitemap.xml`) → sitemap indexes → gzipped sitemaps, counting unique same-site URLs. Falls back to the homepage's internal links as a lower bound. Every fetch and redirect hop passes the SSRF guard.
+  - Verified live: clustox.com lists 732 URLs across 11 sitemap files (about 80 per language plus 312 blog posts). python.org has no sitemap, so the count falls back to 65 homepage links.
+- **Crawl caps raised:** max pages 500 → 2,000, crawl time budget up to 5,400 s, hard process limit 7,200 s. Applying a count sets a matching time budget.
+- **Page-limit banner** on the audit Overview, with a "Re-run with a higher limit" link that prefills New Audit (`?url=&maxPages=`).
+- **Rebrand fix:** engine-written explanations (partial-audit reasons, score notes, finding titles and fixes) are reworded in memory, so "Jev" no longer appears in the UI. audit.json on disk is unchanged.
+- **Tests:** 121/121 passing, including the sitemap parser, index and gzip handling, the same-site filter, blocking redirects into private networks, the homepage fallback, and the counter UI.
+
 ## Remaining tasks
 
 - Push to `MBN4/jev-seo-dashboard` once the empty repository exists.

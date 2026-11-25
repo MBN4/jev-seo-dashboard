@@ -25,7 +25,7 @@ describe("new audit form", () => {
     mockFetch({ "GET /api/settings": settings, "GET /api/system/diagnostics": diag });
     render(<NewAuditPage />);
     expect(await screen.findByLabelText("Maximum pages")).toHaveValue(60);
-    expect(screen.getByText("Engine default: 60")).toBeInTheDocument();
+    expect(screen.getByText("Engine default: 60 · up to 2,000")).toBeInTheDocument();
     expect(screen.getByText(/TYPESAFE_API_KEY missing/)).toBeInTheDocument();
     await waitFor(() => expect(screen.getByText(/Chromium: unavailable/)).toBeInTheDocument());
   });

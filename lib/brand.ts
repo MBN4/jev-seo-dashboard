@@ -30,5 +30,6 @@ export function neutralEngineText(text: string): string {
     .replace(/\bjev-seo\b/gi, "audit engine")
     .replace(/\bjevseo\b/gi, "audit engine")
     .replace(/\bJev judgments\b/g, "AI judgments")
+    .replace(/\bJev's\b/g, "the AI's")
     .replace(/\bJev\b/g, "AI");
 }

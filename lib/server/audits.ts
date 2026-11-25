@@ -6,6 +6,7 @@ import { auditFolder, isValidAuditId, REPORT_FILES } from "./paths";
 import { listJobIds, readJob, refreshJob, type Job } from "./jobs";
 import { readState } from "./state";
 import { redactPaths } from "./redact";
+import { neutralEngineText } from "@/lib/brand";
 import type { EngineAudit, Severity } from "@/types/engine";
 import type { AuditSummary, ReportFile, ReportType, SeverityCounts } from "@/types/api";
 
@@ -26,6 +27,23 @@ const CACHE_LIMIT = 6;
 export class AuditLoadError extends Error {}
 
 /** Parse audit.json once per file version; small LRU so large audits are not re-read per request. */
+/**
+ * Engine-written explanations name the upstream project ("Jev judgments unavailable").
+ * Reword them in memory for display; audit.json on disk is never modified.
+ */
+function neutralizeDisplayText(a: EngineAudit) {
+  const n = (t: string | undefined) => (typeof t === "string" ? neutralEngineText(t) : t);
+  a.scores.partial = a.scores.partial?.map((t) => neutralEngineText(t));
+  a.scores.caps = a.scores.caps?.map((t) => neutralEngineText(t));
+  if (a.scores.notes) for (const k of Object.keys(a.scores.notes)) a.scores.notes[k] = neutralEngineText(a.scores.notes[k]);
+  for (const f of [...a.findings, ...a.actions]) {
+    f.title = n(f.title) as string;
+    f.fix = n(f.fix) as string;
+    f.evidence = n(f.evidence) as string;
+  }
+  if (a.jev?.skipped) a.jev.skipped = neutralEngineText(a.jev.skipped);
+}
+
 export function loadAudit(id: string): EngineAudit | null {
   const folder = auditFolder(id);
   if (!folder) return null;
@@ -51,6 +69,7 @@ export function loadAudit(id: string): EngineAudit | null {
   if (!audit || typeof audit !== "object" || !audit.scores || !Array.isArray(audit.pages) || !Array.isArray(audit.findings)) {
     throw new AuditLoadError(`audit.json in ${id} does not look like a jev-seo audit.`);
   }
+  neutralizeDisplayText(audit);
   cache.set(id, { mtimeMs: st.mtimeMs, size: st.size, audit });
   while (cache.size > CACHE_LIMIT) cache.delete(cache.keys().next().value as string);
   return audit;

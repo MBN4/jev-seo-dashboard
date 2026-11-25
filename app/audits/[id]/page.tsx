@@ -27,6 +27,20 @@ export default function AuditOverviewPage() {
   const aiAllowed = Object.values(ov.site.aiBots).filter(Boolean).length;
   return (
     <div className="space-y-6">
+      {ov.site.limits?.hit_page_cap && (
+        <div role="status" className="flex flex-col gap-3 rounded-xl border border-warning/30 bg-warning-soft/60 p-4 text-sm sm:flex-row sm:items-center">
+          <AlertTriangle className="size-5 shrink-0 text-warning" aria-hidden />
+          <p className="flex-1">
+            <span className="font-medium">This crawl stopped at its page limit ({ov.site.limits.max_pages} pages).</span>{" "}
+            {ov.site.sitemapUrls ? `The site's sitemaps list ${ov.site.sitemapUrls.toLocaleString()} URLs, so most of the site was not audited.` : "The site has more pages than were audited."}
+          </p>
+          <Button asChild size="sm" variant="outline" className="shrink-0">
+            <Link href={`/audits/new?url=${encodeURIComponent(audit.url)}&maxPages=${Math.min(2000, Math.max((ov.site.limits.max_pages ?? 60) * 2, ov.site.sitemapUrls ?? 0))}`}>
+              Re-run with a higher limit
+            </Link>
+          </Button>
+        </div>
+      )}
       <div className="grid gap-4 lg:grid-cols-3">
         <SeoScoreCard scores={ov.scores} />
         <div className="grid grid-cols-2 content-start gap-4 lg:col-span-2 xl:grid-cols-4">

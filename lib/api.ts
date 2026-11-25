@@ -1,6 +1,7 @@
 import type { AuditOptions } from "@/lib/schemas";
 import type { RecommendationStatus } from "@/lib/server/state";
 import type { ExtraResult } from "@/lib/server/extra-checks";
+import type { SiteSize } from "@/lib/server/site-size";
 import type {
   AiData, AuditList, AuditSummary, Diagnostics, FindingDetail, FindingsData, HistoryData, OverviewData,
   PageDetailData, PagesData, PerformanceData, ProgressSnapshot, Recommendation, ReportFile, SettingsData,
@@ -62,6 +63,7 @@ export const api = {
   recommendations: (id: string) => request<{ items: Recommendation[] }>(`/api/audits/${enc(id)}/recommendations`),
   updateRecommendation: (id: string, key: string, body: { status?: RecommendationStatus; notes?: string }) =>
     request<{ key: string; status: RecommendationStatus; notes: string; updatedAt: string }>(`/api/audits/${enc(id)}/recommendations/${enc(key)}`, { method: "PATCH", body: JSON.stringify(body) }),
+  siteSize: (url: string) => request<SiteSize>(`/api/site-size`, { method: "POST", body: JSON.stringify({ url }) }),
   extra: (id: string) => request<ExtraResult>(`/api/audits/${enc(id)}/extra`),
   setKeywords: (id: string, keywords: string[]) => request<{ keywords: string[] }>(`/api/audits/${enc(id)}/keywords`, { method: "PUT", body: JSON.stringify({ keywords }) }),
   reports: (id: string) => request<{ items: ReportFile[] }>(`/api/audits/${enc(id)}/reports`),

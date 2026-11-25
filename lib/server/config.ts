@@ -66,8 +66,9 @@ export function maxConcurrentAudits(): number {
 
 /** Hard ceiling for one audit process (engine crawl budget is separate). */
 export function maxAuditSeconds(): number {
-  const n = Number(process.env.JEVSEO_MAX_AUDIT_SECONDS ?? 3600);
-  return Number.isFinite(n) && n >= 60 ? n : 3600;
+  // Must exceed the largest crawl time budget (5400 s) plus scoring and report generation.
+  const n = Number(process.env.JEVSEO_MAX_AUDIT_SECONDS ?? 7200);
+  return Number.isFinite(n) && n >= 60 ? n : 7200;
 }
 
 export function ensureDir(dir: string, mode = 0o700): void {

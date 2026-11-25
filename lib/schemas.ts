@@ -5,9 +5,9 @@ import { z } from "zod";
  * Bounds keep requests reasonable; engine defaults are used as the dashboard defaults.
  */
 export const auditOptionsSchema = z.object({
-  maxPages: z.number().int().min(1).max(500), // --max-pages (engine default 60)
+  maxPages: z.number().int().min(1).max(2000), // --max-pages (engine default 60; the engine has no upper limit)
   maxDepth: z.number().int().min(1).max(10), // --max-depth (5)
-  timeBudget: z.number().int().min(30).max(1800), // --time-budget seconds (600)
+  timeBudget: z.number().int().min(30).max(5400), // --time-budget seconds (600)
   render: z.enum(["auto", "always", "never"]), // --render (auto)
   jev: z.boolean(), // inverse of --no-jev
   jevPages: z.number().int().min(1).max(200), // --jev-pages (60)

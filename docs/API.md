@@ -35,9 +35,9 @@ Option keys and bounds (each maps to a CLI flag):
 
 | Key | Range | Flag |
 | --- | --- | --- |
-| `maxPages` | 1–500 | `--max-pages` |
+| `maxPages` | 1–2000 | `--max-pages` |
 | `maxDepth` | 1–10 | `--max-depth` |
-| `timeBudget` | 30–1800 | `--time-budget` |
+| `timeBudget` | 30–5400 | `--time-budget` |
 | `render` | auto, always, never | `--render` |
 | `jev` / `jevPages` / `jevBudget` | | `--no-jev` / `--jev-pages` / `--jev-budget` |
 | `psi` / `psiPages` | | `--no-psi` / `--psi-pages` |
@@ -86,6 +86,7 @@ Query parameters: `q`, `status` (repeatable), `from`, `to` (YYYY-MM-DD), `sort=d
 | --- | --- |
 | `POST /api/audits/import` | Body `{ "restoreAll": true }` or `{ "restore": ["id"] }`. Rescans the reports folder (read only) and returns `{ discovered, visible, restored, hidden }`. |
 | `GET /api/audits/import` | `{ discovered, hidden: [{id, hiddenAt}] }` |
+| `POST /api/site-size` | Body `{ "url": "…" }`. Counts pages from robots.txt and XML sitemaps without crawling: `{ finalUrl, sitemapUrlCount, sitemapFiles[{url, type, urls, children, error}], homepageLinks, estimate, basis: sitemap\|homepage-links, truncated, notes }`. Every request and redirect passes the private-network guard. Limits: 100 sitemap files, 200,000 URLs, 60 s. Rate limited to 10 per minute. |
 | `GET /api/history?domain=` | `{ domains, points: [{id, date, score, grade}] }`. Completed audits only. |
 
 ## Settings and system
