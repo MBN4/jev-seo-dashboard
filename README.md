@@ -23,6 +23,10 @@ AuditPilot drives an open-source audit engine (credited in [NOTICE.md](NOTICE.md
   - Filters such as *Missing*, *Duplicate*, *Over 60 characters* and *Non-indexable*.
   - An **Issues** view that ranks everything missing across all tabs.
   - CSV export of any tab and filter.
+- **Every issue comes with its fix:** each issue opens short. You see a verdict, the problem in one line and a **Do this** line. Below that:
+  - **Exact changes:** which page, what to find, what to replace it with. A suggested target is given when the data shows one, for example where other links with the same text go, or a page whose title matches.
+  - **Ready-to-paste code**, in Next.js, Express, nginx and Apache variants: redirects, host redirect, 404 handling, security headers, viewport, canonical, Open Graph and hreflang tags. Draft meta descriptions appear only when the page has real text to draft from.
+  - **Copy for developer:** a Markdown task with the problem, the changes and the code, for a Bitbucket issue or a task tool. The next daily audit confirms the fix.
 - **Every warning explained:** open any finding to see, in plain words, everything below. Findings open from Technical SEO, Recommendations and Monitoring, and the explanation also shows inline when you expand a rule in the Google checklist.
   - what was found and why it matters;
   - numbered steps to fix it;

@@ -9,6 +9,8 @@
  * URL text itself and explained.
  */
 import { CHECKLIST } from "@/lib/google-checklist";
+import { priorityOf } from "@/lib/priorities";
+import { buildFixKit, closestPage, type FixKit } from "./fix-kit";
 import type { EngineAudit, EngineFinding, EnginePage } from "@/types/engine";
 
 export type Tone = "bad" | "warn" | "good" | "info" | "muted";
@@ -59,6 +61,8 @@ export interface Breakdown {
   table: BreakdownTable | null;
   /** "Should I act on this?" in one line. */
   verdict: Verdict;
+  /** Exact changes and copy-paste code, when the data allows */
+  fix: FixKit | null;
 }
 
 export interface Verdict {
@@ -343,7 +347,7 @@ function brokenGroups(ctx: Ctx, external: boolean): BreakdownGroup[] {
     .sort((x, y) => y.total - x.total);
 }
 
-function build(ctx: Ctx): Omit<Breakdown, "meaning" | "steps" | "verdict"> & { steps?: string[]; verdict?: Verdict } {
+function build(ctx: Ctx): Omit<Breakdown, "meaning" | "steps" | "verdict" | "fix"> & { steps?: string[]; verdict?: Verdict } {
   const { a, f, pages, home } = ctx;
   const notes: BreakdownNote[] = [];
   const count = f.urls.length;
@@ -640,7 +644,7 @@ function build(ctx: Ctx): Omit<Breakdown, "meaning" | "steps" | "verdict"> & { s
 }
 
 /** Verdict from the data where it is clear, else from the engine's severity. */
-function autoVerdict(f: EngineFinding, b: Omit<Breakdown, "meaning" | "steps" | "verdict">): Verdict {
+function autoVerdict(f: EngineFinding, b: Omit<Breakdown, "meaning" | "steps" | "verdict" | "fix">): Verdict {
   if (f.id === "faq_rich_result_limited") return { tone: "good", title: "No action needed", text: "FAQ markup does no harm. Google simply no longer shows it as a rich result for most sites." };
   if (f.id === "canonical_elsewhere" && f.urls.every((u) => u.includes("?"))) return { tone: "good", title: "Set up correctly: no action needed", text: "Every page here is a parameter version (tracking or filter) that points Google at the clean address, which is what Google recommends." };
   if (f.id === "broken_internal_links" && b.groups?.length && b.groups.every((g) => isCloudflareEmail(g.key) || markdownHref(g.key))) {
@@ -654,6 +658,24 @@ function autoVerdict(f: EngineFinding, b: Omit<Breakdown, "meaning" | "steps" | 
   return SEVERITY_VERDICT[f.severity] ?? SEVERITY_VERDICT.medium;
 }
 
+/**
+ * Where other links with the same text go: if "Start Your 7-Day Free Trial" links to the signup
+ * page everywhere else, that is almost certainly what the broken one meant.
+ */
+function sameAnchorTarget(a: EngineAudit, anchor: string | null, broken: string): { url: string; why: string } | null {
+  if (!anchor || anchor.length < 4) return null;
+  const want = anchor.trim().toLowerCase();
+  const counts = new Map<string, number>();
+  for (const p of a.pages)
+    for (const l of [...(p.links_internal ?? []), ...(p.links_external ?? [])])
+      if (l.url !== broken && (l.anchor ?? "").trim().toLowerCase() === want) {
+        const st = a.site.link_status?.[l.url] ?? a.site.external_status?.[l.url] ?? null;
+        if (st === 200 || (st == null && a.pages.some((x) => x.url === l.url && x.status === 200))) counts.set(l.url, (counts.get(l.url) ?? 0) + 1);
+      }
+  const best = [...counts].sort((x, y) => y[1] - x[1])[0];
+  return best ? { url: best[0], why: `${best[1]} other link${best[1] === 1 ? "" : "s"} with the text “${anchor}” go there` } : null;
+}
+
 export function findingBreakdown(a: EngineAudit, f: EngineFinding): Breakdown {
   const pages = new Map(a.pages.map((p) => [p.url, p]));
   let home: URL | undefined;
@@ -663,7 +685,29 @@ export function findingBreakdown(a: EngineAudit, f: EngineFinding): Breakdown {
     home = undefined;
   }
   const b = build({ a, f, pages, home });
+  // Broken addresses with no obvious fix: suggest the live page they were probably meant to reach.
+  if ((f.id === "broken_internal_links" || f.id === "http_errors") && b.groups)
+    for (const g of b.groups)
+      if (!g.suggestion && !isCloudflareEmail(g.key)) {
+        // Candidates in order of confidence; never the page the broken link sits on.
+        const self = new Set(g.items.map((it) => it.url.replace(/\/$/, "")));
+        const anchor = g.items.map((it) => it.note?.match(/“(.*)”/)?.[1]).find(Boolean) ?? null;
+        const c = [closestPage(a, g.key), sameAnchorTarget(a, anchor, g.key)].find((x) => x && !self.has(x.url.replace(/\/$/, ""))) ?? null;
+        if (c) g.suggestion = { label: "Probably meant", value: { text: c.url, href: c.url, page: pages.has(c.url), mono: true } };
+        if (c) g.explain = `${g.explain ?? ""} Suggested target: ${c.url} (${c.why}). Check it before changing the link.`.trim();
+      }
+  const p = priorityOf(f.id, f.severity);
+  const fixFinding = f.id === "noindex" ? { ...f, urls: f.urls.filter((u) => !intendedNoindexReason(u)) } : f;
+  let fix: FixKit | null = null;
+  try {
+    fix = fixFinding.urls.length || f.id === "soft_404" || f.id === "host_variant" || f.id === "security_headers"
+      ? buildFixKit(a, fixFinding, (b.groups ?? []).map((g) => ({ key: g.key, suggestion: g.suggestion?.value.href ?? (g.suggestion?.value.text?.startsWith("http") ? g.suggestion.value.text : null), sources: g.items })), p.tier, p.owner)
+      : null;
+  } catch {
+    fix = null;
+  }
   return {
+    fix,
     verdict: b.verdict ?? autoVerdict(f, b),
     headline: b.headline,
     meaning: MEANING[f.id] ?? null,

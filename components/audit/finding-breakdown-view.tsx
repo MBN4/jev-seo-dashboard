@@ -1,11 +1,13 @@
 "use client";
 import { useMemo, useState } from "react";
-import { AlertOctagon, AlertTriangle, Check, CheckCircle2, ChevronDown, Copy, Download, ExternalLink, Info, Lightbulb, ScanSearch, Search, ThumbsUp } from "lucide-react";
+import { AlertOctagon, AlertTriangle, Check, CheckCircle2, ClipboardCopy, ChevronDown, Copy, Download, ExternalLink, Info, Lightbulb, ScanSearch, Search, ThumbsUp } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { shortUrl } from "@/lib/format";
 import type { Breakdown, BreakdownGroup, BreakdownNote, BreakdownTable, Cell, Tone, Verdict } from "@/lib/server/finding-breakdown";
+import type { FixChange, FixCode } from "@/lib/server/fix-kit";
+import { toast } from "sonner";
 
 const TONE_TEXT: Record<Tone, string> = {
   bad: "text-critical",
@@ -303,50 +305,172 @@ export function VerdictBanner({ v, className }: { v: Verdict; className?: string
   );
 }
 
-export function FindingBreakdownView({ b, guidance, onInspect, hideVerdict }: { b: Breakdown; guidance?: string | null; onInspect?: (u: string) => void; hideVerdict?: boolean }) {
+function Disclosure({ title, defaultOpen = false, children, count }: { title: string; defaultOpen?: boolean; children: React.ReactNode; count?: number }) {
+  const [open, setOpen] = useState(defaultOpen);
   return (
-    <div className="space-y-6">
-      {!hideVerdict && b.verdict && <VerdictBanner v={b.verdict} />}
-      <section>
-        <SectionTitle>What we found</SectionTitle>
-        <p className="text-[0.95rem] leading-relaxed font-medium">{b.headline}</p>
-        {b.meaning && <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">Why it matters: {b.meaning}</p>}
-      </section>
-      <Notes notes={b.notes} />
-      {b.steps.length > 0 && (
-        <section>
-          <SectionTitle>How to fix it</SectionTitle>
-          <ol className="space-y-2">
-            {b.steps.map((s, i) => (
-              <li key={i} className="flex gap-3 text-sm leading-relaxed">
-                <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-brand-soft text-[0.7rem] font-semibold text-brand-strong">{i + 1}</span>
-                <span>{s}</span>
-              </li>
+    <section className="rounded-xl border">
+      <button type="button" onClick={() => setOpen((o) => !o)} aria-expanded={open} className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm font-medium hover:bg-muted/40">
+        <ChevronDown className={cn("size-4 text-muted-foreground transition-transform", open && "rotate-180")} />
+        {title}
+        {count != null && <span className="text-xs font-normal text-muted-foreground">({count.toLocaleString()})</span>}
+      </button>
+      {open && <div className="border-t px-4 py-4">{children}</div>}
+    </section>
+  );
+}
+
+function CodeBlock({ c }: { c: FixCode }) {
+  const [i, setI] = useState(0);
+  const v = c.variants[i];
+  return (
+    <div className="overflow-hidden rounded-xl border">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b bg-muted/40 px-3 py-2">
+        <p className="text-xs font-semibold">{c.title}</p>
+        <div className="flex flex-wrap items-center gap-1">
+          {c.variants.length > 1 &&
+            c.variants.map((x, j) => (
+              <button key={x.label} type="button" onClick={() => setI(j)} className={cn("rounded-md px-2 py-0.5 text-[0.7rem]", j === i ? "bg-background font-medium shadow-sm" : "text-muted-foreground hover:text-foreground")}>
+                {x.label}
+              </button>
             ))}
-          </ol>
+          <CopyButton value={v.code} label="Copy code" className="ml-1 px-2 py-1" />
+        </div>
+      </div>
+      {c.note && <p className="border-b px-3 py-1.5 text-[0.72rem] text-muted-foreground">{c.note}</p>}
+      <pre className="max-h-72 overflow-auto bg-muted/20 p-3 font-mono text-[0.75rem] leading-relaxed whitespace-pre">{v.code}</pre>
+    </div>
+  );
+}
+
+function ChangeList({ changes, onInspect }: { changes: FixChange[]; onInspect?: (u: string) => void }) {
+  const [all, setAll] = useState(false);
+  const list = all ? changes : changes.slice(0, 5);
+  return (
+    <ol className="space-y-2">
+      {list.map((c, i) => (
+        <li key={i} className="rounded-lg border p-3 text-sm">
+          <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+            {c.page ? <UrlLink url={c.page} page onInspect={onInspect} compact /> : <span className="text-xs font-medium text-muted-foreground">Site-wide</span>}
+            <span>{c.text}</span>
+          </div>
+          {(c.find || c.replace) && (
+            <div className="mt-2 grid gap-1.5 text-xs sm:grid-cols-2">
+              {c.find && (
+                <div className="flex min-w-0 items-center gap-1 rounded-md bg-critical-soft/60 px-2 py-1">
+                  <span className="shrink-0 font-semibold text-critical">Find</span>
+                  <code className="min-w-0 flex-1 truncate" title={c.find}>{c.find}</code>
+                  <CopyButton value={c.find} label="Copy" />
+                </div>
+              )}
+              {c.replace && (
+                <div className="flex min-w-0 items-center gap-1 rounded-md bg-success-soft/70 px-2 py-1">
+                  <span className="shrink-0 font-semibold text-success">{c.find ? "Replace with" : "Use"}</span>
+                  <code className="min-w-0 flex-1 truncate" title={c.replace}>{c.replace}</code>
+                  <CopyButton value={c.replace} label="Copy" />
+                </div>
+              )}
+            </div>
+          )}
+        </li>
+      ))}
+      {changes.length > 5 && !all && (
+        <li>
+          <button type="button" onClick={() => setAll(true)} className="text-xs font-medium text-info hover:underline">Show all {changes.length} changes</button>
+        </li>
+      )}
+    </ol>
+  );
+}
+
+const VERDICT_CHIP: Record<Verdict["tone"], string> = {
+  good: "bg-success-soft text-success",
+  info: "bg-info-soft text-info",
+  warn: "bg-warning-soft text-warning-ink",
+  bad: "bg-critical-soft text-critical",
+};
+
+/** The readable part of a finding: the problem and the fix first; everything else on demand. */
+export function FindingBreakdownView({ b, guidance, onInspect, hideVerdict }: { b: Breakdown; guidance?: string | null; onInspect?: (u: string) => void; hideVerdict?: boolean }) {
+  const fix = b.fix;
+  const doThis = fix?.summary ?? b.steps[0] ?? null;
+  const whereCount = b.groups?.length ?? b.table?.total ?? 0;
+  return (
+    <div className="space-y-4">
+      {/* 1. The problem, in one line */}
+      <div className="space-y-2">
+        {!hideVerdict && b.verdict && (
+          <span className={cn("inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold", VERDICT_CHIP[b.verdict.tone])} title={b.verdict.text}>
+            {b.verdict.tone === "good" ? <CheckCircle2 className="size-3.5" /> : b.verdict.tone === "bad" ? <AlertOctagon className="size-3.5" /> : <AlertTriangle className="size-3.5" />}
+            {b.verdict.title}
+          </span>
+        )}
+        <p className="text-[0.95rem] leading-relaxed font-medium">{b.headline}</p>
+      </div>
+
+      {/* 2. What to do, in one line */}
+      {doThis && b.verdict?.tone !== "good" && (
+        <div className="flex flex-col gap-3 rounded-xl border border-brand/30 bg-brand-soft/40 p-4 sm:flex-row sm:items-center sm:justify-between">
+          <p className="flex gap-2 text-sm leading-relaxed">
+            <Lightbulb className="mt-0.5 size-4 shrink-0 text-brand-strong" />
+            <span><b>Do this:</b> {doThis}</span>
+          </p>
+          {fix?.devTask && (
+            <Button size="sm" variant="outline" className="h-8 shrink-0 gap-1.5 bg-background" onClick={() => void navigator.clipboard?.writeText(fix.devTask).then(() => toast.success("Copied. Paste it into a task, Bitbucket issue or message for the developer."))}>
+              <ClipboardCopy className="size-3.5" /> Copy for developer
+            </Button>
+          )}
+        </div>
+      )}
+
+      {/* Important context (e.g. "this is Cloudflare, not your site") stays visible but compact */}
+      <Notes notes={b.notes} />
+
+      {/* 3. The exact changes and code */}
+      {fix && fix.changes.length > 0 && (
+        <section>
+          <SectionTitle>Exact changes</SectionTitle>
+          <ChangeList changes={fix.changes} onInspect={onInspect} />
+        </section>
+      )}
+      {fix && fix.code.length > 0 && (
+        <section className="space-y-3">
+          <SectionTitle>Ready-to-paste code</SectionTitle>
+          {fix.code.map((c) => <CodeBlock key={c.title} c={c} />)}
+        </section>
+      )}
+
+      {/* 4. Everything else on demand */}
+      {whereCount > 0 && (
+        <Disclosure title="Where it happens" count={whereCount} defaultOpen={!fix || fix.changes.length === 0}>
+          {b.groups && b.groups.length > 0 && (
+            <div className="space-y-3">
+              {b.groups.map((g, i) => <GroupCard key={g.key} g={g} onInspect={onInspect} defaultOpen={i < 2} />)}
+            </div>
+          )}
+          {b.table && b.table.rows.length > 0 && <TableView t={b.table} onInspect={onInspect} />}
+        </Disclosure>
+      )}
+      <Disclosure title="More detail: why it matters and all steps">
+        <div className="space-y-4 text-sm">
+          {b.verdict && <p className="text-muted-foreground"><b className="text-foreground">{b.verdict.title}.</b> {b.verdict.text}</p>}
+          {b.meaning && <p className="text-muted-foreground"><b className="text-foreground">Why it matters:</b> {b.meaning}</p>}
+          {b.steps.length > 0 && (
+            <ol className="space-y-2">
+              {b.steps.map((st, i) => (
+                <li key={i} className="flex gap-3 leading-relaxed">
+                  <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-brand-soft text-[0.7rem] font-semibold text-brand-strong">{i + 1}</span>
+                  <span>{st}</span>
+                </li>
+              ))}
+            </ol>
+          )}
           {guidance && (
-            <a href={guidance} target="_blank" rel="noreferrer noopener" className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-info hover:underline">
+            <a href={guidance} target="_blank" rel="noreferrer noopener" className="inline-flex items-center gap-1 text-xs font-medium text-info hover:underline">
               Read Google&apos;s guidance <ExternalLink className="size-3" />
             </a>
           )}
-        </section>
-      )}
-      {b.groups && b.groups.length > 0 && (
-        <section>
-          <SectionTitle>Exactly where ({b.groups.length.toLocaleString()})</SectionTitle>
-          <div className="space-y-3">
-            {b.groups.map((g, i) => (
-              <GroupCard key={g.key} g={g} onInspect={onInspect} defaultOpen={i < 3} />
-            ))}
-          </div>
-        </section>
-      )}
-      {b.table && b.table.rows.length > 0 && (
-        <section>
-          <SectionTitle>Exactly where</SectionTitle>
-          <TableView t={b.table} onInspect={onInspect} />
-        </section>
-      )}
+        </div>
+      </Disclosure>
     </div>
   );
 }

@@ -169,3 +169,14 @@ Open **Progress** and pick a site. Each day's audit is a report:
 - **Download report:** the same information as a Markdown file, for sharing with the team.
 
 The first day shows only what is open. Comparisons start from the second report.
+
+## Fixing an issue
+
+Open any issue, in the Google Checklist, Technical SEO, Recommendations or Progress:
+
+1. **Do this** is the fix in one sentence. **Copy for developer** copies a ready task with the exact changes and code.
+2. **Exact changes** lists each page with **Find** → **Replace with** values. Each has a copy button.
+3. **Ready-to-paste code** has a tab for each kind of server (Next.js, Express, nginx, Apache, Cloudflare). Pick the one your site uses.
+4. **Where it happens** and **More detail** hold every affected page and the full explanation.
+
+AuditPilot does not change your sites itself yet. Your developer applies the change, and the next daily audit marks the issue fixed in **Progress**.

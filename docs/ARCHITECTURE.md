@@ -21,6 +21,7 @@
 │   results.ts         paginated projections per view               │
 │   checklist.ts       Google guidelines checklist grading          │
 │   finding-breakdown.ts  plain-language "exactly where" per finding│
+│   fix-kit.ts         exact changes + copy-paste code per finding  │
 │   explorer.ts        Site Explorer tabs / filters / CSV           │
 │   extra-checks.ts    31 extra checks (memoised per audit)         │
 │   branding.ts        branded report copies (scripts/brand_report.py)
