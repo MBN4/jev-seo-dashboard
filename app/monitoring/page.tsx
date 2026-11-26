@@ -130,7 +130,7 @@ function SiteCard({ s, onChanged }: { s: MonitorSite; onChanged: () => void }) {
               {s.search.alerts > 0 && <span className="ml-1.5 rounded-full bg-critical px-1.5 text-[0.6rem] font-bold text-white">{s.search.alerts}</span>}
             </span>
           ) : (
-            <span className="text-critical">{s.search.error ? "needs access" : "syncing"}</span>
+            <span className="text-critical">{s.search.error ? (/No Search Console property|has no access/i.test(s.search.error) ? "needs access" : "sync failed") : "syncing"}</span>
           )}
         </Link>
       )}

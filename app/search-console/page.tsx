@@ -493,7 +493,7 @@ export default function SearchConsolePage() {
                           {c != null && Math.abs(c) >= 0.005 && <span className={c > 0 ? "text-success" : "text-critical"}>{c > 0 ? <TrendingUp className="inline size-3" /> : <TrendingDown className="inline size-3" />} {pct(Math.abs(c))}</span>}
                         </>
                       ) : s.error ? (
-                        <span className="text-critical">needs access</span>
+                        <span className="text-critical">{/No Search Console property|no access|has no access/i.test(s.error) ? "needs access" : "sync failed: open to retry"}</span>
                       ) : (
                         "not synced yet"
                       )}

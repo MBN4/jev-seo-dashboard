@@ -93,7 +93,7 @@ export function SearchConsoleCard() {
     run("test", async () => {
       const r = await api.gscTest();
       setTest(r);
-      if (r.ok) toast.success(`Connected: ${r.properties.length} propert${r.properties.length === 1 ? "y" : "ies"} readable`);
+      if (r.ok) toast.success(`Connected: ${r.properties.length} propert${r.properties.length === 1 ? "y" : "ies"} readable${r.resyncing?.length ? `. Re-syncing ${r.resyncing.join(", ")} in the background.` : ""}`);
     });
   const syncAll = () =>
     run("sync", async () => {

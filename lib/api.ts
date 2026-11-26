@@ -28,7 +28,7 @@ export interface GscOverview {
   connection: GscConnection;
   sites: Array<{ domain: string; url: string; property: string | null; fetchedAt: string | null; error: string | null; alerts: number; kpis: ReturnType<typeof gscKpis> }>;
 }
-export interface GscTest { ok: boolean; clientEmail: string | null; error?: string; properties: Array<{ siteUrl: string; permissionLevel: string }>; sites: Array<{ domain: string; property: string | null }> }
+export interface GscTest { ok: boolean; clientEmail: string | null; error?: string; resyncing?: string[]; properties: Array<{ siteUrl: string; permissionLevel: string }>; sites: Array<{ domain: string; property: string | null }> }
 export interface GscSiteView {
   domain: string;
   synced: boolean;
