@@ -68,6 +68,9 @@ export function SearchConsoleCard() {
   const [test, setTest] = useState<GscTest | null>(null);
   const file = useRef<HTMLInputElement>(null);
   const conn = data?.connection;
+  // Step 5 is done once every site has a readable property (from a test, or from the last sync).
+  const allShared = Boolean((test?.ok && test.sites.length && test.sites.every((x) => x.property)) || (data?.sites.length && data.sites.every((x) => x.property && !x.error)));
+  const done = (i: number) => Boolean(conn?.configured) && (i < 4 || allShared);
 
   const run = async (key: string, fn: () => Promise<void>) => {
     setBusy(key);
@@ -116,8 +119,8 @@ export function SearchConsoleCard() {
         <ol className="space-y-3">
           {STEPS.map((s, i) => (
             <li key={s.title} className="flex gap-3 text-sm">
-              <span className={cn("flex size-6 shrink-0 items-center justify-center rounded-full text-xs font-semibold", conn?.configured && i < 4 ? "bg-success-soft text-success" : "bg-brand-soft text-brand-strong")}>
-                {conn?.configured && i < 4 ? <CheckCircle2 className="size-3.5" /> : i + 1}
+              <span className={cn("flex size-6 shrink-0 items-center justify-center rounded-full text-xs font-semibold", done(i) ? "bg-success-soft text-success" : "bg-brand-soft text-brand-strong")}>
+                {done(i) ? <CheckCircle2 className="size-3.5" /> : i + 1}
               </span>
               <div>
                 <p className="font-medium">{s.title}</p>
