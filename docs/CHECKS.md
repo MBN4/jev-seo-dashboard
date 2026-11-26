@@ -437,7 +437,7 @@ Every crawled URL, in a spreadsheet-style view. Each filter counts the URLs that
 
 ## 4. Monitoring change checks
 
-For each monitored site (emailverify.io, clustox.com, mycoldinbox.com and inboxwarm.ai, plus any you add):
+For each monitored site (emailverify.io, clustox.com, mycoldinbox.com, inboxwarm.ai and tellbear.com, plus any you add):
 
 **Every 3 hours, without a crawl,** Rankora compares:
 

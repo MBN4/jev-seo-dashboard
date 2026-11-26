@@ -147,3 +147,14 @@ Audits run while Rankora is running. Leave `./start.sh` running, for example on 
 ## New Audit: your sites and page counting
 
 Pick a site from **Your sites**, or the chips under the URL field, or type any address. Rankora counts the site's pages from its sitemaps and sets **Maximum pages** and the time budget to match automatically. The maximum is 2,000 pages. You can still change the numbers before starting.
+
+## Search Console
+
+1. **Connect.** Open **Settings → Search Console** and follow the five steps. You create a Google Cloud project, enable the Search Console API, create a service account with a JSON key, and paste the key. Then add the service account email as a user on each property. Press **Test connection** to see which property each site uses.
+2. **Read the data.** Open **Search Console** in the sidebar.
+   - Pick a site and a period (7, 28 or 90 days). Every number is compared with the period before.
+   - **Opportunities** lists where more traffic is most likely, each with what to do.
+   - **Index status** shows Google's own answer for your top pages. **Open in Search Console** goes straight to the URL Inspection report.
+3. **Get alerts.** Drops in clicks or impressions, pages that drop out of the index, and sitemap errors appear in **Monitoring** and on the bell.
+
+Data syncs daily on its own. **Sync now** refreshes a single site.

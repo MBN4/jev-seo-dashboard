@@ -94,7 +94,7 @@ describe("monitoring scheduler", () => {
     // First pass: baseline event for the existing audit, snapshot taken, overdue audit started.
     const r1 = await tick(deps);
     let m = readMonitor();
-    expect(m.sites.map((s) => s.domain)).toEqual(expect.arrayContaining(["emailverify.io", "clustox.com", D, "inboxwarm.ai"]));
+    expect(m.sites.map((s) => s.domain)).toEqual(expect.arrayContaining(["emailverify.io", "clustox.com", D, "inboxwarm.ai", "tellbear.com"]));
     expect(m.events.find((e) => e.domain === D && e.kind === "baseline")?.title).toMatch(/^First audit/);
     expect(m.sites.find((s) => s.domain === D)?.pagesCounted).toBe(2);
     expect(r1.started).toBe("job-1");
@@ -132,7 +132,7 @@ describe("monitoring scheduler", () => {
   it("exposes the feed and controls over the API", async () => {
     const { GET } = await import("@/app/api/monitor/route");
     const res = await (await GET()).json();
-    expect(res.sites).toHaveLength(4);
+    expect(res.sites).toHaveLength(5);
     expect(res.sites.every((s: { intervalHours: number; builtIn: boolean }) => s.intervalHours === 24 && s.builtIn)).toBe(true);
 
     const site = await import("@/app/api/monitor/sites/[domain]/route");

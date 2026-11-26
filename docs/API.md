@@ -103,6 +103,21 @@ Query parameters: `q`, `status` (repeatable), `from`, `to` (YYYY-MM-DD), `sort=d
 | `POST /api/monitor/sites/{domain}/run` | Audit now. It is queued behind any running audit. Response `202`. |
 | `POST /api/monitor/seen` | `{ "ids"?: [] }`: mark events read (all when omitted). |
 
+## Search Console
+
+All Search Console routes are read-only towards Google. The service account key is never returned.
+
+| Route | Description |
+| --- | --- |
+| `GET /api/gsc` | `{ connection: {configured, clientEmail, projectId, source}, sites: [{domain, url, property, fetchedAt, error, alerts, kpis}] }` |
+| `PUT /api/gsc/credentials` | `{ "json": "<service account key file contents>" }`. The key is validated, stored with mode 600, and the response is the connection status. 422 for an invalid key. |
+| `DELETE /api/gsc/credentials` | Remove the stored key (synced data is kept) |
+| `POST /api/gsc/test` | Live check: `{ ok, clientEmail, properties[{siteUrl, permissionLevel}], sites[{domain, property}] }` |
+| `POST /api/gsc/sync` | `{ "domain"?: "…" }`. With a domain it waits and returns `{ ok, fetchedAt, newAlerts }`. Without one, it syncs every site in the background (`202`). |
+| `GET /api/gsc/sites/{domain}?days=7\|28\|90` | `{ kpis{current, prev, change}, series, history (16 months), queries, pages, countries, devices, appearance, searchTypes, opportunities{striking, lowCtr, losingQueries, losingPages, risingQueries, newQueries, cannibal}, indexing{indexed, notIndexed, states, canonicalMismatch, dropped, recovered, richIssues, list}, sitemaps, alerts }` |
+
+Monitoring events have `kind: "search"` for Search Console alerts. Each one carries `search: {id, priority, owner, title, detail, urls}`. `GET /api/audits/{id}/pages/detail` includes `search: {metrics, inspection, queries}` when the site is synced.
+
 ## Settings and system
 
 | Route | Description |

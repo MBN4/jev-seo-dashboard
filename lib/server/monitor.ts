@@ -12,6 +12,8 @@ import { isConfigured } from "./secrets";
 import { diffAudits, diffHeadline, type AuditDiff } from "./audit-diff";
 import { SAMPLE_SITES } from "@/lib/brand";
 import { findingBreakdown } from "./finding-breakdown";
+import { gscCredentialStatus, readSnapshot, syncSite, type GscDeps } from "./gsc";
+import { kpis, type GscAlert } from "@/lib/gsc-insights";
 import { checkUrlSyntax } from "@/lib/url";
 import type { AuditSummary } from "@/types/api";
 
@@ -64,7 +66,7 @@ export interface MonitorEvent {
   at: string;
   domain: string;
   url: string;
-  kind: "baseline" | "audit" | "change" | "error";
+  kind: "baseline" | "audit" | "change" | "error" | "search";
   title: string;
   auditId: string | null;
   prevAuditId: string | null;
@@ -72,6 +74,8 @@ export interface MonitorEvent {
   grade: string | null;
   diff: AuditDiff | null;
   change: ChangeDetails | null;
+  /** Search Console alert (kind "search") */
+  search?: GscAlert | null;
   seen: boolean;
 }
 
@@ -202,6 +206,7 @@ function changeTitle(c: ChangeDetails): string {
 
 export interface TickDeps extends SiteSizeDeps {
   now?: () => number;
+  gsc?: GscDeps;
   startAudit?: (url: string, options: Record<string, unknown>, keywords: string[]) => Promise<{ id: string }>;
 }
 
@@ -258,14 +263,38 @@ async function reportNewAudits(all: AuditSummary[]) {
   });
 }
 
+/**
+ * Sync one site's Search Console data and post each new problem to the change feed once.
+ * A connection error is posted once too (not again while it stays the same).
+ */
+export async function syncSearchConsole(domain: string, deps: GscDeps = {}) {
+  const site = readMonitor().sites.find((x) => x.domain === domain);
+  if (!site) throw Object.assign(new Error("Site is not monitored."), { status: 404 });
+  const before = readSnapshot(domain);
+  try {
+    const r = await syncSite(domain, site.url, deps);
+    if (r.newAlerts.length)
+      await updateMonitor((m) => {
+        for (const a of r.newAlerts.slice().reverse())
+          pushEvent(m, { domain, url: site.url, kind: "search", title: a.title, auditId: null, prevAuditId: null, score: null, grade: null, diff: null, change: null, search: a });
+      });
+    return r;
+  } catch (e) {
+    const msg = (e as Error).message;
+    if (before?.error !== msg)
+      await updateMonitor((m) => pushEvent(m, { domain, url: site.url, kind: "error", title: `Search Console: ${msg}`, auditId: null, prevAuditId: null, score: null, grade: null, diff: null, change: null }));
+    throw e;
+  }
+}
+
 let ticking = false;
 
 /** One scheduler pass: report finished audits, run due change checks, start at most one due audit. */
-export async function tick(deps: TickDeps = {}): Promise<{ started: string | null; checked: string[] }> {
-  if (ticking) return { started: null, checked: [] };
+export async function tick(deps: TickDeps = {}): Promise<{ started: string | null; checked: string[]; synced: string | null }> {
+  if (ticking) return { started: null, checked: [], synced: null };
   ticking = true;
   const now = deps.now ?? Date.now;
-  const out = { started: null as string | null, checked: [] as string[] };
+  const out = { started: null as string | null, checked: [] as string[], synced: null as string | null };
   try {
     await reportNewAudits(listAudits({ includeHidden: true }));
 
@@ -292,6 +321,20 @@ export async function tick(deps: TickDeps = {}): Promise<{ started: string | nul
           if (x) x.lastCheckAt = new Date(now()).toISOString();
           void e;
         });
+      }
+    }
+
+    // Search Console: one site per pass, once a day (failed syncs retry after 6 hours)
+    if (gscCredentialStatus().configured || deps.gsc?.sa) {
+      const due = readMonitor().sites.filter((x) => x.enabled).find((x) => {
+        const snap = readSnapshot(x.domain);
+        if (!snap) return true;
+        const last = Date.parse(snap.errorAt ?? snap.fetchedAt);
+        return now() - last >= (snap.error ? 6 : 24) * H;
+      });
+      if (due) {
+        await syncSearchConsole(due.domain, { ...deps.gsc, now: deps.gsc?.now ?? now }).catch(() => undefined);
+        out.synced = due.domain;
       }
     }
 
@@ -366,9 +409,21 @@ export function monitorOverview() {
       lastAudit: last ? { id: last.id, score: last.score, grade: last.grade, finishedAt: last.finishedAt, pagesCrawled: last.pagesCrawled, findingsTotal: last.findingsTotal, severity: last.severity } : null,
       nextRunAt: nextRunAt(site, a.lastStart),
       history,
+      search: searchSummary(site.domain),
     };
   });
   return { enabled: monitorEnabled(), sites, events: m.events.slice(0, 100), unseen: m.events.filter((e) => !e.seen).length, scheduled: m.scheduled };
+}
+
+function searchSummary(domain: string) {
+  const snap = readSnapshot(domain);
+  if (!snap) return null;
+  const k = snap.endDate ? kpis(snap, 28) : null;
+  return {
+    property: snap.property, fetchedAt: snap.fetchedAt, error: snap.error,
+    clicks: k?.current.clicks ?? null, impressions: k?.current.impressions ?? null, position: k?.current.position ?? null,
+    clicksChange: k?.change.clicks ?? null, alerts: snap.alerts.length,
+  };
 }
 
 export function monitorEnabled() {

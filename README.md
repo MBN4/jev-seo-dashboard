@@ -41,13 +41,34 @@ Rankora drives an open-source audit engine (credited in [NOTICE.md](NOTICE.md)) 
 
 ## Monitoring (automatic daily audits)
 
-The four sites (emailverify.io, clustox.com, mycoldinbox.com, inboxwarm.ai) are monitored from the first start. You can add more on the **Monitoring** page.
+The five sites (emailverify.io, clustox.com, mycoldinbox.com, inboxwarm.ai, tellbear.com) are monitored from the first start. You can add more on the **Monitoring** page.
 
 - **Daily audits:** each site is re-audited every 24 hours. You can change this to 6 hours, 12 hours, 2 days or a week, pause a site, or press **Run now**. The crawl limit is set from the site's current sitemap size, up to 2,000 pages.
 - **Change checks between audits:** every 3 hours, Rankora reads each homepage's title, description, H1, canonical and robots tag, plus the sitemap's URL list (no crawl). New or removed pages and homepage edits are reported straight away, and an audit runs within 3 hours of the last one.
 - **What changed:** every new audit is compared with the previous one. You see the score change, new problems, issues that got worse, fixed and improved issues, and pages that broke, changed title or description, became noindex, or are new. A "still to fix" list puts the most important item first and marks anything that is probably intended.
 - **Notifications:** a bell in the header counts unread changes, and a toast appears when one arrives.
 - Scheduling runs inside Rankora, so it needs Rankora to be running (`./start.sh`). Missed audits start within a minute of the next start. Your own audits are never interrupted: scheduled ones wait for a free slot. Set `RANKORA_MONITOR=0` to turn monitoring off.
+
+## Google Search Console
+
+Connect Search Console once, in **Settings → Search Console**. Rankora then syncs each monitored site every day. It is read-only and never changes anything in Search Console. The **Search Console** page shows:
+
+- **Traffic:** clicks, impressions, CTR and average position, each compared with the previous 7, 28 or 90 days, plus a chart of up to 16 months.
+- **Breakdowns:** queries, pages, countries, devices, search appearance and search type (web, image, video, news, Discover).
+- **Opportunities:**
+  - searches ranking in positions 4–20;
+  - page-1 results with low CTR (against an estimated benchmark);
+  - losing and rising queries and pages;
+  - new queries;
+  - several of your pages competing for the same search.
+- **Index status from Google's URL Inspection:** covers the homepage and top pages. Shows indexed or not and why, last crawl, Google's chosen canonical against yours, and rich result issues.
+- **Sitemap status:** errors and warnings as Google reports them.
+- **Alerts in Monitoring and the bell:** clicks down 20% or more week on week (50% or more is P0), impressions down 30% or more, a page dropping out of the index, important pages not indexed, sitemap errors, canonical mismatches and rich result errors. Each problem is reported once.
+- **Page details:** the page panel inside an audit gets a **Google Search** tab with that page's clicks, top searches and index status.
+
+**Setup (about 5 minutes):** in Google Cloud, create a project, enable *Google Search Console API*, create a service account and download a JSON key. Paste the key in Settings, then add the service account's email as a user (Restricted is enough) on each Search Console property. Press **Test connection**. The key is stored in `data/gsc/service-account.json` (mode 600) and is never returned by the API.
+
+Google's API does not provide the Page indexing totals, Core Web Vitals, Links, Manual actions or Security issues reports, so those stay in Search Console itself. Traffic from other channels needs Google Analytics.
 
 ## Before and during an audit
 
@@ -95,7 +116,8 @@ More detail: [Combined list](docs/COMBINED_LIST.md) · [Daily priority issues](d
 | `RANKORA_MAX_AUDIT_SECONDS` | `7200` | Hard limit per audit process |
 | `RANKORA_ALLOWED_HOSTS` | localhost only | Extra hostnames allowed to reach the app |
 | `RANKORA_AUDIT_CACHE_MB` | `350` | Memory budget for parsed audits (large crawls are 100+ MB) |
-| `RANKORA_MONITOR` | on | `0` turns off scheduled audits and change checks |
+| `RANKORA_MONITOR` | on | `0` turns off scheduled audits, change checks and Search Console syncing |
+| `RANKORA_GSC_KEY_FILE` | `data/gsc/service-account.json` | Optional path to the Search Console service account key, instead of pasting it in Settings |
 | `NEXT_PUBLIC_BRAND_NAME` / `NEXT_PUBLIC_BRAND_TAGLINE` | `Rankora` / `SEO audit workspace` | Product name and tagline (rebuild after changing) |
 
 API keys are entered in **Settings → API keys**, and each one has a **Verify** button. All of them are optional:

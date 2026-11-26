@@ -71,7 +71,7 @@ Start Rankora, then open **Settings → API keys**:
 
 Ctrl+C stops it. Running audits are separate processes and finish on their own.
 
-On first start, the bundled audits of your four sites (`seed/`) are added to the reports folder, and their branded reports are prepared in the background.
+On first start, the bundled audits of your five sites (`seed/`) are added to the reports folder, and their branded reports are prepared in the background.
 
 Development mode with hot reload:
 

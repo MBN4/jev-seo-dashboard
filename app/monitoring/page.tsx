@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { toast } from "sonner";
 import {
-  AlertTriangle, ArrowDownRight, ArrowRight, ArrowUpRight, CheckCircle2, ChevronDown, Clock, FileSearch, Loader2, Pause, Play, Plus, Radar, RefreshCw, Sparkles, Trash2, TrendingDown, TrendingUp, Wrench,
+  AlertTriangle, SearchCheck, ArrowDownRight, ArrowRight, ArrowUpRight, CheckCircle2, ChevronDown, Clock, FileSearch, Loader2, Pause, Play, Plus, Radar, RefreshCw, Sparkles, Trash2, TrendingDown, TrendingUp, Wrench,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -114,6 +114,25 @@ function SiteCard({ s, onChanged }: { s: MonitorSite; onChanged: () => void }) {
           )}
         </div>
       </div>
+      {s.search && (
+        <Link href={`/search-console?site=${encodeURIComponent(s.domain)}`} className="flex items-center justify-between gap-2 rounded-lg bg-muted/40 px-3 py-2 text-xs transition-colors hover:bg-muted/70">
+          <span className="inline-flex items-center gap-1.5 text-muted-foreground"><SearchCheck className="size-3.5" /> Google search, last 28 days</span>
+          {s.search.clicks != null ? (
+            <span className="font-medium tabular-nums">
+              {s.search.clicks.toLocaleString()} clicks · {s.search.impressions?.toLocaleString()} impr.
+              {s.search.clicksChange != null && Math.abs(s.search.clicksChange) >= 0.005 && (
+                <span className={cn("ml-1.5", s.search.clicksChange > 0 ? "text-success" : "text-critical")}>
+                  {s.search.clicksChange > 0 ? "+" : "−"}
+                  {Math.round(Math.abs(s.search.clicksChange) * 100)}%
+                </span>
+              )}
+              {s.search.alerts > 0 && <span className="ml-1.5 rounded-full bg-critical px-1.5 text-[0.6rem] font-bold text-white">{s.search.alerts}</span>}
+            </span>
+          ) : (
+            <span className="text-critical">{s.search.error ? "needs access" : "syncing"}</span>
+          )}
+        </Link>
+      )}
       {s.lastAttemptError && (
         <p className="flex items-start gap-1.5 rounded-md bg-critical-soft px-2.5 py-1.5 text-xs text-critical">
           <AlertTriangle className="mt-0.5 size-3.5 shrink-0" /> Last scheduled run failed: {s.lastAttemptError}
@@ -222,6 +241,22 @@ function UrlBlock({ label, urls, total, tone }: { label: string; urls: string[];
 
 function EventDetails({ e, onOpen }: { e: MonitorEvent; onOpen: (a: string, f: string) => void }) {
   const d = e.diff;
+  if (e.search) {
+    const a = e.search;
+    return (
+      <div className="space-y-3 text-sm">
+        <p className="flex flex-wrap items-center gap-2">
+          <span className={cn("rounded px-1.5 py-0.5 font-mono text-[0.65rem] font-semibold", a.priority === "P0" ? "bg-critical-soft text-critical" : a.priority === "P1" ? "bg-warning-soft text-warning-ink" : "bg-muted")}>{a.priority}</span>
+          <span className="text-xs text-muted-foreground">Owner: {a.owner}</span>
+        </p>
+        <p className="break-words text-muted-foreground">{a.detail}</p>
+        {a.urls.length > 0 && <UrlBlock label="Pages" urls={a.urls.slice(0, 50)} total={a.urls.length} />}
+        <Link href={`/search-console?site=${encodeURIComponent(e.domain)}`} className="inline-flex items-center gap-1 text-xs font-medium text-info hover:underline">
+          Open Search Console data for {e.domain} <ArrowRight className="size-3" />
+        </Link>
+      </div>
+    );
+  }
   if (e.change) {
     const c = e.change;
     return (
@@ -319,6 +354,7 @@ const KIND_META: Record<MonitorEvent["kind"], { icon: typeof Radar; cls: string;
   baseline: { icon: Sparkles, cls: "bg-brand-soft text-brand-strong", label: "First audit" },
   change: { icon: Radar, cls: "bg-warning-soft text-warning-ink", label: "Change detected" },
   error: { icon: AlertTriangle, cls: "bg-critical-soft text-critical", label: "Problem" },
+  search: { icon: SearchCheck, cls: "bg-brand-soft text-brand-strong", label: "Search Console" },
 };
 
 function EventCard({ e, fresh, onOpen, defaultOpen }: { e: MonitorEvent; fresh: boolean; onOpen: (a: string, f: string) => void; defaultOpen: boolean }) {

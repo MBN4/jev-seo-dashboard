@@ -210,8 +210,10 @@ These are not in the app today. They matter for daily monitoring, and none of th
 | `mon_ssl_expiring` | SSL certificate expires within 14 days | An expired certificate takes the whole site offline for visitors and Google | P0 | Dev |
 | `mon_uptime` | Homepage reachability more often than every 3 hours (for example every 15 min) | Find downtime within minutes, not at the next check | P0 | Dev |
 | `mon_redirect_changed` | Important URLs (homepage, top pages) start redirecting | Catches accidental redirects after deploys | P1 | Dev |
-| `gsc_coverage` | Google Search Console: pages Google reports as not indexed | Google's own view of indexing. Needs a Search Console connection. | P1 | SEO |
-| `gsc_manual_actions` | Google Search Console: manual actions or security issues | Turns the manual check `manual_actions` into an automatic one. Needs Search Console. | P0 | SEO |
+| `gsc_not_indexed` / `gsc_deindexed` | Google Search Console: important pages not indexed, or dropped from the index | **Built:** URL Inspection of the homepage and top pages, daily | P1 / P0 | SEO |
+| `gsc_clicks_drop` / `gsc_impressions_drop` | Search clicks or impressions fall week on week | **Built:** clicks down 20% or more is P1, 50% or more is P0; impressions down 30% or more is P1 | P0/P1 | SEO |
+| `gsc_sitemap_errors`, `gsc_canonical_mismatch`, `gsc_rich_errors` | Sitemap errors, Google choosing another canonical, rich result errors | **Built:** from Search Console | P1 / P2 | Dev / SEO |
+| `gsc_manual_actions` | Google Search Console: manual actions or security issues | **Not possible:** Google's API does not expose these reports. Stays a manual check. | — | SEO |
 
 ### Checks whose priority is raised above the app's severity
 

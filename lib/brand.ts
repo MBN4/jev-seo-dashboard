@@ -25,7 +25,7 @@ export const BRAND = {
  * Your sites: used as the rotating placeholder on New Audit. Audits of them ship with the app
  * as seed data (seed/*.tar.xz) and are added to the reports folder on first start.
  */
-export const SAMPLE_SITES = ["https://www.emailverify.io/", "https://www.clustox.com/", "https://mycoldinbox.com/", "https://inboxwarm.ai/"] as const;
+export const SAMPLE_SITES = ["https://www.emailverify.io/", "https://www.clustox.com/", "https://mycoldinbox.com/", "https://inboxwarm.ai/", "https://tellbear.com/"] as const;
 
 /**
  * Engine output (progress log lines, error messages) names its components after the upstream

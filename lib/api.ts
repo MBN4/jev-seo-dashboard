@@ -3,10 +3,40 @@ import type { RecommendationStatus } from "@/lib/server/state";
 import type { ExtraResult } from "@/lib/server/extra-checks";
 import type { SiteSize } from "@/lib/server/site-size";
 import type { monitorOverview } from "@/lib/server/monitor";
+import type { GscAlert, MetricRow, SitemapInfo, kpis as gscKpis, opportunities as gscOpportunities, indexing as gscIndexing } from "@/lib/gsc-insights";
 
 export type MonitorData = ReturnType<typeof monitorOverview>;
 export type MonitorSite = MonitorData["sites"][number];
 export type MonitorEvent = MonitorData["events"][number];
+
+export interface GscConnection { configured: boolean; clientEmail: string | null; projectId: string | null; source: string | null }
+export interface GscOverview {
+  connection: GscConnection;
+  sites: Array<{ domain: string; url: string; property: string | null; fetchedAt: string | null; error: string | null; alerts: number; kpis: ReturnType<typeof gscKpis> }>;
+}
+export interface GscTest { ok: boolean; clientEmail: string | null; error?: string; properties: Array<{ siteUrl: string; permissionLevel: string }>; sites: Array<{ domain: string; property: string | null }> }
+export interface GscSiteView {
+  domain: string;
+  synced: boolean;
+  property: string | null;
+  fetchedAt: string | null;
+  error: string | null;
+  endDate?: string;
+  days?: number;
+  kpis?: NonNullable<ReturnType<typeof gscKpis>>;
+  series?: MetricRow[];
+  history?: MetricRow[];
+  queries?: MetricRow[];
+  pages?: MetricRow[];
+  countries?: MetricRow[];
+  devices?: MetricRow[];
+  appearance?: MetricRow[];
+  searchTypes?: MetricRow[];
+  opportunities?: NonNullable<ReturnType<typeof gscOpportunities>>;
+  indexing?: ReturnType<typeof gscIndexing>;
+  sitemaps?: SitemapInfo[];
+  alerts?: GscAlert[];
+}
 import type { Checklist } from "@/lib/server/checklist";
 import type { Column, ExplorerOverview, FilterKind, Row } from "@/lib/server/explorer";
 
@@ -101,6 +131,12 @@ export const api = {
   monitorRemove: (domain: string) => request<unknown>(`/api/monitor/sites/${enc(domain)}`, { method: "DELETE" }),
   monitorRun: (domain: string) => request<{ queued: boolean }>(`/api/monitor/sites/${enc(domain)}/run`, { method: "POST" }),
   monitorSeen: (ids?: string[]) => request<{ ok: boolean }>(`/api/monitor/seen`, { method: "POST", body: JSON.stringify(ids ? { ids } : {}) }),
+  gsc: () => request<GscOverview>(`/api/gsc`),
+  gscSite: (domain: string, days: number) => request<GscSiteView>(`/api/gsc/sites/${enc(domain)}${qs({ days })}`),
+  gscSaveKey: (json: string) => request<GscConnection>(`/api/gsc/credentials`, { method: "PUT", body: JSON.stringify({ json }) }),
+  gscRemoveKey: () => request<GscConnection>(`/api/gsc/credentials`, { method: "DELETE" }),
+  gscTest: () => request<GscTest>(`/api/gsc/test`, { method: "POST" }),
+  gscSync: (domain?: string) => request<{ ok: boolean; error?: string; started?: boolean; newAlerts?: GscAlert[] }>(`/api/gsc/sync`, { method: "POST", body: JSON.stringify(domain ? { domain } : {}) }),
   health: () => request<{ status: string; engineFound: boolean; running: Array<{ id: string; domain: string; startedAt: string | null }> }>(`/api/system/health`),
   diagnostics: (refresh = false) => request<Diagnostics>(`/api/system/diagnostics${refresh ? "?refresh=1" : ""}`),
 };

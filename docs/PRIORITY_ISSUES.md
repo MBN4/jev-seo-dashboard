@@ -1,6 +1,6 @@
 # Daily priority issues
 
-This is the short list of checks that matter for running emailverify.io, clustox.com, inboxwarm.ai and mycoldinbox.com day to day. It is taken from the [full list of everything Rankora checks](CHECKS.md): 108 Google checklist rules, 31 extra checks and the monitoring checks.
+This is the short list of checks that matter for running emailverify.io, clustox.com, inboxwarm.ai, mycoldinbox.com and tellbear.com day to day. It is taken from the [full list of everything Rankora checks](CHECKS.md): 108 Google checklist rules, 31 extra checks and the monitoring checks.
 
 Each issue has:
 
@@ -24,7 +24,7 @@ Each issue has:
 | inboxwarm.ai (IW) | 25 Nov | 88 (B) | 464 |
 | mycoldinbox.com (MC) | 26 Nov | 97 (A) | 49 |
 
-In the status columns, ✓ means passing and a number is how many pages are affected.
+In the status columns, ✓ means passing and a number is how many pages are affected. tellbear.com (26 Nov audit: 98 (A), 72 pages) passes every P0 and P1 check except one: www.tellbear.com answers without redirecting to tellbear.com (`host_variant`, P1, Dev). Its only P2 item is 2 thin pages (/contact and /opt-out), which is normal for those pages. Search Console alerts (traffic drops, pages dropping out of the index, sitemap errors) are listed in the [combined list](COMBINED_LIST.md).
 
 Summary: **14 critical checks**, **14 high**, **20 important**. About 45 other checks are kept out of the daily feed and go in a weekly review.
 
@@ -161,4 +161,4 @@ These are real but low-impact. Putting them in the daily feed would bury the iss
 3. **clustox.com:** fix the 3 broken links (two with a stray `\"`, one with a `'`), and decide whether /ai-commerce should be indexed.
 4. **inboxwarm.ai:** fix the broken link on /blog/email-warm-up-api, and redirect www.inboxwarm.ai to inboxwarm.ai.
 5. **All sites except clustox.com:** make unknown URLs return a real 404 (soft 404).
-6. **All four sites:** add the free PageSpeed key so Core Web Vitals are tracked daily.
+6. **All sites:** add the free PageSpeed key so Core Web Vitals are tracked daily.

@@ -1,5 +1,6 @@
 import "server-only";
 import { findingBreakdown } from "./finding-breakdown";
+import { readSnapshot } from "./gsc";
 import { loadAudit } from "./audits";
 import { readState, type RecommendationState } from "./state";
 import type { EngineAudit, EngineFinding, EnginePage, AiAnswer, AiQuestion, PsiRun, Severity } from "@/types/engine";
@@ -300,7 +301,19 @@ export function pageDetail(id: string, url: string) {
     mixedContent: p.mixed_content ?? [],
     findings: related,
     ai,
+    search: searchForPage(a.site.domain, p.final_url ?? p.url),
   };
+}
+
+/** Last-28-day Search Console numbers and Google's index status for one URL, when synced. */
+function searchForPage(domain: string, url: string) {
+  const snap = readSnapshot(domain.toLowerCase().replace(/^www\./, ""));
+  if (!snap?.endDate) return null;
+  const n = (u: string) => u.replace(/\/$/, "");
+  const row = snap.ranges["28"]?.pages.find((r) => n(r.key) === n(url)) ?? null;
+  const inspection = Object.values(snap.inspections).find((i) => n(i.url) === n(url)) ?? null;
+  const queries = snap.queryPages.filter((q) => n(q.page) === n(url)).sort((a, b) => b.clicks - a.clicks || b.impressions - a.impressions).slice(0, 10);
+  return { fetchedAt: snap.fetchedAt, period: snap.ranges["28"]?.current ?? null, metrics: row, inspection, queries };
 }
 
 // ---------------------------------------------------------------- AI content judgments

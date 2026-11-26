@@ -8,7 +8,7 @@ import { ErrorState } from "@/components/common/error-state";
 import { AnswerValue, BandBadge, describeAnswer } from "./ai-answer";
 import { useApi } from "@/hooks/use-api";
 import { api } from "@/lib/api";
-import { formatBytes, shortUrl } from "@/lib/format";
+import { formatBytes, formatRelative, shortUrl } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 function Row({ k, v, warn }: { k: string; v: React.ReactNode; warn?: boolean }) {
@@ -53,6 +53,7 @@ export function PageDetailsDrawer({ auditId, url, onClose }: { auditId: string; 
                 <TabsTrigger value="schema">Structured data</TabsTrigger>
                 <TabsTrigger value="findings">Findings ({p.findings.length})</TabsTrigger>
                 <TabsTrigger value="ai">AI</TabsTrigger>
+                <TabsTrigger value="google">Google Search</TabsTrigger>
               </TabsList>
               <TabsContent value="meta">
                 <dl className="divide-y">
@@ -147,6 +148,54 @@ export function PageDetailsDrawer({ auditId, url, onClose }: { auditId: string; 
                     ))}
                   </ul>
                 ) : <p className="text-sm text-muted-foreground">No findings reference this page.</p>}
+              </TabsContent>
+              <TabsContent value="google">
+                {!p.search ? (
+                  <p className="text-sm text-muted-foreground">No Search Console data for this site yet. Connect Search Console in Settings; data syncs daily.</p>
+                ) : (
+                  <div className="space-y-4 text-sm">
+                    <p className="text-xs text-muted-foreground">
+                      {p.search.period ? `${p.search.period.start} to ${p.search.period.end}` : "Last 28 days"} · synced {formatRelative(p.search.fetchedAt)}
+                    </p>
+                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                      {[
+                        ["Clicks", p.search.metrics ? p.search.metrics.clicks.toLocaleString() : "0"],
+                        ["Impressions", p.search.metrics ? p.search.metrics.impressions.toLocaleString() : "0"],
+                        ["CTR", p.search.metrics ? `${(p.search.metrics.ctr * 100).toFixed(1)}%` : "—"],
+                        ["Avg position", p.search.metrics ? p.search.metrics.position.toFixed(1) : "—"],
+                      ].map(([k, v]) => (
+                        <div key={k} className="rounded-lg border px-3 py-2">
+                          <p className="text-[0.7rem] text-muted-foreground">{k}</p>
+                          <p className="font-semibold tabular-nums">{v}</p>
+                        </div>
+                      ))}
+                    </div>
+                    {p.search.inspection ? (
+                      <dl className="divide-y">
+                        <Row k="Google index" v={p.search.inspection.verdict === "PASS" ? "Indexed" : "Not indexed"} warn={p.search.inspection.verdict !== "PASS"} />
+                        <Row k="Coverage" v={p.search.inspection.coverageState} />
+                        <Row k="Last crawl" v={p.search.inspection.lastCrawlTime ? formatRelative(p.search.inspection.lastCrawlTime) : "never"} />
+                        <Row k="Google's canonical" v={p.search.inspection.googleCanonical} />
+                        <Row k="Your canonical" v={p.search.inspection.userCanonical} />
+                      </dl>
+                    ) : (
+                      <p className="text-xs text-muted-foreground">Not inspected (only the homepage and top pages by clicks are inspected daily).</p>
+                    )}
+                    {p.search.queries.length > 0 && (
+                      <div>
+                        <p className="mb-1 text-xs font-semibold text-muted-foreground uppercase">Top searches for this page</p>
+                        <ul className="divide-y rounded-lg border">
+                          {p.search.queries.map((q) => (
+                            <li key={q.query} className="flex items-center justify-between gap-3 px-3 py-1.5 text-xs">
+                              <span className="min-w-0 truncate">{q.query}</span>
+                              <span className="shrink-0 text-muted-foreground tabular-nums">{q.clicks} clicks · {q.impressions} impr · pos {q.position.toFixed(1)}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                )}
               </TabsContent>
               <TabsContent value="ai">
                 {p.ai ? (

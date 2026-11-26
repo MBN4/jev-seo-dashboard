@@ -11,7 +11,7 @@ describe("navigation", () => {
     setPathname("/");
     render(<TooltipProvider><SidebarNav /></TooltipProvider>);
     const labels = screen.getAllByRole("link").map((a) => a.textContent);
-    expect(labels).toEqual(["Overview", "New Audit", "Audit History", "Monitoring", "Google Checklist", "Site Explorer", "Technical SEO", "Extra Checks", "Page Analysis", "AI Content Analysis", "Performance", "Recommendations", "Reports", "Settings"]);
+    expect(labels).toEqual(["Overview", "New Audit", "Audit History", "Monitoring", "Search Console", "Google Checklist", "Site Explorer", "Technical SEO", "Extra Checks", "Page Analysis", "AI Content Analysis", "Performance", "Recommendations", "Reports", "Settings"]);
     expect(screen.getByRole("link", { name: "Overview" })).toHaveAttribute("aria-current", "page");
   });
 

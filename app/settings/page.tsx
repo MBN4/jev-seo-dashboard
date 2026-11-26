@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PageHeader } from "@/components/common/page-header";
 import { SectionCard } from "@/components/common/section-card";
+import { SearchConsoleCard } from "@/components/settings/search-console-card";
 import { ErrorState } from "@/components/common/error-state";
 import { LoadingSkeleton } from "@/components/common/loading-skeleton";
 import { ApiKeyInput } from "@/components/settings/api-key-input";
@@ -149,16 +150,23 @@ function DiagnosticsTab() {
 }
 
 export default function SettingsPage() {
+  const [tab, setTab] = useState("keys");
+  useEffect(() => {
+    const h = window.location.hash.slice(1);
+    if (["keys", "gsc", "defaults", "diagnostics"].includes(h)) setTab(h);
+  }, []);
   return (
     <div className="space-y-6">
       <PageHeader title="Settings" description="API credentials, audit defaults and system diagnostics." />
-      <Tabs defaultValue="keys">
+      <Tabs value={tab} onValueChange={setTab}>
         <TabsList>
           <TabsTrigger value="keys">API keys</TabsTrigger>
+          <TabsTrigger value="gsc">Search Console</TabsTrigger>
           <TabsTrigger value="defaults">Audit defaults</TabsTrigger>
           <TabsTrigger value="diagnostics">Diagnostics</TabsTrigger>
         </TabsList>
         <TabsContent value="keys" className="mt-4"><KeysTab /></TabsContent>
+        <TabsContent value="gsc" className="mt-4"><SearchConsoleCard /></TabsContent>
         <TabsContent value="defaults" className="mt-4"><DefaultsTab /></TabsContent>
         <TabsContent value="diagnostics" className="mt-4"><DiagnosticsTab /></TabsContent>
       </Tabs>

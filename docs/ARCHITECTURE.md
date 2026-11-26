@@ -28,6 +28,7 @@
 │   progress.ts        live snapshot from the engine log            │
 │   monitor.ts         scheduled audits, change checks, event feed  │
 │   audit-diff.ts      what changed between two audits              │
+│   gsc.ts             Search Console: key, token, sync, snapshots  │
 │   state.ts, secrets.ts, diagnostics.ts, seeds.ts, verify.ts       │
 └───────────┬───────────────────────────────────────▲───────────────┘
             │ spawn: <engine python> -m <engine> run │ read
@@ -80,6 +81,7 @@ Replacing the engine with your own later means re-implementing that contract (th
 | `data/secrets.env` | API keys (mode 600, never returned by the API) |
 | `data/jobs/<id>/` | Job metadata and raw engine log |
 | `data/branded/<id>/` | Branded report copies, rebuilt when the source or brand changes |
+| `data/gsc/` | Search Console service account key (mode 600) and one snapshot per site |
 | `data/monitor.json`, `data/monitor/` | Monitored sites, change feed, last sitemap URL list per site |
 | `data/summaries.json` | Audit list summaries, reused while `audit.json` is unchanged |
 | `seed/*.tar.xz` | Bundled audits of your sites, unpacked on first start |
@@ -114,3 +116,11 @@ Measured on the 1,620-page audit (warm cache): History in 15 ms, the Google chec
 3. **Starts one due audit.** This happens only when the concurrency limit allows. It goes through the normal `createAudit()` path, so validation, duplicate checks and keyless-stage handling are identical to a manual audit. The crawl limit comes from the latest sitemap count.
 
 When Rankora was closed at the due time, the next pass starts the overdue audit.
+
+## Search Console
+
+`lib/server/gsc.ts` signs a service account JWT with Node's crypto module and exchanges it at Google's fixed token endpoint. The key file's own `token_uri` is ignored. The access token is cached for its lifetime.
+
+Each daily sync makes about 30 Search Analytics requests and up to 50 URL Inspection requests per site, well within Google's quotas (URL Inspection allows 2,000 per property per day). The scheduler syncs one site per pass, and failed syncs retry after 6 hours.
+
+The sync stores `data/gsc/<domain>.json`. `lib/gsc-insights.ts` derives totals, opportunities, the indexing summary and alerts from that file. The alert IDs are stable, so monitoring reports each problem once.
