@@ -1,6 +1,6 @@
 # Combined list: what's in the app and what needs adding
 
-This merges [everything Rankora checks](CHECKS.md) with the [daily priority list](PRIORITY_ISSUES.md). It was built by comparing both against the app's code. It has three parts:
+This merges [everything AuditPilot checks](CHECKS.md) with the [daily priority list](PRIORITY_ISSUES.md). It was built by comparing both against the app's code. It has three parts:
 
 - **[Part A](#part-a-checks-already-in-the-app):** the 108 checks the app already runs. Each has the app's severity, the priority it gets in the daily list, and an owner role.
 - **[Part B](#part-b-detected-by-monitoring-but-not-yet-tracked-as-issues):** changes monitoring already detects, but which have no ID, threshold or priority yet.

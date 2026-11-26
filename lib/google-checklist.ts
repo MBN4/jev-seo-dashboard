@@ -1,5 +1,5 @@
 /**
- * Google guidelines checklist: every check Rankora runs, organised by the Google Search Central
+ * Google guidelines checklist: every check AuditPilot runs, organised by the Google Search Central
  * guidance it comes from, written as plain-language rules.
  *
  * Sources: Google Search Essentials (technical requirements, spam policies, key best practices),

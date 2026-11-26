@@ -8,7 +8,7 @@ import path from "node:path";
  * real engine checkout or the user's reports.
  */
 export function makeSandbox() {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), "rankora-test-"));
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "auditpilot-test-"));
   const engine = path.join(root, "engine");
   const reports = path.join(engine, "jev-seo-reports");
   const data = path.join(root, "data");
@@ -16,11 +16,11 @@ export function makeSandbox() {
   fs.writeFileSync(path.join(engine, "jevseo", "cli.py"), "# placeholder\n");
   fs.mkdirSync(reports, { recursive: true });
   for (const k of ["JEVSEO_DIR", "JEVSEO_REPORTS_DIR", "JEVSEO_DATA_DIR", "JEVSEO_PYTHON"]) delete process.env[k];
-  process.env.RANKORA_BRANDED_PREBUILD = "0";
-  process.env.RANKORA_ENGINE_DIR = engine;
-  process.env.RANKORA_REPORTS_DIR = reports;
-  process.env.RANKORA_DATA_DIR = data;
-  process.env.RANKORA_ENGINE_PYTHON = path.join(__dirname, "fixtures", "fake-engine.sh");
+  process.env.AUDITPILOT_BRANDED_PREBUILD = "0";
+  process.env.AUDITPILOT_ENGINE_DIR = engine;
+  process.env.AUDITPILOT_REPORTS_DIR = reports;
+  process.env.AUDITPILOT_DATA_DIR = data;
+  process.env.AUDITPILOT_ENGINE_PYTHON = path.join(__dirname, "fixtures", "fake-engine.sh");
   for (const k of ["TYPESAFE_API_KEY", "PAGESPEED_API_KEY", "DATAFORSEO_USERNAME", "DATAFORSEO_PASSWORD"]) delete process.env[k];
   return { root, engine, reports, data, cleanup: () => fs.rmSync(root, { recursive: true, force: true }) };
 }

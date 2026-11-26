@@ -64,7 +64,7 @@ describe("history table", () => {
 
 describe("recommendations", () => {
   const rec: Recommendation = {
-    key: "meta_missing", actionId: "RK-002", priority: "P2", impact: 45, effort: 1, quickWin: true, importance: null, origin: "rule", category: "onpage", categoryName: "On-page",
+    key: "meta_missing", actionId: "AP-002", priority: "P2", impact: 45, effort: 1, quickWin: true, importance: null, origin: "rule", category: "onpage", categoryName: "On-page",
     severity: "medium", title: "Pages without a meta description", fix: "Write descriptions.", source: null, evidence: "3 pages", count: 3, urls: ["https://example.org/a"], needsReview: 0, heuristic: false,
     status: "pending", notes: "", updatedAt: null,
   };

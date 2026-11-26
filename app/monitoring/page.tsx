@@ -29,8 +29,9 @@ function untilText(iso: string | null): string {
   if (!iso) return "Paused";
   const ms = Date.parse(iso) - Date.now();
   if (ms <= 60_000) return "Starting soon";
-  const h = Math.floor(ms / 3_600_000);
-  const m = Math.round((ms % 3_600_000) / 60_000);
+  const total = Math.round(ms / 60_000);
+  const h = Math.floor(total / 60);
+  const m = total % 60;
   return h ? `in ${h} h ${m} min` : `in ${m} min`;
 }
 
@@ -451,11 +452,11 @@ export default function MonitoringPage() {
         description="Each site is audited automatically on its schedule (daily by default), with a quick check of its homepage and sitemaps every 3 hours in between. Every new audit is compared with the previous one, so you see what broke, what was fixed and what to do next."
       />
       {!data.enabled && (
-        <p className="rounded-lg border border-warning/30 bg-warning-soft p-3 text-sm">Monitoring is turned off on this server (RANKORA_MONITOR=0). Remove that setting and restart to enable it.</p>
+        <p className="rounded-lg border border-warning/30 bg-warning-soft p-3 text-sm">Monitoring is turned off on this server (AUDITPILOT_MONITOR=0). Remove that setting and restart to enable it.</p>
       )}
       <p className="flex items-start gap-2 rounded-lg border bg-muted/30 p-3 text-xs text-muted-foreground">
         <Clock className="mt-0.5 size-3.5 shrink-0" />
-        Scheduled audits run while Rankora is running. If it was closed when an audit was due, the audit starts within a minute of the next start. Your own audits always go first; scheduled ones wait their turn.
+        Scheduled audits run while AuditPilot is running. If it was closed when an audit was due, the audit starts within a minute of the next start. Your own audits always go first; scheduled ones wait their turn.
       </p>
 
       <div className="grid gap-4 md:grid-cols-2">
@@ -489,7 +490,7 @@ export default function MonitoringPage() {
         }
       >
         {events.length === 0 ? (
-          <p className="py-8 text-center text-sm text-muted-foreground">Nothing yet. The first entries appear within a few minutes of Rankora starting.</p>
+          <p className="py-8 text-center text-sm text-muted-foreground">Nothing yet. The first entries appear within a few minutes of AuditPilot starting.</p>
         ) : (
           <ul className="space-y-3">
             {events.map((e, i) => (

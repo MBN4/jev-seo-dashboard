@@ -73,7 +73,7 @@ export function readServiceAccount(): ServiceAccount | null {
 
 export function saveServiceAccount(text: string): ServiceAccount {
   const sa = parseServiceAccount(text);
-  if (setting("GSC_KEY_FILE")) throw new GscError(409, "The key is set by RANKORA_GSC_KEY_FILE on the server. Change that file instead.");
+  if (setting("GSC_KEY_FILE")) throw new GscError(409, "The key is set by AUDITPILOT_GSC_KEY_FILE on the server. Change that file instead.");
   ensureDir(path.dirname(dashboardKeyFile()));
   writeAtomic(dashboardKeyFile(), JSON.stringify({ type: "service_account", ...sa }));
   fs.chmodSync(dashboardKeyFile(), 0o600);
@@ -82,7 +82,7 @@ export function saveServiceAccount(text: string): ServiceAccount {
 }
 
 export function deleteServiceAccount() {
-  if (setting("GSC_KEY_FILE")) throw new GscError(409, "The key is set by RANKORA_GSC_KEY_FILE on the server; remove it there.");
+  if (setting("GSC_KEY_FILE")) throw new GscError(409, "The key is set by AUDITPILOT_GSC_KEY_FILE on the server; remove it there.");
   fs.rmSync(dashboardKeyFile(), { force: true });
   tokens.clear();
 }
@@ -135,7 +135,7 @@ async function call<T>(url: string, deps: GscDeps, body?: unknown): Promise<T> {
   const msg = err.error?.message ?? `HTTP ${res.status}`;
   if (res.status === 403 && /not enabled|has not been used|disabled/i.test(msg)) throw new GscError(403, "The Search Console API is not enabled in your Google Cloud project. Enable \"Google Search Console API\" and try again.");
   if (res.status === 403) throw new GscError(403, `The service account (${sa.client_email}) has no access to this property. Add it as a user in Search Console.`);
-  if (res.status === 429) throw new GscError(429, "Search Console quota reached. Rankora will try again later.");
+  if (res.status === 429) throw new GscError(429, "Search Console quota reached. AuditPilot will try again later.");
   throw new GscError(res.status >= 400 && res.status < 600 ? res.status : 502, `Search Console error: ${msg}`);
 }
 

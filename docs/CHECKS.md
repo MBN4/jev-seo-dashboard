@@ -1,9 +1,9 @@
-# Everything Rankora checks
+# Everything AuditPilot checks
 
-This list is generated from Rankora's source code, so it matches exactly what an audit checks. Every audit runs through four layers:
+This list is generated from AuditPilot's source code, so it matches exactly what an audit checks. Every audit runs through four layers:
 
 1. **[Google guidelines checklist](#1-google-guidelines-checklist):** 108 rules in 13 areas, each mapped to Google Search Central guidance. It combines all the layers below into one list.
-2. **[Extra checks](#2-extra-checks):** 31 more checks Rankora runs on the crawl data, including focus-keyword placement in the Rank Math style.
+2. **[Extra checks](#2-extra-checks):** 31 more checks AuditPilot runs on the crawl data, including focus-keyword placement in the Rank Math style.
 3. **[Site Explorer](#3-site-explorer-tabs-and-filters):** 15 tabs with 58 filters for every crawled URL, in the style of a desktop crawler.
 4. **[Monitoring](#4-monitoring-change-checks):** daily re-audits plus change checks between audits.
 
@@ -14,7 +14,7 @@ The list ends with [what no crawler can check](#5-what-no-crawler-can-check).
 | Source | Rules | Runs when |
 |---|---|---|
 | Crawl check (engine) | 52 | Always |
-| Extra check (Rankora) | 31 | Always (keyword checks need focus keywords) |
+| Extra check (AuditPilot) | 31 | Always (keyword checks need focus keywords) |
 | AI judgment (needs TYPESAFE key) | 13 | A TYPESAFE_API_KEY is set |
 | PageSpeed (needs free Google key) | 2 | A PageSpeed key is set (free) |
 | DataForSEO (paid, optional) | 6 | Full mode is chosen (paid) |
@@ -58,10 +58,10 @@ Google indexes one canonical version of each page. Indexing controls and duplica
 | 19 | [Only one host version serves the site (www or non-www)](https://developers.google.com/search/docs/crawling-indexing/consolidate-duplicate-urls) | Two live hosts split signals and create duplicates. | Crawl check (engine) | `host_variant` |
 | 20 | [Host and HTTPS redirects are permanent (301/308)](https://developers.google.com/search/docs/crawling-indexing/301-redirects) | Temporary redirects do not consolidate signals as reliably. | Crawl check (engine) | `host_temporary_redirect` |
 | 21 | [Pages have distinct main content](https://developers.google.com/search/docs/crawling-indexing/consolidate-duplicate-urls) | Identical pages compete with each other; Google picks one and may ignore the rest. | Crawl check (engine) | `duplicate_content` |
-| 22 | [URLs are lowercase](https://developers.google.com/search/docs/crawling-indexing/url-structure) | URLs are case-sensitive; mixed case creates duplicate addresses. | Extra check (Rankora) | `url_uppercase` |
-| 23 | [Words in URLs are separated by hyphens](https://developers.google.com/search/docs/crawling-indexing/url-structure) | Google recommends hyphens so words are read separately. | Extra check (Rankora) | `url_underscores` |
-| 24 | [URLs are short and readable](https://developers.google.com/search/docs/crawling-indexing/url-structure) | Simple, descriptive URLs are easier to understand and share. | Extra check (Rankora) | `url_long` |
-| 25 | [Indexable URLs avoid query parameters](https://developers.google.com/search/docs/crawling-indexing/url-structure) | Parameters create many URL variants of the same content. | Extra check (Rankora) | `url_params` |
+| 22 | [URLs are lowercase](https://developers.google.com/search/docs/crawling-indexing/url-structure) | URLs are case-sensitive; mixed case creates duplicate addresses. | Extra check (AuditPilot) | `url_uppercase` |
+| 23 | [Words in URLs are separated by hyphens](https://developers.google.com/search/docs/crawling-indexing/url-structure) | Google recommends hyphens so words are read separately. | Extra check (AuditPilot) | `url_underscores` |
+| 24 | [URLs are short and readable](https://developers.google.com/search/docs/crawling-indexing/url-structure) | Simple, descriptive URLs are easier to understand and share. | Extra check (AuditPilot) | `url_long` |
+| 25 | [Indexable URLs avoid query parameters](https://developers.google.com/search/docs/crawling-indexing/url-structure) | Parameters create many URL variants of the same content. | Extra check (AuditPilot) | `url_params` |
 
 ### 1.3 Titles and snippets describe each page (9)
 
@@ -74,7 +74,7 @@ Google builds the result's title link and snippet from your title tag, headings 
 | 28 | [Titles are a useful length](https://developers.google.com/search/docs/appearance/title-link) | Very short titles say too little; very long ones are cut off. | Crawl check (engine) | `title_length` |
 | 29 | [Each page has exactly one title element](https://developers.google.com/search/docs/appearance/title-link) | Several titles leave Google to guess. | Crawl check (engine) | `multiple_titles` |
 | 30 | [Titles accurately describe the page](https://developers.google.com/search/docs/appearance/title-link) | Google rewrites title links that do not match the page. | AI judgment (needs TYPESAFE key) | `ai_title_fit` |
-| 31 | [The title and the main heading describe the same topic](https://developers.google.com/search/docs/appearance/title-link) | Consistent signals help Google choose a good title link. | Extra check (Rankora) | `title_h1_mismatch` |
+| 31 | [The title and the main heading describe the same topic](https://developers.google.com/search/docs/appearance/title-link) | Consistent signals help Google choose a good title link. | Extra check (AuditPilot) | `title_h1_mismatch` |
 | 32 | [Every page has a meta description](https://developers.google.com/search/docs/appearance/snippet) | A good description is often used as the search snippet. | Crawl check (engine) | `meta_missing` |
 | 33 | [Meta descriptions are unique](https://developers.google.com/search/docs/appearance/snippet) | Repeated descriptions make results look identical. | Crawl check (engine) | `meta_duplicate` |
 | 34 | [Meta descriptions summarise the page well](https://developers.google.com/search/docs/appearance/snippet) | A specific, accurate description earns clicks. | AI judgment (needs TYPESAFE key) | `ai_meta_fit` |
@@ -85,13 +85,13 @@ The SEO Starter Guide: use the words people search for, in the places that descr
 
 | # | Rule | Why Google cares | Checked by | ID |
 |---|---|---|---|---|
-| 35 | [Every focus keyword has a page about it](https://developers.google.com/search/docs/fundamentals/creating-helpful-content) | If no page covers a search, there is nothing to rank. | Extra check (Rankora) | `kw_no_page` |
-| 36 | [The focus keyword appears in the target page's title](https://developers.google.com/search/docs/appearance/title-link) | Titles are a strong signal of what the page is about. | Extra check (Rankora) | `kw_title` |
-| 37 | [The focus keyword appears in the main heading](https://developers.google.com/search/docs/fundamentals/seo-starter-guide) | Headings tell readers and Google the page topic. | Extra check (Rankora) | `kw_h1` |
-| 38 | [The focus keyword appears in the URL](https://developers.google.com/search/docs/crawling-indexing/url-structure) | Descriptive URLs help users understand the page. | Extra check (Rankora) | `kw_url` |
-| 39 | [The focus keyword appears in the meta description](https://developers.google.com/search/docs/appearance/snippet) | Matching words are highlighted in the snippet. | Extra check (Rankora) | `kw_meta` |
-| 40 | [The topic is stated in the opening text](https://developers.google.com/search/docs/fundamentals/creating-helpful-content) | Readers (and Google) should know quickly they are in the right place. | Extra check (Rankora) | `kw_intro` |
-| 41 | [Keyword target pages cover the topic fully](https://developers.google.com/search/docs/fundamentals/creating-helpful-content) | Thin pages rarely satisfy the search. | Extra check (Rankora) | `kw_thin` |
+| 35 | [Every focus keyword has a page about it](https://developers.google.com/search/docs/fundamentals/creating-helpful-content) | If no page covers a search, there is nothing to rank. | Extra check (AuditPilot) | `kw_no_page` |
+| 36 | [The focus keyword appears in the target page's title](https://developers.google.com/search/docs/appearance/title-link) | Titles are a strong signal of what the page is about. | Extra check (AuditPilot) | `kw_title` |
+| 37 | [The focus keyword appears in the main heading](https://developers.google.com/search/docs/fundamentals/seo-starter-guide) | Headings tell readers and Google the page topic. | Extra check (AuditPilot) | `kw_h1` |
+| 38 | [The focus keyword appears in the URL](https://developers.google.com/search/docs/crawling-indexing/url-structure) | Descriptive URLs help users understand the page. | Extra check (AuditPilot) | `kw_url` |
+| 39 | [The focus keyword appears in the meta description](https://developers.google.com/search/docs/appearance/snippet) | Matching words are highlighted in the snippet. | Extra check (AuditPilot) | `kw_meta` |
+| 40 | [The topic is stated in the opening text](https://developers.google.com/search/docs/fundamentals/creating-helpful-content) | Readers (and Google) should know quickly they are in the right place. | Extra check (AuditPilot) | `kw_intro` |
+| 41 | [Keyword target pages cover the topic fully](https://developers.google.com/search/docs/fundamentals/creating-helpful-content) | Thin pages rarely satisfy the search. | Extra check (AuditPilot) | `kw_thin` |
 
 ### 1.5 Helpful, reliable, people-first content (E-E-A-T) (21)
 
@@ -110,15 +110,15 @@ Google rewards content made for people, showing experience, expertise, authorita
 | 50 | [Every page has a main (H1) heading](https://developers.google.com/search/docs/fundamentals/seo-starter-guide) | Headings structure the page for readers and Google. | Crawl check (engine) | `h1_missing` |
 | 51 | [Each page has one main heading](https://developers.google.com/search/docs/fundamentals/seo-starter-guide) | One clear H1 states the page's topic. | Crawl check (engine) | `h1_multiple` |
 | 52 | [Headings follow a logical order](https://developers.google.com/search/docs/fundamentals/seo-starter-guide) | Skipped levels make the outline harder to follow. | Crawl check (engine) | `heading_skips` |
-| 53 | [Text is easy to read](https://developers.google.com/search/docs/fundamentals/creating-helpful-content) | Clear writing keeps visitors on the page. | Extra check (Rankora) | `readability_hard` |
-| 54 | [An About page says who is behind the site](https://developers.google.com/search/docs/fundamentals/creating-helpful-content) | Google's guidance asks: is it clear who created the content? | Extra check (Rankora) | `eeat_about` |
-| 55 | [A Contact page exists](https://developers.google.com/search/docs/fundamentals/creating-helpful-content) | Easy contact is a basic trust signal. | Extra check (Rankora) | `eeat_contact` |
-| 56 | [Real contact details are visible](https://developers.google.com/search/docs/fundamentals/creating-helpful-content) | An email, phone or address shows a real organisation. | Extra check (Rankora) | `eeat_contact_details` |
-| 57 | [A privacy policy is published](https://developers.google.com/search/docs/fundamentals/creating-helpful-content) | Visitors expect to know how their data is used. | Extra check (Rankora) | `eeat_privacy` |
-| 58 | [Terms of service are published](https://developers.google.com/search/docs/fundamentals/creating-helpful-content) | Clear terms add trust for transactional sites. | Extra check (Rankora) | `eeat_terms` |
-| 59 | [Articles say who wrote them](https://developers.google.com/search/docs/fundamentals/creating-helpful-content) | Bylines and author pages show expertise (the 'who' in E-E-A-T). | Extra check (Rankora) | `eeat_author` |
-| 60 | [Articles show when they were published or updated](https://developers.google.com/search/docs/appearance/publication-dates) | Dates help readers judge freshness and help Google show a date. | Extra check (Rankora) | `eeat_dates` |
-| 61 | [Articles cite their sources](https://developers.google.com/search/docs/fundamentals/creating-helpful-content) | Linking to evidence supports trustworthiness. | Extra check (Rankora) | `links_no_outbound` |
+| 53 | [Text is easy to read](https://developers.google.com/search/docs/fundamentals/creating-helpful-content) | Clear writing keeps visitors on the page. | Extra check (AuditPilot) | `readability_hard` |
+| 54 | [An About page says who is behind the site](https://developers.google.com/search/docs/fundamentals/creating-helpful-content) | Google's guidance asks: is it clear who created the content? | Extra check (AuditPilot) | `eeat_about` |
+| 55 | [A Contact page exists](https://developers.google.com/search/docs/fundamentals/creating-helpful-content) | Easy contact is a basic trust signal. | Extra check (AuditPilot) | `eeat_contact` |
+| 56 | [Real contact details are visible](https://developers.google.com/search/docs/fundamentals/creating-helpful-content) | An email, phone or address shows a real organisation. | Extra check (AuditPilot) | `eeat_contact_details` |
+| 57 | [A privacy policy is published](https://developers.google.com/search/docs/fundamentals/creating-helpful-content) | Visitors expect to know how their data is used. | Extra check (AuditPilot) | `eeat_privacy` |
+| 58 | [Terms of service are published](https://developers.google.com/search/docs/fundamentals/creating-helpful-content) | Clear terms add trust for transactional sites. | Extra check (AuditPilot) | `eeat_terms` |
+| 59 | [Articles say who wrote them](https://developers.google.com/search/docs/fundamentals/creating-helpful-content) | Bylines and author pages show expertise (the 'who' in E-E-A-T). | Extra check (AuditPilot) | `eeat_author` |
+| 60 | [Articles show when they were published or updated](https://developers.google.com/search/docs/appearance/publication-dates) | Dates help readers judge freshness and help Google show a date. | Extra check (AuditPilot) | `eeat_dates` |
+| 61 | [Articles cite their sources](https://developers.google.com/search/docs/fundamentals/creating-helpful-content) | Linking to evidence supports trustworthiness. | Extra check (AuditPilot) | `links_no_outbound` |
 | 62 | [Pages declare their language](https://developers.google.com/search/docs/specialty/international/localized-versions) | The lang attribute helps Google serve the right audience. | Crawl check (engine) | `lang_missing` |
 
 ### 1.6 Links are crawlable and descriptive (4)
@@ -128,8 +128,8 @@ Google follows links to find pages and uses anchor text to understand them. [Goo
 | # | Rule | Why Google cares | Checked by | ID |
 |---|---|---|---|---|
 | 63 | [Link text describes the destination](https://developers.google.com/search/docs/crawling-indexing/links-crawlable) | 'Click here' tells Google nothing about the linked page. | Crawl check (engine) | `generic_anchors` |
-| 64 | [Pages link to related pages](https://developers.google.com/search/docs/crawling-indexing/links-crawlable) | Internal links spread discovery and context. | Extra check (Rankora) | `links_internal_low` |
-| 65 | [Important pages receive several internal links](https://developers.google.com/search/docs/crawling-indexing/links-crawlable) | Pages linked from one place look unimportant. | Extra check (Rankora) | `links_weak_inlinks` |
+| 64 | [Pages link to related pages](https://developers.google.com/search/docs/crawling-indexing/links-crawlable) | Internal links spread discovery and context. | Extra check (AuditPilot) | `links_internal_low` |
+| 65 | [Important pages receive several internal links](https://developers.google.com/search/docs/crawling-indexing/links-crawlable) | Pages linked from one place look unimportant. | Extra check (AuditPilot) | `links_weak_inlinks` |
 | 66 | [Outbound links work](https://developers.google.com/search/docs/crawling-indexing/links-crawlable) | Broken outbound links hurt the reader's experience. | Crawl check (engine) | `broken_external_links` |
 
 ### 1.7 Images are understandable and fast (3)
@@ -140,7 +140,7 @@ Google Images best practices: describe images with alt text and keep them light.
 |---|---|---|---|---|
 | 67 | [Images have alt text](https://developers.google.com/search/docs/appearance/google-images) | Alt text is how Google (and screen readers) understand images. | Crawl check (engine) | `images_alt` |
 | 68 | [Images declare width and height](https://developers.google.com/search/docs/appearance/core-web-vitals) | Missing dimensions cause layout shift (a Core Web Vital). | Crawl check (engine) | `images_dimensions` |
-| 69 | [Below-the-fold images are lazy-loaded](https://developers.google.com/search/docs/crawling-indexing/javascript/lazy-loading) | Lazy loading speeds up the first screen. | Extra check (Rankora) | `images_lazy` |
+| 69 | [Below-the-fold images are lazy-loaded](https://developers.google.com/search/docs/crawling-indexing/javascript/lazy-loading) | Lazy loading speeds up the first screen. | Extra check (AuditPilot) | `images_lazy` |
 
 ### 1.8 Structured data is valid and complete (11)
 
@@ -151,14 +151,14 @@ Structured data helps Google understand the page and can earn rich results, if i
 | 70 | [The homepage has structured data](https://developers.google.com/search/docs/appearance/structured-data/intro-structured-data) | Markup describes your organisation and site to Google. | Crawl check (engine) | `no_structured_data` |
 | 71 | [Structured data parses without errors](https://developers.google.com/search/docs/appearance/structured-data/sd-policies) | Broken JSON-LD is ignored entirely. | Crawl check (engine) | `jsonld_errors` |
 | 72 | [Markup includes the properties Google requires](https://developers.google.com/search/docs/appearance/structured-data/sd-policies) | Missing required properties disqualify rich results. | Crawl check (engine) | `schema_required` |
-| 73 | [Organization markup identifies the business](https://developers.google.com/search/docs/appearance/structured-data/organization) | It feeds Google's understanding of who you are (logo, name, contact). | Extra check (Rankora) | `eeat_org_schema` |
-| 74 | [Organization markup links your official profiles](https://developers.google.com/search/docs/appearance/structured-data/organization) | sameAs connects your site to your social and business profiles. | Extra check (Rankora) | `eeat_sameas` |
-| 75 | [Deeper pages have breadcrumb markup](https://developers.google.com/search/docs/appearance/structured-data/breadcrumb) | Breadcrumbs show your site structure in results. | Extra check (Rankora) | `schema_breadcrumb` |
-| 76 | [Articles have Article markup](https://developers.google.com/search/docs/appearance/structured-data/article) | It gives Google the headline, author, image and dates. | Extra check (Rankora) | `schema_article` |
+| 73 | [Organization markup identifies the business](https://developers.google.com/search/docs/appearance/structured-data/organization) | It feeds Google's understanding of who you are (logo, name, contact). | Extra check (AuditPilot) | `eeat_org_schema` |
+| 74 | [Organization markup links your official profiles](https://developers.google.com/search/docs/appearance/structured-data/organization) | sameAs connects your site to your social and business profiles. | Extra check (AuditPilot) | `eeat_sameas` |
+| 75 | [Deeper pages have breadcrumb markup](https://developers.google.com/search/docs/appearance/structured-data/breadcrumb) | Breadcrumbs show your site structure in results. | Extra check (AuditPilot) | `schema_breadcrumb` |
+| 76 | [Articles have Article markup](https://developers.google.com/search/docs/appearance/structured-data/article) | It gives Google the headline, author, image and dates. | Extra check (AuditPilot) | `schema_article` |
 | 77 | [A local business uses LocalBusiness markup](https://developers.google.com/search/docs/appearance/structured-data/local-business) | It supports local results with address and hours. | AI judgment (needs TYPESAFE key) | `ai_local_schema` |
 | 78 | [FAQ markup is used only where Google shows it](https://developers.google.com/search/docs/appearance/structured-data/faqpage) | FAQ rich results now appear only for government and health sites. | Crawl check (engine) | `faq_rich_result_limited` |
 | 79 | [Pages have Open Graph title and image](https://ogp.me/) | Controls how links look when shared. | Crawl check (engine) | `og_missing` |
-| 80 | [Pages have an X (Twitter) card](https://ogp.me/) | Shared links show a rich preview. | Extra check (Rankora) | `social_twitter_card` |
+| 80 | [Pages have an X (Twitter) card](https://ogp.me/) | Shared links show a rich preview. | Extra check (AuditPilot) | `social_twitter_card` |
 
 ### 1.9 Page experience: mobile, speed and security (10)
 
@@ -191,8 +191,8 @@ Search Essentials spam policies. Breaking them can demote or remove a site. [Goo
 
 | # | Rule | Why Google cares | Checked by | ID |
 |---|---|---|---|---|
-| 92 | [Text is not stuffed with repeated keywords](https://developers.google.com/search/docs/essentials/spam-policies) | Keyword stuffing is a named spam policy violation. | Extra check (Rankora) | `keyword_stuffing` |
-| 93 | [Focus keywords are used naturally](https://developers.google.com/search/docs/essentials/spam-policies) | Unnatural repetition reads as stuffing. | Extra check (Rankora) | `kw_density_high` |
+| 92 | [Text is not stuffed with repeated keywords](https://developers.google.com/search/docs/essentials/spam-policies) | Keyword stuffing is a named spam policy violation. | Extra check (AuditPilot) | `keyword_stuffing` |
+| 93 | [Focus keywords are used naturally](https://developers.google.com/search/docs/essentials/spam-policies) | Unnatural repetition reads as stuffing. | Extra check (AuditPilot) | `kw_density_high` |
 | 94 | [Google and visitors see the same content (no cloaking)](https://developers.google.com/search/docs/essentials/spam-policies) | Showing different content to Google is a spam violation. | Manual review | `manual_cloaking` |
 | 95 | [No hidden text or links](https://developers.google.com/search/docs/essentials/spam-policies) | Text hidden for search engines is a spam violation. | Manual review | `manual_hidden` |
 | 96 | [No doorway or scaled low-value pages](https://developers.google.com/search/docs/essentials/spam-policies) | Mass-produced pages made to rank are a spam violation. | Manual review | `manual_doorways` |
@@ -225,7 +225,7 @@ How the site actually performs: rankings, keyword coverage and links from other 
 
 ## 2. Extra checks
 
-Rankora runs these on the saved crawl data. They show on the **Extra Checks** tab, and also inside the Google checklist above. Checks marked *heuristic* are a rule of thumb, so confirm each case before acting. The keyword checks run once you add focus keywords to the audit.
+AuditPilot runs these on the saved crawl data. They show on the **Extra Checks** tab, and also inside the Google checklist above. Checks marked *heuristic* are a rule of thumb, so confirm each case before acting. The keyword checks run once you add focus keywords to the audit.
 
 ### Focus keywords (Rank Math style) (9)
 
@@ -439,7 +439,7 @@ Every crawled URL, in a spreadsheet-style view. Each filter counts the URLs that
 
 For each monitored site (emailverify.io, clustox.com, mycoldinbox.com, inboxwarm.ai and tellbear.com, plus any you add):
 
-**Every 3 hours, without a crawl,** Rankora compares:
+**Every 3 hours, without a crawl,** AuditPilot compares:
 
 | Checked | Reported as |
 |---|---|
@@ -467,7 +467,7 @@ For each monitored site (emailverify.io, clustox.com, mycoldinbox.com, inboxwarm
 
 ## 5. What no crawler can check
 
-These matter for Google, but no automated audit can measure them. Rankora lists them so they are not forgotten.
+These matter for Google, but no automated audit can measure them. AuditPilot lists them so they are not forgotten.
 
 | Topic | Why it can't be checked automatically |
 |---|---|

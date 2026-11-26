@@ -3,7 +3,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCallback, useRef } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Logo } from "./logo";
@@ -48,7 +47,7 @@ export function SidebarNav({ collapsed = false, onNavigate, layoutGroup = "deskt
                 {active && (
                   <motion.span
                     layoutId={`nav-active-${layoutGroup}`}
-                    className="absolute inset-0 rounded-lg bg-sidebar-accent shadow-[inset_0_1px_0_0_oklch(1_0_0/0.06)]"
+                    className="absolute inset-0 rounded-lg bg-sidebar-accent dark:shadow-[inset_0_1px_0_0_oklch(1_0_0/0.06)]"
                     transition={reduce ? { duration: 0 } : { type: "spring", stiffness: 500, damping: 38 }}
                     aria-hidden
                   >
@@ -161,13 +160,15 @@ function ResizeHandle() {
 }
 
 export function AppSidebar() {
-  const { width, collapsed, dragging, toggle } = useSidebar();
+  const { width, collapsed, dragging } = useSidebar();
   const reduce = useReducedMotion();
   return (
     <motion.aside
       initial={false}
       animate={{ width: collapsed ? SIDEBAR_RAIL : width }}
       transition={dragging || reduce ? { duration: 0 } : { type: "spring", stiffness: 380, damping: 40 }}
+      data-collapsed={collapsed ? "true" : "false"}
+      aria-label="Main navigation"
       className="sticky top-0 hidden h-dvh shrink-0 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground lg:flex"
       style={{ backgroundImage: "radial-gradient(400px 220px at 0% 0%, oklch(0.76 0.15 160 / 0.08), transparent 70%)" }}
     >
@@ -179,26 +180,6 @@ export function AppSidebar() {
       </div>
       <div className={cn("flex-1 overflow-x-hidden overflow-y-auto py-4", collapsed ? "px-2.5" : "px-3")}>
         <SidebarNav collapsed={collapsed} />
-      </div>
-      <div className={cn("border-t border-sidebar-border p-3", collapsed && "px-2.5")}>
-        <button
-          type="button"
-          onClick={toggle}
-          className="group flex h-9 w-full items-center gap-2.5 overflow-hidden rounded-lg px-3 text-xs text-sidebar-muted transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:outline-2 focus-visible:outline-sidebar-ring"
-          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-          aria-expanded={!collapsed}
-        >
-          <motion.span animate={{ rotate: collapsed ? 180 : 0 }} transition={{ type: "spring", stiffness: 300, damping: 24 }} className="grid shrink-0 place-items-center">
-            {collapsed ? <PanelLeftOpen className="size-4" /> : <PanelLeftClose className="size-4" />}
-          </motion.span>
-          <AnimatePresence initial={false}>
-            {!collapsed && (
-              <motion.span {...fade} className="flex flex-1 items-center justify-between whitespace-nowrap">
-                Collapse <kbd className="rounded border border-sidebar-border px-1 font-mono text-[0.62rem]">Ctrl B</kbd>
-              </motion.span>
-            )}
-          </AnimatePresence>
-        </button>
       </div>
     </motion.aside>
   );

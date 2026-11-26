@@ -143,7 +143,7 @@ function DiagnosticsTab() {
         actions={<Button variant="outline" size="sm" onClick={() => setRefresh((r) => r + 1)} disabled={loading}><RefreshCw className={loading ? "size-3.5 animate-spin" : "size-3.5"} /> Re-run</Button>}
       >
         <ul className="grid gap-2 lg:grid-cols-2">{data.checks.map((c) => <SystemStatusCard key={c.key} check={c} />)}</ul>
-        <p className="mt-3 text-xs text-muted-foreground">Max concurrent audits: {data.limits.maxConcurrentAudits}. The engine and reports folders are set with <code>RANKORA_ENGINE_DIR</code> and <code>RANKORA_REPORTS_DIR</code> in <code>.env.local</code>.</p>
+        <p className="mt-3 text-xs text-muted-foreground">Max concurrent audits: {data.limits.maxConcurrentAudits}. The engine and reports folders are set with <code>AUDITPILOT_ENGINE_DIR</code> and <code>AUDITPILOT_REPORTS_DIR</code> in <code>.env.local</code>.</p>
       </SectionCard>
     </div>
   );

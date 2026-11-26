@@ -1,7 +1,7 @@
 /**
- * Rankora's audit model. It mirrors the audit engine's audit.json (schema_version 1.0) after
+ * AuditPilot's audit model. It mirrors the audit engine's audit.json (schema_version 1.0) after
  * lib/server/engine-adapter.ts has translated engine-specific names (AI block, check-id and
- * action-id prefixes) into Rankora's. Fields the engine may omit are optional.
+ * action-id prefixes) into AuditPilot's. Fields the engine may omit are optional.
  */
 
 export type Severity = "critical" | "high" | "medium" | "low" | "info";

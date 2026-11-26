@@ -13,7 +13,7 @@ const run = promisify(execFile);
 /**
  * Branded report copies.
  *
- * The engine writes its own report.pdf/xlsx/md. Rankora serves branded copies instead, built
+ * The engine writes its own report.pdf/xlsx/md. AuditPilot serves branded copies instead, built
  * by scripts/brand_report.py from the engine's files (which are only read, never changed).
  * Copies live in data/branded/<audit id>/ and are rebuilt when the source files or the brand
  * name change.
@@ -25,8 +25,8 @@ const SOURCE_FILES = ["report.html", "report.xlsx", "report.md", "digest.md", "a
 const SCRIPT = path.join(process.cwd(), "scripts", "brand_report.py");
 const VERSION = 1;
 
-const g = globalThis as unknown as { __rankoraBranding?: Map<string, Promise<void>> };
-const inflight: Map<string, Promise<void>> = (g.__rankoraBranding ??= new Map());
+const g = globalThis as unknown as { __auditpilotBranding?: Map<string, Promise<void>> };
+const inflight: Map<string, Promise<void>> = (g.__auditpilotBranding ??= new Map());
 
 export function brandedDir(id: string): string {
   return path.join(dataDir(), "branded", id);
@@ -92,8 +92,8 @@ export function ensureBranded(id: string): Promise<void> {
 
 /** Fire-and-forget pre-build, e.g. right after an audit completes. Errors are logged only. */
 export function prebuildBranded(id: string): void {
-  if (process.env.RANKORA_BRANDED_PREBUILD === "0") return; // e.g. in tests; downloads still build on demand
-  ensureBranded(id).catch((e) => console.error("[rankora] branded reports failed for", id, (e as Error).message));
+  if ((process.env.AUDITPILOT_BRANDED_PREBUILD ?? process.env.RANKORA_BRANDED_PREBUILD) === "0") return; // e.g. in tests; downloads still build on demand
+  ensureBranded(id).catch((e) => console.error("[auditpilot] branded reports failed for", id, (e as Error).message));
 }
 
 /** Formats whose branded copy failed in the last build (with the reason). */

@@ -14,8 +14,8 @@ export const maxDuration = 300;
 
 /**
  * GET /api/audits/{id}/reports/{type}[?inline=1]
- * Serves Rankora-branded copies of the engine's reports (built on first request if needed) and
- * Rankora's own JSON export. Only fixed file names inside registered folders are ever read.
+ * Serves AuditPilot-branded copies of the engine's reports (built on first request if needed) and
+ * AuditPilot's own JSON export. Only fixed file names inside registered folders are ever read.
  */
 export async function GET(req: Request, ctx: RouteCtx<{ id: string; type: string }>) {
   const { id, type } = await ctx.params;
@@ -36,7 +36,7 @@ export async function GET(req: Request, ctx: RouteCtx<{ id: string; type: string
   });
 
   if (type === "json") {
-    // Rankora's own export: the audit after translation to Rankora's model (no engine branding).
+    // AuditPilot's own export: the audit after translation to AuditPilot's model (no engine branding).
     const audit = loadAudit(id);
     if (!audit) return problem(404, "Audit not found.");
     const body = Buffer.from(JSON.stringify({ exported_by: BRAND.name, ...audit }, null, 1));
@@ -46,7 +46,7 @@ export async function GET(req: Request, ctx: RouteCtx<{ id: string; type: string
   try {
     await ensureBranded(id);
   } catch (e) {
-    console.error("[rankora] branding failed", id, (e as Error).message);
+    console.error("[auditpilot] branding failed", id, (e as Error).message);
     return problem(500, "The branded report could not be prepared. Check Settings > Diagnostics (engine Python and WeasyPrint).");
   }
   const file = brandedFile(id, type as BrandedType);

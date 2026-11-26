@@ -10,7 +10,7 @@ import { readState } from "./state";
 const run = promisify(execFile);
 
 /**
- * Seed audits: real audits of your own sites that ship with Rankora (seed/<audit id>.tar.xz).
+ * Seed audits: real audits of your own sites that ship with AuditPilot (seed/<audit id>.tar.xz).
  * On server start each one is unpacked into the reports folder unless it is already there or
  * was removed from history. Existing folders are never overwritten.
  */
@@ -30,7 +30,7 @@ export function seedArchives(): Array<{ id: string; file: string }> {
 }
 
 export async function importSeeds(): Promise<string[]> {
-  if (process.env.RANKORA_SEEDS === "0") return [];
+  if ((process.env.AUDITPILOT_SEEDS ?? process.env.RANKORA_SEEDS) === "0") return [];
   const root = reportsDir();
   const hidden = readState().hidden;
   const imported: string[] = [];
@@ -47,11 +47,11 @@ export async function importSeeds(): Promise<string[]> {
       fs.renameSync(src, path.join(root, s.id));
       imported.push(s.id);
     } catch (e) {
-      console.error("[rankora] seed import failed", s.id, (e as Error).message);
+      console.error("[auditpilot] seed import failed", s.id, (e as Error).message);
     } finally {
       fs.rmSync(tmp, { recursive: true, force: true });
     }
   }
-  if (imported.length) console.log(`[rankora] added ${imported.length} seed audit(s): ${imported.join(", ")}`);
+  if (imported.length) console.log(`[auditpilot] added ${imported.length} seed audit(s): ${imported.join(", ")}`);
   return imported;
 }

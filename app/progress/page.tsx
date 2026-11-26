@@ -141,7 +141,7 @@ function SiteProgress({ p, domain, onChanged }: { p: ProgressView; domain: strin
       <SectionCard>
         <div className="flex flex-col items-center gap-2 py-12 text-center">
           <History className="size-8 text-muted-foreground" />
-          <p className="text-sm">No reports recorded yet. History starts with the next completed audit (existing audits are added within a few minutes of starting Rankora).</p>
+          <p className="text-sm">No reports recorded yet. History starts with the next completed audit (existing audits are added within a few minutes of starting AuditPilot).</p>
         </div>
       </SectionCard>
     );
@@ -306,7 +306,7 @@ function Storage({ p, onChanged }: { p: ProgressView; onChanged: () => void }) {
           <p>
             <b>{p.storage.audits}</b> full audit{p.storage.audits === 1 ? "" : "s"} stored ({formatBytes(p.storage.auditBytes)}) · daily history {formatBytes(p.storage.historyBytes)}
           </p>
-          <p className="text-xs text-muted-foreground">The daily history (issues, pages, score, search numbers) is always kept. Full audit files are large; you can let Rankora clean up old scheduled ones. Your own audits and the two newest per site are never removed.</p>
+          <p className="text-xs text-muted-foreground">The daily history (issues, pages, score, search numbers) is always kept. Full audit files are large; you can let AuditPilot clean up old scheduled ones. Your own audits and the two newest per site are never removed.</p>
         </div>
       </div>
       <Select value={p.storage.keepAuditDays == null ? "forever" : String(p.storage.keepAuditDays)} onValueChange={change} disabled={busy}>

@@ -1,14 +1,14 @@
-# Rankora
+# AuditPilot
 
-**Rankora is a local SEO audit workspace.** Audit any public website from your browser, see exactly which of Google's guidelines it meets and which it breaks, explore every crawled URL to find what is missing, track fixes, and download branded PDF, Excel and Markdown reports.
+**AuditPilot is a local SEO audit workspace.** Audit any public website from your browser, see exactly which of Google's guidelines it meets and which it breaks, explore every crawled URL to find what is missing, track fixes, and download branded PDF, Excel and Markdown reports.
 
 ```
-Browser ──► Rankora (Next.js UI + API, port 3000) ──runs──► audit engine (Python, separate process)
+Browser ──► AuditPilot (Next.js UI + API, port 3000) ──runs──► audit engine (Python, separate process)
                      │                                              │
                      └───── reads ◄── reports folder: <site>-<date>/audit.json + report files
 ```
 
-Rankora drives an open-source audit engine (credited in [NOTICE.md](NOTICE.md)) as an unmodified separate process, and adds everything around it: the interface, the Google checklist, the Site Explorer, 31 extra checks, branded reports, history and settings.
+AuditPilot drives an open-source audit engine (credited in [NOTICE.md](NOTICE.md)) as an unmodified separate process, and adds everything around it: the interface, the Google checklist, the Site Explorer, 31 extra checks, branded reports, history and settings.
 
 ## What you get after an audit
 
@@ -37,17 +37,17 @@ Rankora drives an open-source audit engine (credited in [NOTICE.md](NOTICE.md)) 
   - E-E-A-T signals: About, Contact, privacy and terms pages, authors, dates, Organization schema.
   - URL structure, breadcrumb and article schema, internal linking, readability, keyword stuffing, lazy loading.
 - **Recommendations:** ranked actions with your own status and notes.
-- **Reports:** Rankora-branded PDF, Excel, Markdown and JSON, with an in-browser PDF preview.
+- **Reports:** AuditPilot-branded PDF, Excel, Markdown and JSON, with an in-browser PDF preview.
 
 ## Monitoring (automatic daily audits)
 
 The five sites (emailverify.io, clustox.com, mycoldinbox.com, inboxwarm.ai, tellbear.com) are monitored from the first start. You can add more on the **Monitoring** page.
 
 - **Daily audits:** each site is re-audited every 24 hours. You can change this to 6 hours, 12 hours, 2 days or a week, pause a site, or press **Run now**. The crawl limit is set from the site's current sitemap size, up to 2,000 pages.
-- **Change checks between audits:** every 3 hours, Rankora reads each homepage's title, description, H1, canonical and robots tag, plus the sitemap's URL list (no crawl). New or removed pages and homepage edits are reported straight away, and an audit runs within 3 hours of the last one.
+- **Change checks between audits:** every 3 hours, AuditPilot reads each homepage's title, description, H1, canonical and robots tag, plus the sitemap's URL list (no crawl). New or removed pages and homepage edits are reported straight away, and an audit runs within 3 hours of the last one.
 - **What changed:** every new audit is compared with the previous one. You see the score change, new problems, issues that got worse, fixed and improved issues, and pages that broke, changed title or description, became noindex, or are new. A "still to fix" list puts the most important item first and marks anything that is probably intended.
 - **Notifications:** a bell in the header counts unread changes, and a toast appears when one arrives.
-- Scheduling runs inside Rankora, so it needs Rankora to be running (`./start.sh`). Missed audits start within a minute of the next start. Your own audits are never interrupted: scheduled ones wait for a free slot. Set `RANKORA_MONITOR=0` to turn monitoring off.
+- Scheduling runs inside AuditPilot, so it needs AuditPilot to be running (`./start.sh`). Missed audits start within a minute of the next start. Your own audits are never interrupted: scheduled ones wait for a free slot. Set `AUDITPILOT_MONITOR=0` to turn monitoring off.
 
 ## Progress (stored daily)
 
@@ -57,13 +57,13 @@ Every daily audit is stored as a compact report in `data/history/<site>/<date>.j
 - **Still to fix:** sorted by priority (P0 critical, P1 high, P2 important, weekly) and then by how long each issue has been open. Each issue has an owner role (Dev, SEO, Content), a page-count trend, and a flag when it came back after a fix. You can filter by owner.
 - **Over time:** a chart of open issues by priority with the score, a fix log of every resolved issue, and Search Console clicks per day.
 - **Download report:** a Markdown progress report to share or paste into a task tool.
-- **Storage:** full audit files can be large (100 MB or more for a big site). You can let Rankora clean up scheduled audits older than 14 to 365 days. Your own audits, the two newest per site and the daily history are never removed. This is off by default.
+- **Storage:** full audit files can be large (100 MB or more for a big site). You can let AuditPilot clean up scheduled audits older than 14 to 365 days. Your own audits, the two newest per site and the daily history are never removed. This is off by default.
 
 Priorities and owners for every check live in `lib/priorities.ts`, generated from [docs/COMBINED_LIST.md](docs/COMBINED_LIST.md). Findings the data shows are intentional, such as noindex on pagination or legal pages, are not counted as open.
 
 ## Google Search Console
 
-Connect Search Console once, in **Settings → Search Console**. Rankora then syncs each monitored site every day. It is read-only and never changes anything in Search Console. The **Search Console** page shows:
+Connect Search Console once, in **Settings → Search Console**. AuditPilot then syncs each monitored site every day. It is read-only and never changes anything in Search Console. The **Search Console** page shows:
 
 - **Traffic:** clicks, impressions, CTR and average position, each compared with the previous 7, 28 or 90 days, plus a chart of up to 16 months.
 - **Breakdowns:** queries, pages, countries, devices, search appearance and search type (web, image, video, news, Discover).
@@ -84,10 +84,10 @@ Google's API does not provide the Page indexing totals, Core Web Vitals, Links, 
 
 ## Before and during an audit
 
-- **Your sites and automatic page count:** pick one of your sites from the **Your sites** menu, or type any URL. Rankora reads its sitemaps (no crawl), counts the pages, and sets the crawl limit and time budget to match automatically, up to 2,000 pages.
+- **Your sites and automatic page count:** pick one of your sites from the **Your sites** menu, or type any URL. AuditPilot reads its sitemaps (no crawl), counts the pages, and sets the crawl limit and time budget to match automatically, up to 2,000 pages.
 - **Live progress:** the engine's real stages, URLs crawled, pages judged and PageSpeed runs. Warnings are grouped by cause, each with its fix, so six rate-limited requests are one notice, not six.
 - **No keyless warnings:** AI judgments stay off until a key is added, and PageSpeed is off by default without one.
-- **Your sites:** audits of emailverify.io, clustox.com, mycoldinbox.com and inboxwarm.ai ship with Rankora and appear on first start. The New Audit placeholder rotates through them. The list is in `lib/brand.ts`.
+- **Your sites:** audits of emailverify.io, clustox.com, mycoldinbox.com and inboxwarm.ai ship with AuditPilot and appear on first start. The New Audit placeholder rotates through them. The list is in `lib/brand.ts`.
 
 ## Interface
 
@@ -98,9 +98,9 @@ Light, dark and system themes. The sidebar can be resized by dragging and collap
 You need the audit engine with its Python environment (see [docs/INSTALLATION.md](docs/INSTALLATION.md)) and Node.js 18.18 or newer. Then:
 
 ```bash
-git clone https://github.com/MBN4/rankora ~/rankora
-cd ~/rankora
-echo "RANKORA_ENGINE_DIR=$HOME/path/to/engine" > .env.local
+git clone https://github.com/MBN4/auditpilot ~/auditpilot
+cd ~/auditpilot
+echo "AUDITPILOT_ENGINE_DIR=$HOME/path/to/engine" > .env.local
 ./start.sh
 ```
 
@@ -112,7 +112,7 @@ Open **http://localhost:3000**. `start.sh` installs dependencies and rebuilds on
 | API | http://localhost:3000/api (for example `/api/system/health`) |
 | Development mode | `./start.sh --dev` |
 
-More detail: [Combined list](docs/COMBINED_LIST.md) · [Daily priority issues](docs/PRIORITY_ISSUES.md) · [Everything Rankora checks](docs/CHECKS.md) · [Installation](docs/INSTALLATION.md) · [User guide](docs/USER_GUIDE.md) · [Architecture](docs/ARCHITECTURE.md) · [API](docs/API.md)
+More detail: [Combined list](docs/COMBINED_LIST.md) · [Daily priority issues](docs/PRIORITY_ISSUES.md) · [Everything AuditPilot checks](docs/CHECKS.md) · [Installation](docs/INSTALLATION.md) · [User guide](docs/USER_GUIDE.md) · [Architecture](docs/ARCHITECTURE.md) · [API](docs/API.md)
 
 ## Configuration
 
@@ -120,17 +120,17 @@ More detail: [Combined list](docs/COMBINED_LIST.md) · [Daily priority issues](d
 
 | Variable | Default | Purpose |
 | --- | --- | --- |
-| `RANKORA_ENGINE_DIR` | `../jev-seo` | Audit engine folder |
-| `RANKORA_ENGINE_PYTHON` | `<engine>/.venv/bin/python` | Python with the engine's requirements (a path, or a command such as `python3`) |
-| `RANKORA_REPORTS_DIR` | the engine's output folder | Where audit folders live |
-| `RANKORA_DATA_DIR` | `./data` | Rankora state, secrets, job logs, branded reports |
-| `RANKORA_MAX_CONCURRENT` | `1` | Simultaneous audits (max 4) |
-| `RANKORA_MAX_AUDIT_SECONDS` | `7200` | Hard limit per audit process |
-| `RANKORA_ALLOWED_HOSTS` | localhost only | Extra hostnames allowed to reach the app |
-| `RANKORA_AUDIT_CACHE_MB` | `350` | Memory budget for parsed audits (large crawls are 100+ MB) |
-| `RANKORA_MONITOR` | on | `0` turns off scheduled audits, change checks and Search Console syncing |
-| `RANKORA_GSC_KEY_FILE` | `data/gsc/service-account.json` | Optional path to the Search Console service account key, instead of pasting it in Settings |
-| `NEXT_PUBLIC_BRAND_NAME` / `NEXT_PUBLIC_BRAND_TAGLINE` | `Rankora` / `SEO audit workspace` | Product name and tagline (rebuild after changing) |
+| `AUDITPILOT_ENGINE_DIR` | `../jev-seo` | Audit engine folder |
+| `AUDITPILOT_ENGINE_PYTHON` | `<engine>/.venv/bin/python` | Python with the engine's requirements (a path, or a command such as `python3`) |
+| `AUDITPILOT_REPORTS_DIR` | the engine's output folder | Where audit folders live |
+| `AUDITPILOT_DATA_DIR` | `./data` | AuditPilot state, secrets, job logs, branded reports |
+| `AUDITPILOT_MAX_CONCURRENT` | `1` | Simultaneous audits (max 4) |
+| `AUDITPILOT_MAX_AUDIT_SECONDS` | `7200` | Hard limit per audit process |
+| `AUDITPILOT_ALLOWED_HOSTS` | localhost only | Extra hostnames allowed to reach the app |
+| `AUDITPILOT_AUDIT_CACHE_MB` | `350` | Memory budget for parsed audits (large crawls are 100+ MB) |
+| `AUDITPILOT_MONITOR` | on | `0` turns off scheduled audits, change checks and Search Console syncing |
+| `AUDITPILOT_GSC_KEY_FILE` | `data/gsc/service-account.json` | Optional path to the Search Console service account key, instead of pasting it in Settings |
+| `NEXT_PUBLIC_BRAND_NAME` / `NEXT_PUBLIC_BRAND_TAGLINE` | `AuditPilot` / `SEO audit workspace` | Product name and tagline (rebuild after changing) |
 
 API keys are entered in **Settings → API keys**, and each one has a **Verify** button. All of them are optional:
 
@@ -152,12 +152,12 @@ npm run typecheck && npm run lint && npm run build
 
 | Symptom | Fix |
 | --- | --- |
-| "Audit engine not found" | Set `RANKORA_ENGINE_DIR` in `.env.local`. |
+| "Audit engine not found" | Set `AUDITPILOT_ENGINE_DIR` in `.env.local`. |
 | "Engine Python … missing packages" | `<engine>/.venv/bin/python -m pip install -r <engine>/requirements.txt` |
 | Performance shows "rate limited (HTTP 429)" | Add a free `PAGESPEED_API_KEY` in Settings, press **Verify**, re-run the audit. |
 | Branded PDF "could not be prepared" | The engine Python needs WeasyPrint (it is in the engine's requirements). Check Settings → Diagnostics. |
-| "Only 1 audit can run at once" | Wait, cancel the running audit, or raise `RANKORA_MAX_CONCURRENT`. |
-| Audit shows "Interrupted" | The engine process stopped while Rankora was down. Start a new audit. |
-| 403 "Host not allowed" | Open the app via `localhost`, or add your hostname to `RANKORA_ALLOWED_HOSTS`. |
+| "Only 1 audit can run at once" | Wait, cancel the running audit, or raise `AUDITPILOT_MAX_CONCURRENT`. |
+| Audit shows "Interrupted" | The engine process stopped while AuditPilot was down. Start a new audit. |
+| 403 "Host not allowed" | Open the app via `localhost`, or add your hostname to `AUDITPILOT_ALLOWED_HOSTS`. |
 
 Settings → Diagnostics runs these checks and suggests the fix.

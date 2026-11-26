@@ -5,12 +5,12 @@ import type { AuditOptions } from "@/lib/schemas";
 import type { EngineAudit } from "@/types/engine";
 
 /**
- * Translates the audit engine's raw audit.json into Rankora's model, in memory.
+ * Translates the audit engine's raw audit.json into AuditPilot's model, in memory.
  * audit.json on disk is never modified.
  *
- * - The AI-judgment block and its completeness flags get Rankora names (`ai`).
+ * - The AI-judgment block and its completeness flags get AuditPilot names (`ai`).
  * - AI check ids (`<engine>_helpfulness`) become `ai_helpfulness`; origin becomes "ai".
- * - Action ids become `RK-001`.
+ * - Action ids become `AP-001`.
  * - Engine-written explanations are reworded so the upstream name never appears.
  */
 
@@ -80,7 +80,7 @@ export function normalizeAudit(raw: Raw): EngineAudit {
     a.scores.caps = a.scores.caps?.map((t) => neutralEngineText(t));
     if (a.scores.notes) for (const k of Object.keys(a.scores.notes)) a.scores.notes[k] = neutralEngineText(a.scores.notes[k]);
   }
-  // run options: expose Rankora option names alongside the raw ones
+  // run options: expose AuditPilot option names alongside the raw ones
   const o = a.run?.options;
   if (o) {
     if (RAW.aiOffOption in o) {
@@ -98,14 +98,14 @@ export function normalizeAudit(raw: Raw): EngineAudit {
   return a as unknown as EngineAudit;
 }
 
-/** CLI arguments for the AI stage from Rankora options. */
+/** CLI arguments for the AI stage from AuditPilot options. */
 export function aiStageArgs(o: Pick<AuditOptions, "ai" | "aiPages" | "aiBudget">): string[] {
   return o.ai ? [ENGINE_AI_FLAGS.pages, String(o.aiPages), ENGINE_AI_FLAGS.budget, String(o.aiBudget)] : [ENGINE_AI_FLAGS.off];
 }
 
 /**
  * Older saved options (dashboard state, job records) used the engine's names for the AI stage.
- * Map them to Rankora's so nothing saved before the rename is lost.
+ * Map them to AuditPilot's so nothing saved before the rename is lost.
  */
 export function migrateOptionKeys<T extends Record<string, unknown>>(o: T | null | undefined): T | null | undefined {
   if (!o) return o;

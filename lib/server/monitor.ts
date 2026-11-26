@@ -25,7 +25,7 @@ import type { AuditSummary } from "@/types/api";
  * the homepage and sitemaps between audits for changes, and records a "what changed" event
  * for every new audit (issues that appeared, got worse, were fixed, and page-level changes).
  *
- * Runs inside the Rankora server process. When Rankora was not running at the due time, the
+ * Runs inside the AuditPilot server process. When AuditPilot was not running at the due time, the
  * missed audit starts shortly after the next start. Audits use the normal job runner, so the
  * concurrency limit and duplicate checks apply; a manual audit is never interrupted.
  */
@@ -555,13 +555,13 @@ export async function markSeen(ids?: string[]) {
 
 // ------------------------------------------------------------------ lifecycle
 
-const g = globalThis as unknown as { __rankoraMonitor?: NodeJS.Timeout };
+const g = globalThis as unknown as { __auditpilotMonitor?: NodeJS.Timeout };
 
-/** Start the background scheduler (once per server process). RANKORA_MONITOR=0 disables it. */
+/** Start the background scheduler (once per server process). AUDITPILOT_MONITOR=0 disables it. */
 export function startMonitor() {
-  if (!monitorEnabled() || g.__rankoraMonitor) return;
+  if (!monitorEnabled() || g.__auditpilotMonitor) return;
   const run = () => void tick().catch((e) => console.error("[monitor]", (e as Error).message));
   setTimeout(run, 20_000).unref?.();
-  g.__rankoraMonitor = setInterval(run, 60_000);
-  g.__rankoraMonitor.unref?.();
+  g.__auditpilotMonitor = setInterval(run, 60_000);
+  g.__auditpilotMonitor.unref?.();
 }

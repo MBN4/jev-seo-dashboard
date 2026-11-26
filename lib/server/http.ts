@@ -25,7 +25,7 @@ export function handle<A extends unknown[]>(fn: (...args: A) => Promise<Response
       if (err instanceof AuditLoadError) return problem(422, err.message);
       const status = (err as { status?: number }).status;
       if (status && status >= 400 && status < 600) return problem(status, (err as Error).message);
-      console.error("[rankora]", err);
+      console.error("[auditpilot]", err);
       return problem(500, "Unexpected server error. See the dashboard server log for details.");
     }
   };

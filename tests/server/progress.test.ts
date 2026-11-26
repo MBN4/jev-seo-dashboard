@@ -94,7 +94,7 @@ describe("daily history storage", () => {
 
     const rep = await import("@/app/api/progress/[domain]/report/route");
     const r = await rep.GET(jsonReq(`/api/progress/${D}/report`, "GET"), { params: Promise.resolve({ domain: D }) });
-    expect(r.headers.get("content-disposition")).toMatch(/attachment; filename="rankora-progress-mycoldinbox.com-2026-11-25.md"/);
+    expect(r.headers.get("content-disposition")).toMatch(/attachment; filename="auditpilot-progress-mycoldinbox.com-2026-11-25.md"/);
     expect(await r.text()).toContain("## Since the last report (2026-11-24 → 2026-11-25)");
 
     const bad = await one.GET(jsonReq("/api/progress/evil.com", "GET"), { params: Promise.resolve({ domain: "../../etc" }) });

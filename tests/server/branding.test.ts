@@ -21,17 +21,17 @@ z=zipfile.ZipFile(sys.argv[1],'w')
 z.writestr('xl/sharedStrings.xml','<sst><si><t>Jev SEO audit: x</t></si><si><t>Type (Jev)</t></si><si><t>JEV-003</t></si></sst>')
 z.writestr('xl/styles.xml','<styleSheet><fill><fgColor rgb="00D45BB6"/></fill><fgColor rgb="000B0B0B"/></styleSheet>')
 z.close()`, path.join(src, "report.xlsx")]);
-    const log = py(["--src", src, "--out", out, "--name", "Rankora", "--prefix", "RK", "--formats", "md,digest,xlsx"]);
+    const log = py(["--src", src, "--out", out, "--name", "AuditPilot", "--prefix", "AP", "--formats", "md,digest,xlsx"]);
     expect(log).toMatch(/md: written/);
     const outMd = fs.readFileSync(path.join(out, "report.md"), "utf8");
     expect(outMd).not.toMatch(/jev/i);
-    expect(outMd).toContain("# Rankora SEO audit: example.org");
-    expect(outMd).toContain("RK-001 judged by AI; the AI's view.");
-    expect(fs.readFileSync(path.join(out, "digest.md"), "utf8")).toBe("AI judgments unavailable. RK-002.");
+    expect(outMd).toContain("# AuditPilot SEO audit: example.org");
+    expect(outMd).toContain("AP-001 judged by AI; the AI's view.");
+    expect(fs.readFileSync(path.join(out, "digest.md"), "utf8")).toBe("AI judgments unavailable. AP-002.");
     const xml = execFileSync("python3", ["-c", "import zipfile,sys;z=zipfile.ZipFile(sys.argv[1]);print(z.read('xl/sharedStrings.xml').decode());print(z.read('xl/styles.xml').decode())", path.join(out, "report.xlsx")], { encoding: "utf8" });
     expect(xml).not.toMatch(/jev/i);
-    expect(xml).toContain("Rankora SEO audit: x");
-    expect(xml).toContain("RK-003");
+    expect(xml).toContain("AuditPilot SEO audit: x");
+    expect(xml).toContain("AP-003");
     expect(xml).not.toContain("D45BB6"); // magenta turned green
     expect(xml).toContain("0B0B0B"); // neutral colours untouched
     // originals unchanged
@@ -42,7 +42,7 @@ z.close()`, path.join(src, "report.xlsx")]);
     const out = execFileSync("python3", ["-c", `
 import importlib.util,sys
 spec=importlib.util.spec_from_file_location('b', sys.argv[1]); m=importlib.util.module_from_spec(spec); spec.loader.exec_module(m)
-print(m.rebrand_text("src: url('file:///opt/jev-seo/jevseo/fonts/Inter.otf'); .tile.jev{color:var(--jev)} Jev", "Rankora", "RK"))
+print(m.rebrand_text("src: url('file:///opt/jev-seo/jevseo/fonts/Inter.otf'); .tile.jev{color:var(--jev)} Jev", "AuditPilot", "AP"))
 print(m.recolor_hex('d45bb6'), m.recolor_hex('0b0b0b'), m.recolor_hex('1d4f8a'))`, SCRIPT], { encoding: "utf8" });
     expect(out).toContain("file:///opt/jev-seo/jevseo/fonts/Inter.otf");
     expect(out).toContain(".tile.brand{color:var(--brand)} AI");

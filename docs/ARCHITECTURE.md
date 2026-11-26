@@ -7,7 +7,7 @@
 │   └─ lib/api.ts typed client ── fetch / EventSource ──┐           │
 └────────────────────────────────────────────────────────┼──────────┘
                                                          ▼
-┌──────────────────── Rankora server (Node, :3000) ─────────────────┐
+┌──────────────────── AuditPilot server (Node, :3000) ─────────────────┐
 │ middleware.ts        Host allow-list + cross-site write refusal   │
 │ instrumentation.ts   on start: unpack seed audits, start scheduler │
 │ app/api/**           route handlers (Zod validation, uniform errors)
@@ -15,7 +15,7 @@
 │   url-guard.ts       URL syntax + DNS + private/metadata blocks   │
 │   jobs.ts            spawn engine (argv array, own process group),│
 │                      log to file, cancel, timeout, restart recovery
-│   engine-adapter.ts  engine audit.json -> Rankora model           │
+│   engine-adapter.ts  engine audit.json -> AuditPilot model           │
 │   audits.ts          discover audits, parse with byte-budget LRU, │
 │                      summaries persisted to data/summaries.json   │
 │   results.ts         paginated projections per view               │
@@ -42,23 +42,23 @@
 
 ## The engine boundary
 
-The engine is a Python CLI with no web API. Rankora treats it as a black box with a small, documented interface, kept in two files:
+The engine is a Python CLI with no web API. AuditPilot treats it as a black box with a small, documented interface, kept in two files:
 
 - **`lib/engine-protocol.ts`** holds the engine's command name, log line format, CLI flags and raw data key names. It is the only place those appear.
-- **`lib/server/engine-adapter.ts`** translates each raw `audit.json` into Rankora's model when the file is loaded, in memory only:
+- **`lib/server/engine-adapter.ts`** translates each raw `audit.json` into AuditPilot's model when the file is loaded, in memory only:
   - the AI block becomes `ai`;
   - AI check IDs get the `ai_` prefix;
-  - action IDs become `RK-001`;
+  - action IDs become `AP-001`;
   - engine-written explanations are reworded so the upstream name never appears in the UI.
 
 Replacing the engine with your own later means re-implementing that contract (the same CLI arguments and the same `audit.json` shape) or changing those two files.
 
-| Engine behaviour | How Rankora uses it |
+| Engine behaviour | How AuditPilot uses it |
 | --- | --- |
 | `run` = crawl, check, judge, score, render | One subprocess per audit. Every New Audit option maps to one flag (`engineArgs()` in `lib/server/jobs.ts`). |
 | Progress lines `[<engine> mm:ss] == n/7 Stage` | Parsed by `lib/progress.ts` into stage states, measured counters and grouped notices. |
-| Output folder `<host>-<YYYY-MM-DD-HHMM>` | Rankora passes `--out` with the same naming and never reuses a folder. The folder name is the audit ID. |
-| Keys from env, then its own `.env` files | Keys saved in Rankora are injected as environment variables (highest priority). |
+| Output folder `<host>-<YYYY-MM-DD-HHMM>` | AuditPilot passes `--out` with the same naming and never reuses a folder. The folder name is the audit ID. |
+| Keys from env, then its own `.env` files | Keys saved in AuditPilot are injected as environment variables (highest priority). |
 | `doctor` prints JSON | Reused for Settings → Diagnostics. |
 
 ## Audit lifecycle
@@ -77,7 +77,7 @@ Replacing the engine with your own later means re-implementing that contract (th
 
 | Location | Content |
 | --- | --- |
-| `<reports>/<id>/` | Engine output. Source of truth, never modified by Rankora. |
+| `<reports>/<id>/` | Engine output. Source of truth, never modified by AuditPilot. |
 | `data/state.json` | Hidden audit IDs, recommendation status and notes, focus keywords, audit defaults |
 | `data/secrets.env` | API keys (mode 600, never returned by the API) |
 | `data/jobs/<id>/` | Job metadata and raw engine log |
@@ -92,7 +92,7 @@ Replacing the engine with your own later means re-implementing that contract (th
 
 `scripts/brand_report.py` runs with the engine's Python, which already has WeasyPrint. It builds the branded copies from the engine's originals:
 
-- **Branding:** it rewrites upstream names in visible text and changes action IDs to `RK-`.
+- **Branding:** it rewrites upstream names in visible text and changes action IDs to `AP-`.
 - **Colours:** it rotates the magenta palette to the brand green by changing hue and keeping lightness. This covers CSS, the inline SVG charts, spreadsheet colours and embedded PNGs.
 - **PDF:** it re-renders the PDF from the engine's `report.html`.
 
@@ -100,9 +100,9 @@ Each format is independent: if one fails, the others are still produced, and an 
 
 ## Performance on large sites
 
-A 1,620-page audit is about 119 MB of JSON. Rankora handles it as follows:
+A 1,620-page audit is about 119 MB of JSON. AuditPilot handles it as follows:
 
-- Parsed audits are cached within a memory budget (`RANKORA_AUDIT_CACHE_MB`).
+- Parsed audits are cached within a memory budget (`AUDITPILOT_AUDIT_CACHE_MB`).
 - The audit list uses the summaries saved in `data/summaries.json`.
 - Extra checks and Site Explorer rows are computed once per parsed audit.
 - Every list endpoint is paginated.
@@ -111,13 +111,13 @@ Measured on the 1,620-page audit (warm cache): History in 15 ms, the Google chec
 
 ## Monitoring
 
-`lib/server/monitor.ts` runs a scheduler pass every minute inside the Rankora server process. Each pass does three things:
+`lib/server/monitor.ts` runs a scheduler pass every minute inside the AuditPilot server process. Each pass does three things:
 
 1. **Reports new audits.** Each new completed audit of a monitored site becomes an event with a `diffAudits()` comparison against the previous completed audit.
 2. **Checks for changes.** Every 3 hours per site, it reads the homepage tags and the sitemap URL list through the same guarded client as **Count pages**. Differences become a `change` event, and an audit then runs within 3 hours of the previous one.
 3. **Starts one due audit.** This happens only when the concurrency limit allows. It goes through the normal `createAudit()` path, so validation, duplicate checks and keyless-stage handling are identical to a manual audit. The crawl limit comes from the latest sitemap count.
 
-When Rankora was closed at the due time, the next pass starts the overdue audit.
+When AuditPilot was closed at the due time, the next pass starts the overdue audit.
 
 ## Search Console
 

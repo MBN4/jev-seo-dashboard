@@ -7,7 +7,7 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * Rankora design tokens. Light and dark are each tuned separately (not an automatic flip).
+ * AuditPilot design tokens. Light and dark are each tuned separately (not an automatic flip).
  * Accent: emerald "search green". Status: red (critical), orange (high), amber (warning), blue (info).
  */
 @theme inline {
@@ -117,15 +117,16 @@
   --chart-4: oklch(0.58 0.18 300);
   --chart-5: oklch(0.63 0.11 200);
 
-  --sidebar: oklch(0.19 0.02 264);
-  --sidebar-foreground: oklch(0.92 0.008 255);
-  --sidebar-muted: oklch(0.66 0.02 260);
-  --sidebar-primary: oklch(0.76 0.15 160);
-  --sidebar-primary-foreground: oklch(0.18 0.02 264);
-  --sidebar-accent: oklch(0.26 0.022 264);
-  --sidebar-accent-foreground: oklch(0.99 0 0);
-  --sidebar-border: oklch(0.27 0.02 264);
-  --sidebar-ring: oklch(0.76 0.15 160);
+  /* Light sidebar for the light theme: a soft tint of the page, with the brand green for the active item. */
+  --sidebar: oklch(0.975 0.004 255);
+  --sidebar-foreground: oklch(0.3 0.02 264);
+  --sidebar-muted: oklch(0.52 0.02 260);
+  --sidebar-primary: oklch(0.56 0.14 160);
+  --sidebar-primary-foreground: oklch(0.99 0 0);
+  --sidebar-accent: oklch(0.93 0.03 162);
+  --sidebar-accent-foreground: oklch(0.32 0.08 162);
+  --sidebar-border: oklch(0.91 0.006 255);
+  --sidebar-ring: oklch(0.6 0.15 160);
 
   --elev-1: 0 1px 2px 0 rgb(15 23 42 / 0.04), 0 1px 3px -1px rgb(15 23 42 / 0.05);
   --elev-2: 0 12px 32px -12px rgb(15 23 42 / 0.18), 0 4px 10px -4px rgb(15 23 42 / 0.08);

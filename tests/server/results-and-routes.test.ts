@@ -133,20 +133,20 @@ describe("report downloads", () => {
   it("serves branded copies, never the engine originals", async () => {
     // Branding runs scripts/brand_report.py with the engine Python; plain python3 handles the
     // text formats here (it has no WeasyPrint, which lets us test the PDF failure path too).
-    const prev = process.env.RANKORA_ENGINE_PYTHON;
-    process.env.RANKORA_ENGINE_PYTHON = "python3";
+    const prev = process.env.AUDITPILOT_ENGINE_PYTHON;
+    process.env.AUDITPILOT_ENGINE_PYTHON = "python3";
     fs.writeFileSync(path.join(sb.reports, ID, "report.md"), "# Jev SEO audit\nJEV-001 found by Jev.");
     try {
       const { GET } = await import("@/app/api/audits/[id]/reports/[type]/route");
       const md = await GET(jsonReq("", "GET"), ctx({ id: ID, type: "md" }));
       expect(md.status).toBe(200);
-      expect(md.headers.get("content-disposition")).toMatch(/attachment; filename="rankora-.*report\.md"/);
-      expect(await md.text()).toBe("# Rankora SEO audit\nRK-001 found by AI.");
+      expect(md.headers.get("content-disposition")).toMatch(/attachment; filename="auditpilot-.*report\.md"/);
+      expect(await md.text()).toBe("# AuditPilot SEO audit\nAP-001 found by AI.");
       const inline = await GET(new Request("http://localhost/x?inline=1"), ctx({ id: ID, type: "md" }));
       expect(inline.headers.get("content-disposition")).toContain("inline");
       const json = await GET(jsonReq("", "GET"), ctx({ id: ID, type: "json" }));
       const text = await json.text();
-      expect(JSON.parse(text).exported_by).toBe("Rankora");
+      expect(JSON.parse(text).exported_by).toBe("AuditPilot");
       expect(text.replace(/"text_excerpt":"[^"]*"/g, "")).not.toMatch(/\bjev\b|JEV-/i);
       // No report.html -> no branded PDF can be made; the unbranded original is never served instead.
       const pdf = await GET(jsonReq("", "GET"), ctx({ id: ID, type: "pdf" }));
@@ -156,7 +156,7 @@ describe("report downloads", () => {
       expect(pdf2.status).toBe(500); // WeasyPrint missing in this interpreter
       expect(await pdf2.text()).not.toContain("test report.pdf");
     } finally {
-      process.env.RANKORA_ENGINE_PYTHON = prev;
+      process.env.AUDITPILOT_ENGINE_PYTHON = prev;
       fs.rmSync(path.join(sb.reports, ID, "report.html"), { force: true });
     }
   });

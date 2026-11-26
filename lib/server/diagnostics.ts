@@ -57,7 +57,7 @@ async function computeDiagnostics() {
     label: "Audit engine",
     state: engineOk ? "ok" : "error",
     detail: engineOk ? "Engine package found." : "The audit engine was not found in the configured engine folder.",
-    action: engineOk ? undefined : "Set RANKORA_ENGINE_DIR in .env.local to your audit engine folder and restart the dashboard.",
+    action: engineOk ? undefined : "Set AUDITPILOT_ENGINE_DIR in .env.local to your audit engine folder and restart the dashboard.",
   });
 
   let doctor: Record<string, string> | null = null;
@@ -75,7 +75,7 @@ async function computeDiagnostics() {
     label: "Python interpreter",
     state: doctor ? "ok" : "error",
     detail: doctor ? `Python ${pythonVersion} (engine virtualenv)` : `Could not run the engine's self-check: ${doctorError}`,
-    action: doctor ? undefined : "Create the engine virtualenv and install requirements (see docs/INSTALLATION.md), or set RANKORA_ENGINE_PYTHON.",
+    action: doctor ? undefined : "Create the engine virtualenv and install requirements (see docs/INSTALLATION.md), or set AUDITPILOT_ENGINE_PYTHON.",
   });
 
   const deps = ["requests", "bs4", "lxml", "matplotlib", "jinja2", "weasyprint", "openpyxl"];
@@ -126,7 +126,7 @@ async function computeDiagnostics() {
     const n = fs.readdirSync(reports).length;
     reportsState = { key: "reports", label: "Report directory", state: "ok", detail: `Writable; ${n} item(s) present.` };
   } catch (err) {
-    reportsState = { key: "reports", label: "Report directory", state: "error", detail: (err as Error).message, action: "Set RANKORA_REPORTS_DIR to a writable folder." };
+    reportsState = { key: "reports", label: "Report directory", state: "error", detail: (err as Error).message, action: "Set AUDITPILOT_REPORTS_DIR to a writable folder." };
   }
   checks.push(reportsState);
 

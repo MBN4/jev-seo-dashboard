@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Make Rankora-branded copies of an audit's report files.
+"""Make AuditPilot-branded copies of an audit's report files.
 
 Run with the audit engine's Python (it already has WeasyPrint):
 
     <engine>/.venv/bin/python scripts/brand_report.py --src <audit folder> --out <output folder> \
-        --name Rankora --prefix RK --formats pdf,xlsx,md,digest
+        --name AuditPilot --prefix RK --formats pdf,xlsx,md,digest
 
 The engine's original files are only read, never modified. Branding means:
   - upstream product names in visible text become the brand name or neutral wording,
@@ -143,8 +143,8 @@ def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--src", required=True)
     ap.add_argument("--out", required=True)
-    ap.add_argument("--name", default="Rankora")
-    ap.add_argument("--prefix", default="RK")
+    ap.add_argument("--name", default="AuditPilot")
+    ap.add_argument("--prefix", default="AP")
     ap.add_argument("--formats", default="pdf,xlsx,md,digest")
     args = ap.parse_args(argv)
     src, out = Path(args.src), Path(args.out)

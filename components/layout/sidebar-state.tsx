@@ -24,7 +24,8 @@ const Ctx = createContext<SidebarState | null>(null);
 
 function load<T>(key: string, fallback: T): T {
   try {
-    const v = localStorage.getItem(key);
+    // Fall back to the value saved under the app's previous name.
+    const v = localStorage.getItem(key) ?? localStorage.getItem(key.replace(/^auditpilot\./, "rankora."));
     return v == null ? fallback : (JSON.parse(v) as T);
   } catch {
     return fallback;
@@ -46,20 +47,20 @@ export function SidebarProvider({ children }: { children: React.ReactNode }) {
   const [dragging, setDragging] = useState(false);
 
   useEffect(() => {
-    setW(clampWidth(load("rankora.sidebar.width", SIDEBAR_DEFAULT)));
-    setC(load("rankora.sidebar.collapsed", false));
+    setW(clampWidth(load("auditpilot.sidebar.width", SIDEBAR_DEFAULT)));
+    setC(load("auditpilot.sidebar.collapsed", false));
   }, []);
 
   const setWidth = useCallback((w: number) => {
     const c = clampWidth(w);
     setW(c);
-    save("rankora.sidebar.width", c);
+    save("auditpilot.sidebar.width", c);
   }, []);
   const setCollapsed = useCallback((c: boolean) => {
     setC(c);
-    save("rankora.sidebar.collapsed", c);
+    save("auditpilot.sidebar.collapsed", c);
   }, []);
-  const toggle = useCallback(() => setC((c) => (save("rankora.sidebar.collapsed", !c), !c)), []);
+  const toggle = useCallback(() => setC((c) => (save("auditpilot.sidebar.collapsed", !c), !c)), []);
 
   // Ctrl/Cmd + B toggles the sidebar, like most editors.
   useEffect(() => {

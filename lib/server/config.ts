@@ -4,18 +4,19 @@ import path from "node:path";
 import { ENGINE_REPORTS_FOLDER } from "@/lib/engine-protocol";
 
 /**
- * Where Rankora finds the audit engine and where it keeps its own state.
+ * Where AuditPilot finds the audit engine and where it keeps its own state.
  * Everything is overridable through environment variables (see .env.example). Settings use the
- * RANKORA_ prefix; the older JEVSEO_ names are still accepted so existing .env.local files work.
+ * AUDITPILOT_ prefix; the older JEVSEO_ names are still accepted so existing .env.local files work.
  */
 function resolveDir(p: string): string {
   if (p.startsWith("~/")) p = path.join(process.env.HOME ?? "", p.slice(2));
   return path.resolve(p);
 }
 
-/** Read RANKORA_<name>, falling back to the legacy variable name. */
+/** Read AUDITPILOT_<name>, falling back to the legacy variable name. */
 export function setting(name: string, legacy?: string): string | undefined {
-  const v = process.env[`RANKORA_${name}`] ?? (legacy ? process.env[legacy] : undefined);
+  // AUDITPILOT_* first; the earlier RANKORA_* and JEVSEO_* names keep working.
+  const v = process.env[`AUDITPILOT_${name}`] ?? process.env[`RANKORA_${name}`] ?? (legacy ? process.env[legacy] : undefined);
   return v && v.trim() ? v.trim() : undefined;
 }
 

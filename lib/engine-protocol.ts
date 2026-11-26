@@ -1,9 +1,9 @@
 /**
  * The audit engine's wire format, in one place.
  *
- * Rankora drives an external open-source audit engine (credited in NOTICE.md). Its command
+ * AuditPilot drives an external open-source audit engine (credited in NOTICE.md). Its command
  * name, log line format, CLI flags and raw data keys are the only places the dashboard
- * depends on the engine's own naming. Everything else uses Rankora's model; replacing the
+ * depends on the engine's own naming. Everything else uses AuditPilot's model; replacing the
  * engine later means changing this file and lib/server/engine-adapter.ts only.
  */
 
@@ -25,7 +25,7 @@ export const ENGINE_AI_COUNTER = /^Jev: (\d+)\/(\d+) pages judged/;
 /** CLI flags for the AI-judgment stage */
 export const ENGINE_AI_FLAGS = { pages: "--jev-pages", budget: "--jev-budget", off: "--no-jev" } as const;
 
-/** Raw data keys/prefixes the adapter translates to Rankora's model */
+/** Raw data keys/prefixes the adapter translates to AuditPilot's model */
 export const RAW = {
   aiKey: "jev",
   aiCompleteness: "jev",
@@ -36,6 +36,6 @@ export const RAW = {
   aiOffOption: "no_jev",
 } as const;
 
-/** Rankora's prefixes */
-export const ACTION_ID_PREFIX = "RK-";
+/** AuditPilot's prefixes */
+export const ACTION_ID_PREFIX = "AP-";
 export const AI_ID_PREFIX = "ai_";

@@ -8,7 +8,7 @@ import { expectedCtr, indexing, kpis, opportunities, type GscSnapshot } from "@/
 let sb: ReturnType<typeof makeSandbox>;
 const { privateKey, publicKey } = generateKeyPairSync("rsa", { modulusLength: 2048 });
 const PEM = privateKey.export({ type: "pkcs8", format: "pem" }).toString();
-const EMAIL = "rankora@demo-project.iam.gserviceaccount.com";
+const EMAIL = "auditpilot@demo-project.iam.gserviceaccount.com";
 const KEY_JSON = JSON.stringify({ type: "service_account", project_id: "demo-project", client_email: EMAIL, private_key: PEM, token_uri: "https://evil.example/token" });
 const DAY = 86_400_000;
 const NOW = Date.parse("2026-11-26T12:00:00Z");

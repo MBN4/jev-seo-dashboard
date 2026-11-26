@@ -81,7 +81,7 @@ The component tests cover: navigation, the audit form (URL validation, defaults,
   - Each check carries a Google Search Central link, or is labelled *heuristic* when it is a plugin convention rather than a documented Google rule.
   - The tab also lists what cannot be checked from crawl data (image formats, compression, freshness values, interstitials, Search Console data, backlinks, Google Business Profile).
 - **Keywords:** an optional field on New Audit, editable afterwards on the Extra Checks tab (including imported audits). They are stored in `data/state.json`, never sent to the engine. API: `GET /api/audits/{id}/extra`, `GET/PUT /api/audits/{id}/keywords`.
-- **Rebrand:** the product is named **Rankora** (placeholder). The name and tagline live in `lib/brand.ts` and can be overridden with `NEXT_PUBLIC_BRAND_NAME` / `NEXT_PUBLIC_BRAND_TAGLINE`. The logo is a lettermark built from the initials. The AI feature is called "AI judgments", and engine log text is shown with neutral wording (it is parsed before rewording, so the progress counters still work).
+- **Rebrand:** the product is named **AuditPilot** (placeholder). The name and tagline live in `lib/brand.ts` and can be overridden with `NEXT_PUBLIC_BRAND_NAME` / `NEXT_PUBLIC_BRAND_TAGLINE`. The logo is a lettermark built from the initials. The AI feature is called "AI judgments", and engine log text is shown with neutral wording (it is parsed before rewording, so the progress counters still work).
   - Not renamed, on purpose: the internal `JEVSEO_*` environment variables (renaming them would break existing `.env.local` files), and the PDF/XLSX/MD reports, which the engine generates.
 - **Tests:** 112/112, adding 13 extra-check tests (each check fires and passes on crafted pages, keyword API validation) plus component tests for the tab, the keyword field and branding. Typecheck, lint and build are clean. Verified in a real browser against the python.org audit with 4 keywords in light and dark mode; there were no console errors.
 
@@ -94,7 +94,7 @@ The component tests cover: navigation, the audit form (URL validation, defaults,
 - **Rebrand fix:** engine-written explanations (partial-audit reasons, score notes, finding titles and fixes) are reworded in memory, so "Jev" no longer appears in the UI. audit.json on disk is unchanged.
 - **Tests:** 121/121 passing, including the sitemap parser, index and gzip handling, the same-site filter, blocking redirects into private networks, the homepage fallback, and the counter UI.
 
-## Update: Rankora (Google checklist, Site Explorer, full rebrand, your sites)
+## Update: AuditPilot (Google checklist, Site Explorer, full rebrand, your sites)
 
 - **Google guidelines checklist** (`lib/google-checklist.ts`, `lib/server/checklist.ts`):
   - Covers 102 checks across 13 Google Search Central areas: the 52 engine rules, 31 extra checks, 13 AI checks, 6 DataForSEO checks, Core Web Vitals and Lighthouse, plus 4 manual-only spam checks.
@@ -102,15 +102,15 @@ The component tests cover: navigation, the audit form (URL validation, defaults,
   - It is graded from real results. A check whose data source was missing is marked **Not checked**, with the reason, and never counted as a pass.
   - Shown first on every audit and on the main Overview, with its own tab.
 - **Site Explorer** (`lib/server/explorer.ts`): 15 crawler-style tabs with Missing / Duplicate / Too long / Too short style filters, an Issues view ranked by type, sorting, search, pagination, and CSV export protected against formula injection. Rows open the page analysis drawer.
-- **Full rebrand to Rankora:**
+- **Full rebrand to AuditPilot:**
   - Engine-facing names live only in `lib/engine-protocol.ts` and `lib/server/engine-adapter.ts`.
-  - The adapter renames the AI block, check IDs (`ai_*`) and action IDs (`RK-001`) and rewords engine text. A test checks that the translated audit contains no upstream name in any letter case.
-  - Settings use `RANKORA_*`, with `JEVSEO_*` still accepted. Saved option names are migrated.
+  - The adapter renames the AI block, check IDs (`ai_*`) and action IDs (`AP-001`) and rewords engine text. A test checks that the translated audit contains no upstream name in any letter case.
+  - Settings use `AUDITPILOT_*`, with `JEVSEO_*` still accepted. Saved option names are migrated.
   - Package, local-storage keys, logs and docs are renamed. The engine is credited in `NOTICE.md`.
 - **Branded reports** (`scripts/brand_report.py`, `lib/server/branding.ts`):
-  - PDF, Excel, Markdown and digest copies carry the Rankora name, `RK-` action IDs and the green palette (hue rotation across CSS, SVG charts, spreadsheet colours and PNGs).
+  - PDF, Excel, Markdown and digest copies carry the AuditPilot name, `AP-` action IDs and the green palette (hue rotation across CSS, SVG charts, spreadsheet colours and PNGs).
   - Copies are built after each audit, cached, and rebuilt when the source or brand changes. Each format is independent.
-  - The unbranded original is never served. The JSON download is Rankora's own export.
+  - The unbranded original is never served. The JSON download is AuditPilot's own export.
 - **Warnings fixed at the source:**
   - With no AI key, the AI stage is switched off before the engine starts, so there's no warning. PageSpeed defaults to off without a key.
   - The progress page groups warnings by cause ("6 of 6 PageSpeed requests were rate limited", with one fix button) and shows missing keys as information.
@@ -125,3 +125,9 @@ The component tests cover: navigation, the audit form (URL validation, defaults,
 
 - Push to `MBN4/jev-seo-dashboard` once the empty repository exists.
 - Optional future work: a DataForSEO data view, and comparing two audits of the same domain.
+
+## Rename: AuditPilot
+
+- The product is now **AuditPilot** (previously Rankora). The name appears in the UI, branded reports (action IDs `AP-001`), downloads, docs and the package name.
+- Settings use `AUDITPILOT_*`; the earlier `RANKORA_*` and `JEVSEO_*` names still work, and saved sidebar width and state carry over.
+- The light theme now has a light sidebar. The sidebar has one collapse control (top bar button or Ctrl+B) instead of two.

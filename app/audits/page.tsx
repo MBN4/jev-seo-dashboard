@@ -66,7 +66,7 @@ function HistoryInner() {
     <div className="space-y-6">
       <PageHeader
         title="Audit History"
-        description="Every audit launched from Rankora, plus any audit already in your reports folder."
+        description="Every audit launched from AuditPilot, plus any audit already in your reports folder."
         actions={
           <>
             <Button variant="outline" onClick={() => rescan(false)}><FolderSync className="size-4" /> Rescan reports folder</Button>

@@ -81,7 +81,7 @@ Query parameters: `q`, `status` (repeatable), `from`, `to` (YYYY-MM-DD), `sort=d
 | `GET /api/audits/{id}/extra` | Extra checks layer: `{ findings[{id, group, severity, title, fix, source, heuristic, urls, count, evidence}], passed[], skipped[], keywords[], keywordReport[{keyword, targetUrl, checks{title,h1,url,meta,intro}, densityPct, wordCount}], readability[], notCheckable[], checksTotal }`. Computed from the saved audit.json; does not change the engine score. |
 | `GET/PUT /api/audits/{id}/keywords` | Focus keywords for the extra checks. PUT body `{ "keywords": ["…"] }` (max 10, each ≤ 80 chars); an empty list clears them. Works for imported audits too. |
 | `GET /api/audits/{id}/reports` | `{ items: [{ type, label, filename, size, modifiedAt }], branded: { ready, building } }`. Starts building branded copies if needed. |
-| `GET /api/audits/{id}/reports/{pdf\|xlsx\|md\|json\|digest}[?inline=1]` | Branded copy of the report (built on first request if needed; the engine original is never served). `json` is Rankora's own export. `inline` is allowed for pdf and md. |
+| `GET /api/audits/{id}/reports/{pdf\|xlsx\|md\|json\|digest}[?inline=1]` | Branded copy of the report (built on first request if needed; the engine original is never served). `json` is AuditPilot's own export. `inline` is allowed for pdf and md. |
 
 ### Import and history
 

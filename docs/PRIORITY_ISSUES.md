@@ -1,10 +1,10 @@
 # Daily priority issues
 
-This is the short list of checks that matter for running emailverify.io, clustox.com, inboxwarm.ai, mycoldinbox.com and tellbear.com day to day. It is taken from the [full list of everything Rankora checks](CHECKS.md): 108 Google checklist rules, 31 extra checks and the monitoring checks.
+This is the short list of checks that matter for running emailverify.io, clustox.com, inboxwarm.ai, mycoldinbox.com and tellbear.com day to day. It is taken from the [full list of everything AuditPilot checks](CHECKS.md): 108 Google checklist rules, 31 extra checks and the monitoring checks.
 
 Each issue has:
 
-- **ID:** the check ID Rankora reports. Use it as the stable key when tasks are created in your task tool later.
+- **ID:** the check ID AuditPilot reports. Use it as the stable key when tasks are created in your task tool later.
 - **Owner:** the role that normally fixes it.
   - **Dev:** developer or hosting.
   - **SEO:** SEO specialist.
@@ -77,7 +77,7 @@ These hurt crawling, indexing or mobile use on the affected pages.
 | 28 | Focus keyword has no page at all | `kw_no_page` | Content + SEO | open | a page targets it | needs keywords⁸ | needs keywords | needs keywords | needs keywords |
 
 ² emailverify.io: 1,460 of these come from Cloudflare's email protection (`/cdn-cgi/l/email-protection`). Turning off **Scrape Shield → Email Address Obfuscation** in Cloudflare fixes them all at once. The other 3 are links pasted as Markdown on the Indonesian, Dutch and Turkish Monday integration pages.
-³ clustox.com: 2 links end in `\"`, on /blog/ai-agent-architecture-blueprint and /blog/nodejs-vs-react; Rankora shows the working address for both. The third ends in `'`, on the product-strategy link. Also, /blog/services/devops-services returns 404.
+³ clustox.com: 2 links end in `\"`, on /blog/ai-agent-architecture-blueprint and /blog/nodejs-vs-react; AuditPilot shows the working address for both. The third ends in `'`, on the product-strategy link. Also, /blog/services/devops-services returns 404.
 ⁴ inboxwarm.ai: /blog/email-warm-up-api links to the article's *title* used as the URL, which returns 404.
 ⁵ emailverify.io: all 54 are /docs pages. One fix in the docs template covers them.
 ⁶ inboxwarm.ai: www.inboxwarm.ai answers without redirecting to inboxwarm.ai.

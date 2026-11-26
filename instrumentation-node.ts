@@ -7,5 +7,5 @@ import { startMonitor } from "./lib/server/monitor";
 const added = await importSeeds();
 for (const id of added) prebuildBranded(id);
 
-// Scheduled audits and change checks for monitored sites (RANKORA_MONITOR=0 turns this off).
+// Scheduled audits and change checks for monitored sites (AUDITPILOT_MONITOR=0 turns this off).
 startMonitor();

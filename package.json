@@ -1,5 +1,5 @@
 {
-  "name": "rankora",
+  "name": "auditpilot",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -56,5 +56,5 @@
   "engines": {
     "node": ">=18.18"
   },
-  "description": "Rankora: SEO audit workspace"
+  "description": "AuditPilot: SEO audit workspace"
 }

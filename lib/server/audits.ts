@@ -21,10 +21,10 @@ interface CacheEntry {
   size: number;
   audit: EngineAudit;
 }
-const g = globalThis as unknown as { __rankoraAuditCache?: Map<string, CacheEntry> };
-const cache: Map<string, CacheEntry> = (g.__rankoraAuditCache ??= new Map());
+const g = globalThis as unknown as { __auditpilotAuditCache?: Map<string, CacheEntry> };
+const cache: Map<string, CacheEntry> = (g.__auditpilotAuditCache ??= new Map());
 /** Keep parsed audits in memory up to this much source JSON (large crawls can be 100+ MB each). */
-const CACHE_BYTES = Number(process.env.RANKORA_AUDIT_CACHE_MB ?? 350) * 1024 * 1024;
+const CACHE_BYTES = Number(process.env.AUDITPILOT_AUDIT_CACHE_MB ?? process.env.RANKORA_AUDIT_CACHE_MB ?? 350) * 1024 * 1024;
 
 export class AuditLoadError extends Error {}
 
@@ -69,8 +69,8 @@ interface SummaryCacheEntry {
   mtimeMs: number;
   summary: Omit<AuditSummary, "status" | "origin" | "error" | "reports">;
 }
-const gs = globalThis as unknown as { __rankoraSummaryCache?: Map<string, SummaryCacheEntry> };
-const summaryCache: Map<string, SummaryCacheEntry> = (gs.__rankoraSummaryCache ??= loadSummaryFile());
+const gs = globalThis as unknown as { __auditpilotSummaryCache?: Map<string, SummaryCacheEntry> };
+const summaryCache: Map<string, SummaryCacheEntry> = (gs.__auditpilotSummaryCache ??= loadSummaryFile());
 
 /**
  * Summaries are also kept on disk (data/summaries.json), so listing audits after a restart never

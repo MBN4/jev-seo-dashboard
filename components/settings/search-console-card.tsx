@@ -46,7 +46,7 @@ const STEPS: Array<{ title: string; body: React.ReactNode }> = [
       </>
     ),
   },
-  { title: "Paste or upload the key below", body: "Rankora stores it on this computer only (data/gsc, readable only by you) and never shows it again." },
+  { title: "Paste or upload the key below", body: "AuditPilot stores it on this computer only (data/gsc, readable only by you) and never shows it again." },
   {
     title: "Give it access to each site",
     body: (
@@ -101,7 +101,7 @@ export function SearchConsoleCard() {
   return (
     <SectionCard
       title="Google Search Console"
-      description="Clicks, impressions, CTR, positions, queries, pages, index status and sitemaps for your sites, synced daily. Read-only: Rankora never changes anything in Search Console."
+      description="Clicks, impressions, CTR, positions, queries, pages, index status and sitemaps for your sites, synced daily. Read-only: AuditPilot never changes anything in Search Console."
       actions={
         conn?.configured ? (
           <span className="inline-flex items-center gap-1.5 rounded-full bg-success-soft px-2.5 py-1 text-xs font-medium text-success">
@@ -134,7 +134,7 @@ export function SearchConsoleCard() {
                 <code className="min-w-0 truncate text-sm font-medium">{conn.clientEmail}</code>
                 <CopyButton value={conn.clientEmail} label="Copy email" />
               </div>
-              {conn.source === "server-file" && <p className="mt-1 text-[0.7rem] text-muted-foreground">Key loaded from RANKORA_GSC_KEY_FILE on the server.</p>}
+              {conn.source === "server-file" && <p className="mt-1 text-[0.7rem] text-muted-foreground">Key loaded from AUDITPILOT_GSC_KEY_FILE on the server.</p>}
             </div>
           )}
           <div className="space-y-2">

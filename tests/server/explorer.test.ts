@@ -70,7 +70,7 @@ describe("site explorer", () => {
     const { GET } = await import("@/app/api/audits/[id]/explorer/[tab]/route");
     const res = await GET(jsonReq(`/x?format=csv`, "GET"), ctx({ id: ID, tab: "titles" }));
     expect(res.headers.get("content-type")).toContain("text/csv");
-    expect(res.headers.get("content-disposition")).toMatch(/rankora-.*titles\.csv/);
+    expect(res.headers.get("content-disposition")).toMatch(/auditpilot-.*titles\.csv/);
     const csv = await res.text();
     expect(csv.split("\n")[0]).toBe("Address,Title,Characters,Title tags,H1");
     expect(csv).toContain(`"'=HYPERLINK(""evil"")"`); // neutralised and quoted

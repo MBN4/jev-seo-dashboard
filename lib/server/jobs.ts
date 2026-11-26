@@ -40,8 +40,8 @@ interface Registry {
   timers: Map<string, NodeJS.Timeout>;
 }
 
-const g = globalThis as unknown as { __rankoraJobs?: Registry };
-const registry: Registry = (g.__rankoraJobs ??= { children: new Map(), timers: new Map() });
+const g = globalThis as unknown as { __auditpilotJobs?: Registry };
+const registry: Registry = (g.__auditpilotJobs ??= { children: new Map(), timers: new Map() });
 
 const TERMINAL: AuditStatus[] = ["completed", "failed", "cancelled", "interrupted"];
 export const isTerminal = (s: AuditStatus) => TERMINAL.includes(s);
@@ -258,7 +258,7 @@ export function startJob(url: string, domain: string, options: AuditOptions): Jo
   child.on("error", (err) => {
     const j = readJob(id);
     if (j && !isTerminal(j.status)) {
-      j.error = `Could not start the engine (${enginePython()}): ${err.message}. Check RANKORA_ENGINE_PYTHON and RANKORA_ENGINE_DIR (see Settings > Diagnostics).`;
+      j.error = `Could not start the engine (${enginePython()}): ${err.message}. Check AUDITPILOT_ENGINE_PYTHON and AUDITPILOT_ENGINE_DIR (see Settings > Diagnostics).`;
       saveJob(j);
     }
     finalize(id, null, null);

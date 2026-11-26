@@ -35,7 +35,7 @@ const page = (url: string, over: Record<string, unknown> = {}) => ({ url, final_
 
 beforeAll(() => {
   sb = makeSandbox();
-  process.env.RANKORA_MONITOR = "1";
+  process.env.AUDITPILOT_MONITOR = "1";
 });
 afterAll(() => sb.cleanup());
 beforeEach(() => {

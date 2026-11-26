@@ -4,7 +4,7 @@
  * Change the name here, or without touching code by setting NEXT_PUBLIC_BRAND_NAME (and
  * optionally NEXT_PUBLIC_BRAND_TAGLINE) in .env.local, then rebuild (npm run build).
  */
-const name = (process.env.NEXT_PUBLIC_BRAND_NAME ?? "").trim() || "Rankora";
+const name = (process.env.NEXT_PUBLIC_BRAND_NAME ?? "").trim() || "AuditPilot";
 const tagline = (process.env.NEXT_PUBLIC_BRAND_TAGLINE ?? "").trim() || "SEO audit workspace";
 
 export const BRAND = {

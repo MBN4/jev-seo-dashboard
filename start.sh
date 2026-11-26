@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Rankora launcher.
+# AuditPilot launcher.
 #   ./start.sh          production mode, http://localhost:3000 (installs and rebuilds when needed)
 #   ./start.sh --dev    development mode with hot reload
 # Settings come from .env.local (see .env.example). Older JEVSEO_* names are still accepted.
@@ -22,7 +22,7 @@ if [ -f .env.local ]; then
   done < <(grep -E '^[A-Z_][A-Z0-9_]*=' .env.local)
 fi
 
-ENGINE_DIR="${RANKORA_ENGINE_DIR:-${JEVSEO_DIR:-$(pwd)/../jev-seo}}"
+ENGINE_DIR="${AUDITPILOT_ENGINE_DIR:-${RANKORA_ENGINE_DIR:-${JEVSEO_DIR:-$(pwd)/../jev-seo}}}"
 ENGINE_DIR="$(cd "$ENGINE_DIR" 2>/dev/null && pwd || echo "$ENGINE_DIR")"
 fail=0
 
@@ -37,13 +37,13 @@ if [ "$NODE_MAJOR" -lt 18 ]; then red "Node $(node -v) is too old; Next.js 15 ne
 if [ ! -f "$ENGINE_DIR/jevseo/cli.py" ]; then
   red "Audit engine not found at: $ENGINE_DIR"
   echo "  Set its folder in .env.local, e.g.:"
-  echo "    echo 'RANKORA_ENGINE_DIR=$HOME/path/to/engine' >> .env.local"
+  echo "    echo 'AUDITPILOT_ENGINE_DIR=$HOME/path/to/engine' >> .env.local"
   echo "  (see docs/INSTALLATION.md)"
   fail=1
 fi
 
 # 3. Python environment used by the engine
-PY="${RANKORA_ENGINE_PYTHON:-${JEVSEO_PYTHON:-}}"
+PY="${AUDITPILOT_ENGINE_PYTHON:-${RANKORA_ENGINE_PYTHON:-${JEVSEO_PYTHON:-}}}"
 if [ -z "$PY" ]; then
   for c in "$ENGINE_DIR/.venv/bin/python" "$ENGINE_DIR/venv/bin/python"; do [ -x "$c" ] && PY="$c" && break; done
 fi
@@ -51,7 +51,7 @@ if [ -z "$PY" ]; then
   red "No Python virtualenv found for the engine ($ENGINE_DIR/.venv)."
   echo "  Create one (uv works on Ubuntu 20.04):"
   echo "    cd $ENGINE_DIR && uv venv .venv -p 3.12 && uv pip install -p .venv/bin/python -r requirements.txt"
-  echo "  or set RANKORA_ENGINE_PYTHON in .env.local to the interpreter you already use."
+  echo "  or set AUDITPILOT_ENGINE_PYTHON in .env.local to the interpreter you already use."
   fail=1
 elif ! PYTHONPATH="$ENGINE_DIR" "$PY" -c "import requests, bs4, lxml, matplotlib, jinja2, weasyprint, openpyxl" 2>/dev/null; then
   red "Engine Python ($PY) is missing packages. Run:"
@@ -59,7 +59,7 @@ elif ! PYTHONPATH="$ENGINE_DIR" "$PY" -c "import requests, bs4, lxml, matplotlib
   fail=1
 fi
 [ "$fail" = 1 ] && exit 1
-export RANKORA_ENGINE_DIR="$ENGINE_DIR" RANKORA_ENGINE_PYTHON="$PY"
+export AUDITPILOT_ENGINE_DIR="$ENGINE_DIR" AUDITPILOT_ENGINE_PYTHON="$PY"
 if ! PYTHONPATH="$ENGINE_DIR" "$PY" -c "import playwright" 2>/dev/null; then
   dim "Note: Playwright not installed; JavaScript rendering is off. Standard crawling works normally."
 fi
@@ -76,7 +76,7 @@ if [ "$MODE" = "prod" ]; then
   fi
 fi
 
-green "${NEXT_PUBLIC_BRAND_NAME:-Rankora}"
+green "${NEXT_PUBLIC_BRAND_NAME:-AuditPilot}"
 echo "  Dashboard:  http://localhost:$PORT"
 echo "  API:        http://localhost:$PORT/api  (e.g. /api/system/health)"
 dim "Press Ctrl+C to stop. Running audits are separate processes and finish on their own."

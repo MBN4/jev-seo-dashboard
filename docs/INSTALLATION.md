@@ -4,7 +4,7 @@ Tested on Ubuntu 20.04, 22.04 and 24.04 with Python 3.12 (via `uv`) and Node.js 
 
 ## 1. The audit engine (Python)
 
-Rankora runs an open-source audit engine as a separate process (see [NOTICE.md](../NOTICE.md)). If you already have it installed with a working virtualenv, skip to step 2.
+AuditPilot runs an open-source audit engine as a separate process (see [NOTICE.md](../NOTICE.md)). If you already have it installed with a working virtualenv, skip to step 2.
 
 ```bash
 curl -LsSf https://astral.sh/uv/install.sh | sh          # Python 3.12 without touching the system Python
@@ -27,7 +27,7 @@ sudo apt-get install -y libpango-1.0-0 libpangoft2-1.0-0
 ~/audit-engine/.venv/bin/python -m playwright install chromium
 ```
 
-On Ubuntu 20.04 the Chromium download may fail. That is fine: crawling falls back to raw HTML, and Rankora shows rendering as unavailable. Do not upgrade Ubuntu for this.
+On Ubuntu 20.04 the Chromium download may fail. That is fine: crawling falls back to raw HTML, and AuditPilot shows rendering as unavailable. Do not upgrade Ubuntu for this.
 
 ## 2. Node.js
 
@@ -39,19 +39,19 @@ source ~/.bashrc
 nvm install 20
 ```
 
-## 3. Rankora
+## 3. AuditPilot
 
 ```bash
-git clone https://github.com/MBN4/rankora ~/rankora
-cd ~/rankora
+git clone https://github.com/MBN4/auditpilot ~/auditpilot
+cd ~/auditpilot
 cp .env.example .env.local
 ```
 
-Edit `.env.local` and set `RANKORA_ENGINE_DIR` to the engine folder, for example `RANKORA_ENGINE_DIR=/home/you/audit-engine`. Existing `.env.local` files that use the older `JEVSEO_DIR` keep working.
+Edit `.env.local` and set `AUDITPILOT_ENGINE_DIR` to the engine folder, for example `AUDITPILOT_ENGINE_DIR=/home/you/audit-engine`. Existing `.env.local` files that use the older `JEVSEO_DIR` keep working.
 
 ## 4. Keys (optional)
 
-Start Rankora, then open **Settings → API keys**:
+Start AuditPilot, then open **Settings → API keys**:
 
 - Paste each key and press **Save**, then **Verify**.
 - Keys are stored in `data/secrets.env` (mode 600, git-ignored) and passed only to the engine process.

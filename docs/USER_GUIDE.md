@@ -142,11 +142,11 @@ Open **Monitoring** in the sidebar. The bell in the header shows how many change
   - **Change detected:** found between audits from the homepage and sitemaps, for example "3 new pages in the sitemap" or "homepage title changed", with before and after.
 - **Explanations:** click any issue to open its full explanation.
 
-Audits run while Rankora is running. Leave `./start.sh` running, for example on an always-on machine, for true daily monitoring.
+Audits run while AuditPilot is running. Leave `./start.sh` running, for example on an always-on machine, for true daily monitoring.
 
 ## New Audit: your sites and page counting
 
-Pick a site from **Your sites**, or the chips under the URL field, or type any address. Rankora counts the site's pages from its sitemaps and sets **Maximum pages** and the time budget to match automatically. The maximum is 2,000 pages. You can still change the numbers before starting.
+Pick a site from **Your sites**, or the chips under the URL field, or type any address. AuditPilot counts the site's pages from its sitemaps and sets **Maximum pages** and the time budget to match automatically. The maximum is 2,000 pages. You can still change the numbers before starting.
 
 ## Search Console
 
