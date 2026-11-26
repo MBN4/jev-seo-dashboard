@@ -79,7 +79,7 @@ Open **http://localhost:3000**. `start.sh` installs dependencies and rebuilds on
 | API | http://localhost:3000/api (for example `/api/system/health`) |
 | Development mode | `./start.sh --dev` |
 
-More detail: [Daily priority issues](docs/PRIORITY_ISSUES.md) · [Everything Rankora checks](docs/CHECKS.md) · [Installation](docs/INSTALLATION.md) · [User guide](docs/USER_GUIDE.md) · [Architecture](docs/ARCHITECTURE.md) · [API](docs/API.md)
+More detail: [Combined list](docs/COMBINED_LIST.md) · [Daily priority issues](docs/PRIORITY_ISSUES.md) · [Everything Rankora checks](docs/CHECKS.md) · [Installation](docs/INSTALLATION.md) · [User guide](docs/USER_GUIDE.md) · [Architecture](docs/ARCHITECTURE.md) · [API](docs/API.md)
 
 ## Configuration
 
