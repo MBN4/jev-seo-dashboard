@@ -70,7 +70,7 @@ if [ ! -d node_modules ] || [ package-lock.json -nt node_modules/.package-lock.j
   npm ci --no-audit --no-fund
 fi
 if [ "$MODE" = "prod" ]; then
-  if [ ! -f .next/BUILD_ID ] || [ -n "$(find app components lib hooks types middleware.ts next.config.ts package.json .env.local -newer .next/BUILD_ID -print -quit 2>/dev/null)" ]; then
+  if [ ! -f .next/BUILD_ID ] || [ -n "$(find app components lib hooks types middleware.ts instrumentation.ts instrumentation-node.ts next.config.ts package.json .env.local -newer .next/BUILD_ID -print -quit 2>/dev/null)" ]; then
     echo "Building (about a minute)..."
     npm run build
   fi
