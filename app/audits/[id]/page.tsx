@@ -1,4 +1,5 @@
 "use client";
+import { DEFAULT_MAX_PAGES } from "@/lib/limits";
 import Link from "next/link";
 import { AlertOctagon, AlertTriangle, ArrowRight, Bot, CheckCircle2, FileSearch, Globe, ListChecks, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -37,7 +38,7 @@ export default function AuditOverviewPage() {
             {ov.site.sitemapUrls ? `The site's sitemaps list ${ov.site.sitemapUrls.toLocaleString()} URLs, so most of the site was not audited.` : "The site has more pages than were audited."}
           </p>
           <Button asChild size="sm" variant="outline" className="shrink-0">
-            <Link href={`/audits/new?url=${encodeURIComponent(audit.url)}&maxPages=${Math.min(2000, Math.max((ov.site.limits.max_pages ?? 60) * 2, ov.site.sitemapUrls ?? 0))}`}>
+            <Link href={`/audits/new?url=${encodeURIComponent(audit.url)}&maxPages=${Math.min(DEFAULT_MAX_PAGES, Math.max((ov.site.limits.max_pages ?? 60) * 2, ov.site.sitemapUrls ?? 0))}`}>
               Re-run with a higher limit
             </Link>
           </Button>

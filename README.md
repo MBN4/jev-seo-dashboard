@@ -47,7 +47,7 @@ AuditPilot drives an open-source audit engine (credited in [NOTICE.md](NOTICE.md
 
 The five sites (emailverify.io, clustox.com, mycoldinbox.com, inboxwarm.ai, tellbear.com) are monitored from the first start. You can add more on the **Monitoring** page.
 
-- **Daily audits:** each site is re-audited every 24 hours. You can change this to 6 hours, 12 hours, 2 days or a week, pause a site, or press **Run now**. The crawl limit is set from the site's current sitemap size, up to 2,000 pages.
+- **Daily audits:** each site is re-audited every 24 hours. You can change this to 6 hours, 12 hours, 2 days or a week, pause a site, or press **Run now**. Each audit aims to cover the **whole site**. The crawl limit is the sitemap count plus 25% headroom for pages found only through links. If an audit still stops at its limit, the next one allows 1.5× more. The default maximum is 5,000 pages per audit (see *Big sites* below), and each Monitoring card shows how much of the site the last audit covered.
 - **Change checks between audits:** every 3 hours, AuditPilot reads each homepage's title, description, H1, canonical and robots tag, plus the sitemap's URL list (no crawl). New or removed pages and homepage edits are reported straight away, and an audit runs within 3 hours of the last one.
 - **What changed:** every new audit is compared with the previous one. You see the score change, new problems, issues that got worse, fixed and improved issues, and pages that broke, changed title or description, became noindex, or are new. A "still to fix" list puts the most important item first and marks anything that is probably intended.
 - **Notifications:** a bell in the header counts unread changes, and a toast appears when one arrives.
@@ -86,9 +86,19 @@ Connect Search Console once, in **Settings → Search Console**. AuditPilot then
 
 Google's API does not provide the Page indexing totals, Core Web Vitals, Links, Manual actions or Security issues reports, so those stay in Search Console itself. Traffic from other channels needs Google Analytics.
 
+## Big sites
+
+The audit engine has no page limit of its own. AuditPilot sets one to keep memory use sensible, because a whole audit is loaded to build the reports and views.
+
+| Site size | What happens |
+|---|---|
+| Up to 5,000 pages | Covered completely, with no setup. Crawling runs at about 2–4 pages per second, so 5,000 pages takes roughly 20–40 minutes. |
+| 5,000–20,000 pages | Set `AUDITPILOT_MAX_PAGES` in `.env.local` (for example `12000`) on a computer with at least 8 GB of RAM. `start.sh` already gives Node 4 GB; for very large sites also set `NODE_OPTIONS=--max-old-space-size=8192`. |
+| Over the limit | The audit crawls up to the limit: the homepage first, then pages by link depth, then the sitemap URLs that links never reached. The Monitoring card says the audit stopped at its limit. Search Console still reports clicks and index status for the whole site. |
+
 ## Before and during an audit
 
-- **Your sites and automatic page count:** pick one of your sites from the **Your sites** menu, or type any URL. AuditPilot reads its sitemaps (no crawl), counts the pages, and sets the crawl limit and time budget to match automatically, up to 2,000 pages.
+- **Your sites and automatic page count:** pick one of your sites from the **Your sites** menu, or type any URL. AuditPilot reads its sitemaps (no crawl), counts the pages, and sets the crawl limit and time budget to match automatically, up to 5,000 pages.
 - **Live progress:** the engine's real stages, URLs crawled, pages judged and PageSpeed runs. Warnings are grouped by cause, each with its fix, so six rate-limited requests are one notice, not six.
 - **No keyless warnings:** AI judgments stay off until a key is added, and PageSpeed is off by default without one.
 - **Your sites:** audits of emailverify.io, clustox.com, mycoldinbox.com and inboxwarm.ai ship with AuditPilot and appear on first start. The New Audit placeholder rotates through them. The list is in `lib/brand.ts`.
@@ -132,6 +142,7 @@ More detail: [Combined list](docs/COMBINED_LIST.md) · [Daily priority issues](d
 | `AUDITPILOT_MAX_AUDIT_SECONDS` | `7200` | Hard limit per audit process |
 | `AUDITPILOT_ALLOWED_HOSTS` | localhost only | Extra hostnames allowed to reach the app |
 | `AUDITPILOT_AUDIT_CACHE_MB` | `350` | Memory budget for parsed audits (large crawls are 100+ MB) |
+| `AUDITPILOT_MAX_PAGES` | `5000` | Largest crawl per audit (up to 20,000). Each page adds roughly 50–100 KB to the audit file, so raise it only on a machine with enough memory. |
 | `AUDITPILOT_MONITOR` | on | `0` turns off scheduled audits, change checks and Search Console syncing |
 | `AUDITPILOT_GSC_KEY_FILE` | `data/gsc/service-account.json` | Optional path to the Search Console service account key, instead of pasting it in Settings |
 | `NEXT_PUBLIC_BRAND_NAME` / `NEXT_PUBLIC_BRAND_TAGLINE` | `AuditPilot` / `SEO audit workspace` | Product name and tagline (rebuild after changing) |

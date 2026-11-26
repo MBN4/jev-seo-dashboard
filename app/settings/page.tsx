@@ -9,6 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PageHeader } from "@/components/common/page-header";
+import { DEFAULT_MAX_PAGES, MAX_TIME_BUDGET } from "@/lib/limits";
 import { SectionCard } from "@/components/common/section-card";
 import { SearchConsoleCard } from "@/components/settings/search-console-card";
 import { ErrorState } from "@/components/common/error-state";
@@ -87,9 +88,9 @@ function DefaultsTab() {
   return (
     <SectionCard title="Audit defaults" description="Pre-filled on the New Audit form. Each maps to an audit engine option.">
       <div className="grid gap-4 sm:grid-cols-3">
-        {num("maxPages", "Crawl limit (pages)", 1, 2000)}
+        {num("maxPages", "Crawl limit (pages)", 1, DEFAULT_MAX_PAGES)}
         {num("maxDepth", "Max depth", 1, 10)}
-        {num("timeBudget", "Crawl time budget (s)", 30, 5400)}
+        {num("timeBudget", "Crawl time budget (s)", 30, MAX_TIME_BUDGET)}
         {num("aiPages", "Pages sent to AI", 1, 200)}
         {num("aiBudget", "AI spend cap (USD)", 0.01, 5, 0.05)}
         {num("psiPages", "PageSpeed pages", 1, 10)}

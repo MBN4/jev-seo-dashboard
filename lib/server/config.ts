@@ -1,3 +1,4 @@
+import { DEFAULT_MAX_PAGES, HARD_MAX_PAGES } from "@/lib/limits";
 import "server-only";
 import fs from "node:fs";
 import path from "node:path";
@@ -77,11 +78,17 @@ export function maxConcurrentAudits(): number {
 
 /** Hard ceiling for one audit process (engine crawl budget is separate). */
 export function maxAuditSeconds(): number {
-  // Must exceed the largest crawl time budget (5400 s) plus scoring and report generation.
-  const n = Number(setting("MAX_AUDIT_SECONDS", "JEVSEO_MAX_AUDIT_SECONDS") ?? 7200);
-  return Number.isFinite(n) && n >= 60 ? n : 7200;
+  // Must exceed the largest crawl time budget (14,400 s) plus scoring and report generation.
+  const n = Number(setting("MAX_AUDIT_SECONDS", "JEVSEO_MAX_AUDIT_SECONDS") ?? 18000);
+  return Number.isFinite(n) && n >= 60 ? n : 18000;
 }
 
 export function ensureDir(dir: string, mode = 0o700): void {
   fs.mkdirSync(dir, { recursive: true, mode });
+}
+
+/** Largest crawl this server allows (AUDITPILOT_MAX_PAGES, default 5,000, at most 20,000). */
+export function maxCrawlPages(): number {
+  const n = Number(setting("MAX_PAGES") ?? DEFAULT_MAX_PAGES);
+  return Number.isFinite(n) ? Math.min(HARD_MAX_PAGES, Math.max(100, Math.round(n))) : DEFAULT_MAX_PAGES;
 }

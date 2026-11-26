@@ -7,14 +7,13 @@ import { CountUp } from "@/components/motion/primitives";
 import { api, ApiError } from "@/lib/api";
 import { checkUrlSyntax } from "@/lib/url";
 import { cn } from "@/lib/utils";
+import { DEFAULT_MAX_PAGES, suggestedTimeBudget } from "@/lib/limits";
 import type { SiteSize } from "@/lib/server/site-size";
 
-export const MAX_PAGES_CAP = 2000;
+export const MAX_PAGES_CAP = DEFAULT_MAX_PAGES;
 
 /** Crawl time budget that comfortably fits `pages` (seconds), within the engine's limits. */
-export function suggestedTimeBudget(pages: number): number {
-  return Math.min(5400, Math.max(600, Math.ceil((pages * 2) / 60) * 60));
-}
+export { suggestedTimeBudget };
 
 /**
  * "Count pages" for the URL in the form: reads robots.txt and sitemaps (no crawl) and lets the

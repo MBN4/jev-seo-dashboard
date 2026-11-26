@@ -98,7 +98,7 @@ describe("monitoring scheduler", () => {
     expect(m.events.find((e) => e.domain === D && e.kind === "baseline")?.title).toMatch(/^First audit/);
     expect(m.sites.find((s) => s.domain === D)?.pagesCounted).toBe(2);
     expect(r1.started).toBe("job-1");
-    expect(started[0].options).toMatchObject({ maxPages: 2, psi: false, ai: false });
+    expect(started[0].options).toMatchObject({ maxPages: 60, maxDepth: 10, psi: false, ai: false }); // 2 sitemap pages + headroom, at least the default
 
     // Three hours later the site changed: new sitemap page and a new homepage title.
     site.urls.push("https://mycoldinbox.com/new-post");
@@ -149,5 +149,27 @@ describe("monitoring scheduler", () => {
 
     const after = await (await GET()).json();
     expect(after.sites.find((s: { domain: string }) => s.domain === "clustox.com")).toMatchObject({ enabled: false, intervalHours: 12, nextRunAt: null });
+  });
+});
+
+describe("crawl planning for big sites", () => {
+  it("covers the whole site with headroom, grows after hitting the limit, and respects the server cap", async () => {
+    const { plannedCrawl } = await import("@/lib/server/monitor");
+    expect(plannedCrawl({ pagesCounted: 1620 }, { pagesCrawled: 1620, sitemapUrls: 1961, options: { maxPages: 1620 } }, 60)).toMatchObject({ pages: 2502, known: 1961, lastHitCap: true, capped: false });
+    expect(plannedCrawl({ pagesCounted: 49 }, { pagesCrawled: 49, sitemapUrls: 49, options: { maxPages: 200 } }, 60)).toMatchObject({ pages: 112, lastHitCap: false });
+    expect(plannedCrawl({ pagesCounted: 8000 }, null, 60)).toMatchObject({ pages: 5000, capped: true, cap: 5000 });
+    process.env.AUDITPILOT_MAX_PAGES = "12000";
+    expect(plannedCrawl({ pagesCounted: 8000 }, null, 60)).toMatchObject({ pages: 10050, capped: false });
+    process.env.AUDITPILOT_MAX_PAGES = "999999";
+    expect(plannedCrawl({ pagesCounted: 30000 }, null, 60).pages).toBe(20000);
+    delete process.env.AUDITPILOT_MAX_PAGES;
+  });
+
+  it("lowers a manual audit above the server limit, with a warning", async () => {
+    const { createAudit } = await import("@/lib/server/audit-service");
+    const pub = async () => ["93.184.216.34"];
+    const { job, warnings } = await createAudit({ url: "https://big.example.org/", options: { maxPages: 15000, psi: false } }, pub);
+    expect(job.options.maxPages).toBe(5000);
+    expect(warnings.join(" ")).toMatch(/at most 5,000 pages/);
   });
 });

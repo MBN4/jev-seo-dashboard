@@ -4,6 +4,7 @@ import { validateAuditTarget, type Resolver } from "./url-guard";
 import { startJob, JobError } from "./jobs";
 import { readState, updateState } from "./state";
 import { isConfigured } from "./secrets";
+import { maxCrawlPages } from "./config";
 
 /** Validate a create-audit request end to end and launch the engine. */
 export async function createAudit(body: unknown, resolver?: Resolver) {
@@ -20,6 +21,10 @@ export async function createAudit(body: unknown, resolver?: Resolver) {
   }
   const domain = new URL(target.url).hostname.toLowerCase().replace(/^www\./, "");
   const warnings: string[] = [];
+  if (options.maxPages > maxCrawlPages()) {
+    warnings.push(`This server crawls at most ${maxCrawlPages().toLocaleString()} pages per audit (AUDITPILOT_MAX_PAGES); the limit was lowered from ${options.maxPages.toLocaleString()}.`);
+    options.maxPages = maxCrawlPages();
+  }
   // No key, no AI stage: turn it off up front instead of letting the engine log a warning.
   if (options.ai && !isConfigured("TYPESAFE_API_KEY")) {
     options.ai = false;

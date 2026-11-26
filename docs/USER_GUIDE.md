@@ -146,7 +146,7 @@ Audits run while AuditPilot is running. Leave `./start.sh` running, for example 
 
 ## New Audit: your sites and page counting
 
-Pick a site from **Your sites**, or the chips under the URL field, or type any address. AuditPilot counts the site's pages from its sitemaps and sets **Maximum pages** and the time budget to match automatically. The maximum is 2,000 pages. You can still change the numbers before starting.
+Pick a site from **Your sites**, or the chips under the URL field, or type any address. AuditPilot counts the site's pages from its sitemaps and sets **Maximum pages** and the time budget to match automatically. The maximum is 5,000 pages by default. You can still change the numbers before starting.
 
 ## Search Console
 

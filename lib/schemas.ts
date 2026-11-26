@@ -1,13 +1,14 @@
 import { z } from "zod";
+import { HARD_MAX_PAGES, MAX_TIME_BUDGET } from "@/lib/limits";
 
 /**
  * Audit options. Every field maps 1:1 to an audit engine CLI flag (see lib/engine-protocol.ts).
  * Bounds keep requests reasonable; engine defaults are used as the dashboard defaults.
  */
 export const auditOptionsSchema = z.object({
-  maxPages: z.number().int().min(1).max(2000), // --max-pages (engine default 60; the engine has no upper limit)
+  maxPages: z.number().int().min(1).max(HARD_MAX_PAGES), // --max-pages (engine default 60; no engine limit). The server applies AUDITPILOT_MAX_PAGES.
   maxDepth: z.number().int().min(1).max(10), // --max-depth (5)
-  timeBudget: z.number().int().min(30).max(5400), // --time-budget seconds (600)
+  timeBudget: z.number().int().min(30).max(MAX_TIME_BUDGET), // --time-budget seconds (600)
   render: z.enum(["auto", "always", "never"]), // --render (auto)
   ai: z.boolean(), // AI judgments on/off
   aiPages: z.number().int().min(1).max(200), // pages sent to the AI model (60)

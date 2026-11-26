@@ -134,6 +134,22 @@ function SiteCard({ s, onChanged }: { s: MonitorSite; onChanged: () => void }) {
           )}
         </Link>
       )}
+      {s.coverage.crawled != null && (
+        <p className={cn("rounded-lg px-3 py-2 text-xs", s.coverage.lastHitCap ? "bg-warning-soft text-warning-ink" : "bg-muted/40 text-muted-foreground")}>
+          {s.coverage.lastHitCap ? (
+            <>
+              Last audit stopped at its limit ({s.coverage.crawled.toLocaleString()} pages
+              {s.coverage.known ? ` of about ${s.coverage.known.toLocaleString()} known` : ""}). The next audit crawls up to <b>{s.coverage.nextLimit.toLocaleString()}</b> pages
+              {s.coverage.capped ? ` (this server's maximum; raise AUDITPILOT_MAX_PAGES to cover more)` : " to cover the whole site"}.
+            </>
+          ) : (
+            <>
+              Whole site covered: {s.coverage.crawled.toLocaleString()} pages crawled
+              {s.coverage.known ? `, ${s.coverage.known.toLocaleString()} in the sitemap` : ""}. Next audit: up to {s.coverage.nextLimit.toLocaleString()}.
+            </>
+          )}
+        </p>
+      )}
       {s.lastAttemptError && (
         <p className="flex items-start gap-1.5 rounded-md bg-critical-soft px-2.5 py-1.5 text-xs text-critical">
           <AlertTriangle className="mt-0.5 size-3.5 shrink-0" /> Last scheduled run failed: {s.lastAttemptError}

@@ -64,6 +64,9 @@ if ! PYTHONPATH="$ENGINE_DIR" "$PY" -c "import playwright" 2>/dev/null; then
   dim "Note: Playwright not installed; JavaScript rendering is off. Standard crawling works normally."
 fi
 
+# Large audits (thousands of pages) are loaded whole; give Node room unless the user chose a size.
+case " ${NODE_OPTIONS:-} " in *max-old-space-size*) ;; *) export NODE_OPTIONS="${NODE_OPTIONS:-} --max-old-space-size=4096" ;; esac
+
 # 4. Dependencies and build: (re)install / rebuild only when something changed, e.g. after git pull.
 if [ ! -d node_modules ] || [ package-lock.json -nt node_modules/.package-lock.json ]; then
   echo "Installing dependencies..."

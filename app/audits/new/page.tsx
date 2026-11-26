@@ -22,6 +22,7 @@ import { ConfirmationDialog } from "@/components/common/confirmation-dialog";
 import { LoadingSkeleton } from "@/components/common/loading-skeleton";
 import { OptionRow } from "@/components/audit/option-row";
 import { SiteSizeCounter } from "@/components/audit/site-size-counter";
+import { DEFAULT_MAX_PAGES, MAX_TIME_BUDGET, suggestedTimeBudget } from "@/lib/limits";
 import { api, ApiError, type MonitorSite } from "@/lib/api";
 import { checkUrlSyntax } from "@/lib/url";
 import { SAMPLE_SITES } from "@/lib/brand";
@@ -99,12 +100,12 @@ export default function NewAuditPage() {
       // Prefill from links such as "Re-run with a higher limit" (?url=…&maxPages=…).
       const q = new URLSearchParams(window.location.search);
       const qMax = Number(q.get("maxPages"));
-      const preMax = Number.isInteger(qMax) && qMax >= 1 && qMax <= 2000 ? qMax : null;
+      const preMax = Number.isInteger(qMax) && qMax >= 1 && qMax <= DEFAULT_MAX_PAGES ? qMax : null;
       reset({
         url: q.get("url")?.slice(0, 2048) || form.getValues("url"),
         keywordsText: form.getValues("keywordsText"),
         ...s.defaults,
-        ...(preMax ? { maxPages: preMax, timeBudget: Math.max(s.defaults.timeBudget, Math.min(5400, Math.max(600, Math.ceil((preMax * 2) / 60) * 60))) } : {}),
+        ...(preMax ? { maxPages: preMax, timeBudget: Math.max(s.defaults.timeBudget, suggestedTimeBudget(preMax)) } : {}),
         full: false,
         // Without keys these stages only produce warnings, so start them off (users can still turn PageSpeed on).
         ...(s.secrets.find((x) => x.key === "TYPESAFE_API_KEY")?.configured ? {} : { ai: false }),
@@ -232,9 +233,9 @@ export default function NewAuditPage() {
 
           <SectionCard title="Crawl" description="Maps to the engine's --max-pages, --max-depth and --time-budget.">
             <div className="grid gap-4 sm:grid-cols-3">
-              <NumberField id="maxPages" label="Maximum pages" hint="Set automatically from the page count · up to 2,000" min={1} max={2000} value={v.maxPages} onChange={(n) => setValue("maxPages", n, { shouldValidate: true })} error={err.maxPages?.message} />
+              <NumberField id="maxPages" label="Maximum pages" hint="Set automatically from the page count · up to 5,000" min={1} max={DEFAULT_MAX_PAGES} value={v.maxPages} onChange={(n) => setValue("maxPages", n, { shouldValidate: true })} error={err.maxPages?.message} />
               <NumberField id="maxDepth" label="Maximum depth" hint="Engine default: 5" min={1} max={10} value={v.maxDepth} onChange={(n) => setValue("maxDepth", n, { shouldValidate: true })} error={err.maxDepth?.message} />
-              <NumberField id="timeBudget" label="Crawl time budget (s)" hint="Engine default: 600 · up to 5,400" min={30} max={5400} value={v.timeBudget} onChange={(n) => setValue("timeBudget", n, { shouldValidate: true })} error={err.timeBudget?.message} />
+              <NumberField id="timeBudget" label="Crawl time budget (s)" hint="Set automatically with the page count · up to 14,400 (4 h)" min={30} max={MAX_TIME_BUDGET} value={v.timeBudget} onChange={(n) => setValue("timeBudget", n, { shouldValidate: true })} error={err.timeBudget?.message} />
             </div>
             <div className="mt-4 grid gap-4 sm:grid-cols-2">
               <div className="space-y-1">

@@ -28,9 +28,9 @@ describe("count pages", () => {
     const onApply = vi.fn();
     render(<SiteSizeCounter url="bigsite-demo.com" currentMax={60} onApply={onApply} />);
     await userEvent.click(screen.getByRole("button", { name: /count pages/i }));
-    await userEvent.click(await screen.findByRole("button", { name: /crawl 2,000 pages/i }));
-    expect(onApply).toHaveBeenCalledWith(2000, suggestedTimeBudget(2000), false);
-    expect(screen.getByText(/at most 2,000 pages/)).toBeInTheDocument();
+    await userEvent.click(await screen.findByRole("button", { name: /crawl 5,000 pages/i }));
+    expect(onApply).toHaveBeenCalledWith(5000, suggestedTimeBudget(5000), false);
+    expect(screen.getByText(/at most 5,000 pages/)).toBeInTheDocument();
   });
 
   it("counts automatically and sets the crawl limit when a site is entered", async () => {
@@ -51,6 +51,7 @@ describe("count pages", () => {
     expect(suggestedTimeBudget(10)).toBe(600);
     expect(suggestedTimeBudget(732)).toBe(1500);
     expect(suggestedTimeBudget(2000)).toBe(4020);
-    expect(suggestedTimeBudget(100000)).toBe(5400);
+    expect(suggestedTimeBudget(5000)).toBe(10020);
+    expect(suggestedTimeBudget(100000)).toBe(14400);
   });
 });

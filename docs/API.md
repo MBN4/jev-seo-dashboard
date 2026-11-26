@@ -35,9 +35,9 @@ Option keys and bounds (each maps to a CLI flag):
 
 | Key | Range | Flag |
 | --- | --- | --- |
-| `maxPages` | 1–2000 | `--max-pages` |
+| `maxPages` | 1–5000 by default (`AUDITPILOT_MAX_PAGES`, up to 20000) | `--max-pages` |
 | `maxDepth` | 1–10 | `--max-depth` |
-| `timeBudget` | 30–5400 | `--time-budget` |
+| `timeBudget` | 30–14400 | `--time-budget` |
 | `render` | auto, always, never | `--render` |
 | `ai` / `aiPages` / `aiBudget` | | AI judgments on/off, pages sent, spend cap. Switched off automatically when no `TYPESAFE_API_KEY` is set. |
 | `psi` / `psiPages` | | `--no-psi` / `--psi-pages` |

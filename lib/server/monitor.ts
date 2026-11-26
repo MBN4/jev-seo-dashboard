@@ -2,7 +2,8 @@ import "server-only";
 import fs from "node:fs";
 import path from "node:path";
 import { createHash, randomUUID } from "node:crypto";
-import { dataDir, jobsDir, maxConcurrentAudits, setting } from "./config";
+import { dataDir, jobsDir, maxConcurrentAudits, maxCrawlPages, setting } from "./config";
+import { suggestedTimeBudget } from "@/lib/limits";
 import { readState, writeAtomic } from "./state";
 import { listAudits, loadAudit } from "./audits";
 import { runningJobs } from "./jobs";
@@ -31,7 +32,6 @@ import type { AuditSummary } from "@/types/api";
  */
 
 export const INTERVALS = [6, 12, 24, 48, 168] as const;
-const MAX_PAGES = 2000;
 const CHECK_EVERY_H = 3;
 /** An audit triggered by a detected change waits at least this long after the previous audit. */
 const CHANGE_MIN_GAP_H = 3;
@@ -358,6 +358,21 @@ export async function setRetention(days: number | null) {
   });
 }
 
+/**
+ * How many pages the next scheduled audit should crawl, aiming to cover the whole site:
+ * the larger of the sitemap counts plus 25% headroom (pages found through links but missing from
+ * the sitemap), and 1.5× the last crawl when that crawl stopped at its limit. Capped by
+ * AUDITPILOT_MAX_PAGES.
+ */
+export function plannedCrawl(site: Pick<MonitoredSite, "pagesCounted">, last: Pick<AuditSummary, "pagesCrawled" | "sitemapUrls" | "options"> | null, fallback: number) {
+  const known = Math.max(site.pagesCounted ?? 0, last?.sitemapUrls ?? 0);
+  const lastLimit = last?.options?.maxPages ?? null;
+  const lastHitCap = Boolean(last && lastLimit && (last.pagesCrawled ?? 0) >= lastLimit);
+  const want = Math.max(known ? Math.ceil(known * 1.25) + 50 : 0, lastHitCap ? Math.ceil((last!.pagesCrawled ?? 0) * 1.5) : 0, last?.pagesCrawled ?? 0, fallback);
+  const cap = maxCrawlPages();
+  return { pages: Math.min(cap, want), known, lastHitCap, capped: want > cap, cap };
+}
+
 let ticking = false;
 
 /** One scheduler pass: report finished audits, run due change checks, start at most one due audit. */
@@ -426,10 +441,12 @@ export async function tick(deps: TickDeps = {}): Promise<{ started: string | nul
     if (!pick) return out;
     const { site, a } = pick;
     const defaults = readState().defaults;
-    const pages = Math.min(MAX_PAGES, Math.max(1, site.pagesCounted ?? a.completed.at(-1)?.pagesCrawled ?? defaults.maxPages));
+    const plan = plannedCrawl(site, a.completed.at(-1) ?? null, defaults.maxPages);
+    const pages = plan.pages;
     const options = {
       maxPages: pages,
-      timeBudget: Math.min(5400, Math.max(defaults.timeBudget, Math.ceil((pages * 2) / 60) * 60)),
+      maxDepth: 10,
+      timeBudget: Math.max(defaults.timeBudget, suggestedTimeBudget(pages)),
       psi: isConfigured("PAGESPEED_API_KEY") && defaults.psi,
       ai: isConfigured("TYPESAFE_API_KEY") && defaults.ai,
       full: false,
@@ -481,6 +498,11 @@ export function monitorOverview() {
       running: a.running ? { id: a.running.id, startedAt: a.running.startedAt } : null,
       lastAudit: last ? { id: last.id, score: last.score, grade: last.grade, finishedAt: last.finishedAt, pagesCrawled: last.pagesCrawled, findingsTotal: last.findingsTotal, severity: last.severity } : null,
       nextRunAt: nextRunAt(site, a.lastStart),
+      coverage: (() => {
+        const plan = plannedCrawl(site, last, 60);
+        const crawled = last?.pagesCrawled ?? null;
+        return { crawled, known: plan.known || null, lastHitCap: plan.lastHitCap, nextLimit: plan.pages, capped: plan.capped, cap: plan.cap };
+      })(),
       history,
       search: searchSummary(site.domain),
     };
