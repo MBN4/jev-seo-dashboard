@@ -1,4 +1,4 @@
-import { BadgeCheck, BarChart3, Bot, Table2, ClipboardList, FileText, Gauge, History, LayoutDashboard, ListChecks, PlusCircle, SearchCheck, Settings, Wrench } from "lucide-react";
+import { Radar, BadgeCheck, BarChart3, Bot, Table2, ClipboardList, FileText, Gauge, History, LayoutDashboard, ListChecks, PlusCircle, SearchCheck, Settings, Wrench } from "lucide-react";
 
 export type AuditTab = "overview" | "checklist" | "explorer" | "technical" | "extra" | "pages" | "ai" | "performance" | "recommendations" | "reports";
 
@@ -16,6 +16,7 @@ export const NAV: NavItem[] = [
   { label: "Overview", icon: LayoutDashboard, href: "/" },
   { label: "New Audit", icon: PlusCircle, href: "/audits/new" },
   { label: "Audit History", icon: History, href: "/audits" },
+  { label: "Monitoring", icon: Radar, href: "/monitoring" },
   { label: "Google Checklist", icon: BadgeCheck, tab: "checklist", fallback: "/google-checklist" },
   { label: "Site Explorer", icon: Table2, tab: "explorer", fallback: "/site-explorer" },
   { label: "Technical SEO", icon: Wrench, tab: "technical", fallback: "/technical" },

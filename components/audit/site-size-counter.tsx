@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { ChevronDown, FileStack, Hash, Loader2, Wand2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -20,35 +20,58 @@ export function suggestedTimeBudget(pages: number): number {
  * "Count pages" for the URL in the form: reads robots.txt and sitemaps (no crawl) and lets the
  * user apply the count as the crawl limit.
  */
-export function SiteSizeCounter({ url, currentMax, onApply }: { url: string; currentMax: number; onApply: (pages: number, timeBudget: number) => void }) {
+export function SiteSizeCounter({ url, currentMax, onApply, auto = false }: { url: string; currentMax: number; onApply: (pages: number, timeBudget: number, automatic: boolean) => void; auto?: boolean }) {
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<SiteSize | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showFiles, setShowFiles] = useState(false);
+  const [applied, setApplied] = useState<number | null>(null);
   const valid = checkUrlSyntax(url).ok;
+  const counted = useRef<string | null>(null);
+  const apply = useRef(onApply);
+  apply.current = onApply;
 
-  const count = async () => {
+  const count = async (automatic = false) => {
+    const target = url.trim();
+    counted.current = target;
     setBusy(true);
     setError(null);
     setResult(null);
+    setApplied(null);
     try {
-      setResult(await api.siteSize(url));
+      const r = await api.siteSize(target);
+      if (counted.current !== target) return; // the URL changed meanwhile
+      setResult(r);
+      if (automatic) {
+        const pages = Math.max(1, Math.min(r.estimate, MAX_PAGES_CAP));
+        apply.current(pages, suggestedTimeBudget(pages), true);
+        setApplied(pages);
+      }
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : "Could not count pages.");
+      if (counted.current === target) setError(e instanceof ApiError ? e.message : "Could not count pages.");
     } finally {
-      setBusy(false);
+      if (counted.current === target) setBusy(false);
     }
   };
+
+  // Count automatically when a complete URL is entered or picked, and set the crawl limit to match.
+  useEffect(() => {
+    if (!auto || !valid || /^https?:\/\/[^/.]+$/i.test(url.trim()) || counted.current === url.trim()) return;
+    const t = setTimeout(() => void count(true), 900);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [url, auto, valid]);
 
   const target = result ? Math.min(result.estimate, MAX_PAGES_CAP) : 0;
   const covered = result && currentMax >= result.estimate;
 
   return (
     <div className="space-y-2">
-      <Button type="button" variant="outline" size="sm" className="h-9" onClick={count} disabled={!valid || busy}>
+      <Button type="button" variant="outline" size="sm" className="h-9" onClick={() => void count(auto)} disabled={!valid || busy}>
         {busy ? <Loader2 className="size-3.5 animate-spin" /> : <Hash className="size-3.5" />}
-        {busy ? "Counting pages…" : "Count pages"}
+        {busy ? "Counting pages…" : result ? "Count again" : "Count pages"}
       </Button>
+      {auto && !result && !busy && <p className="text-[0.7rem] text-muted-foreground">Pages are counted automatically when you enter or pick a site, and the crawl limit is set to match.</p>}
       {busy && <p className="text-[0.7rem] text-muted-foreground">Reading robots.txt and sitemaps; nothing is crawled. Usually a few seconds.</p>}
       {error && <p role="alert" className="text-xs text-critical">{error}</p>}
       <AnimatePresence>
@@ -74,10 +97,12 @@ export function SiteSizeCounter({ url, currentMax, onApply }: { url: string; cur
                     {result.basis === "sitemap" && ` · homepage links to ${result.homepageLinks}`}
                   </p>
                 </div>
-                {covered ? (
+                {applied != null ? (
+                  <p className="inline-flex items-center gap-1 text-xs font-medium text-brand-strong"><Wand2 className="size-3.5" /> Crawl limit set to {applied.toLocaleString()} pages automatically</p>
+                ) : covered ? (
                   <p className="text-xs font-medium text-brand-strong">Your crawl limit ({currentMax}) already covers this.</p>
                 ) : (
-                  <Button type="button" size="sm" onClick={() => onApply(target, suggestedTimeBudget(target))}>
+                  <Button type="button" size="sm" onClick={() => { onApply(target, suggestedTimeBudget(target), false); setApplied(target); }}>
                     <Wand2 className="size-3.5" /> Crawl {target.toLocaleString()} pages
                   </Button>
                 )}
@@ -85,7 +110,7 @@ export function SiteSizeCounter({ url, currentMax, onApply }: { url: string; cur
               {result.estimate > MAX_PAGES_CAP && (
                 <p className="mt-2 text-xs text-warning-ink">The dashboard crawls at most {MAX_PAGES_CAP.toLocaleString()} pages per audit; the limit will be set to that.</p>
               )}
-              {!covered && <p className="mt-2 text-[0.7rem] text-muted-foreground">Applying also raises the crawl time budget so the crawl is not cut short. Larger crawls take longer, roughly a few minutes per 100 pages on a typical site.</p>}
+              {(!covered || applied != null) && <p className="mt-2 text-[0.7rem] text-muted-foreground">Applying also raises the crawl time budget so the crawl is not cut short. Larger crawls take longer, roughly a few minutes per 100 pages on a typical site.</p>}
               {result.notes.map((n) => <p key={n} className="mt-1 text-[0.7rem] text-muted-foreground">{n}</p>)}
               {result.sitemapFiles.length > 0 && (
                 <div className="mt-2">

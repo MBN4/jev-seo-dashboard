@@ -1,8 +1,9 @@
 "use client";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import { Menu, PanelLeft, Search, Settings } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
+import { Bell, Menu, PanelLeft, Search, Settings } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
@@ -76,6 +77,44 @@ function RunningIndicator() {
   );
 }
 
+/** Bell with the number of unread monitoring changes; toasts when a new one arrives. */
+function MonitorBell() {
+  const [unseen, setUnseen] = useState(0);
+  const last = useRef<string | null>(null);
+  useEffect(() => {
+    let alive = true;
+    const poll = () =>
+      api
+        .monitor()
+        .then((m) => {
+          if (!alive) return;
+          setUnseen(m.unseen);
+          const top = m.events.find((e) => !e.seen);
+          if (top && last.current !== null && top.id !== last.current && top.kind !== "baseline") {
+            toast(`${top.domain}: ${top.title}`, { action: { label: "View", onClick: () => (window.location.href = "/monitoring") } });
+          }
+          last.current = top?.id ?? "";
+        })
+        .catch(() => undefined);
+    poll();
+    const t = setInterval(poll, 60_000);
+    return () => {
+      alive = false;
+      clearInterval(t);
+    };
+  }, []);
+  return (
+    <Button variant="ghost" size="icon-sm" asChild>
+      <Link href="/monitoring" aria-label={unseen ? `Monitoring: ${unseen} unread changes` : "Monitoring"} title="Site monitoring" className="relative">
+        <Bell className="size-4" />
+        {unseen > 0 && (
+          <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-critical px-1 text-[0.6rem] font-semibold text-white tabular-nums">{unseen > 99 ? "99+" : unseen}</span>
+        )}
+      </Link>
+    </Button>
+  );
+}
+
 export function AppHeader() {
   const pathname = usePathname();
   const sidebar = useSidebar();
@@ -135,6 +174,7 @@ export function AppHeader() {
         <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search audits by domain" aria-label="Search audits by domain" className="h-9 w-56 rounded-full bg-card/70 pl-8 text-sm transition-[width,box-shadow] duration-300 focus-visible:w-72" />
       </form>
       <RunningIndicator />
+      <MonitorBell />
       <ThemeToggle />
       <Button variant="ghost" size="icon-sm" asChild>
         <Link href="/settings" aria-label="Settings">

@@ -87,7 +87,8 @@ describe("finding breakdown", () => {
 
   it("says where a noindex comes from and which heading level is skipped", async () => {
     const n = await detail("noindex");
-    expect(n.headline).toMatch(/^1 page tells Google/);
+    expect(n.headline).toBe("1 page tells Google not to index it. It looks like a real content page.");
+    expect(n.verdict).toMatchObject({ tone: "bad", title: "Check 1 page" });
     expect(n.table.rows[0].where[0].text).toBe("meta robots: noindex, follow");
     const h = await detail("heading_skips");
     expect(h.table.rows[0].skip.text).toBe("h2 → h4: “Skipped”");

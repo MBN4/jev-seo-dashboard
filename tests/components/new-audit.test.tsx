@@ -25,7 +25,7 @@ describe("new audit form", () => {
     mockFetch({ "GET /api/settings": settings, "GET /api/system/diagnostics": diag });
     render(<NewAuditPage />);
     expect(await screen.findByLabelText("Maximum pages")).toHaveValue(60);
-    expect(screen.getByText("Engine default: 60 · up to 2,000")).toBeInTheDocument();
+    expect(screen.getByText("Set automatically from the page count · up to 2,000")).toBeInTheDocument();
     // No AI key: the stage is off and cannot be switched on, instead of producing a warning later.
     expect(screen.getByText(/AI judgments off \(no key\)/)).toBeInTheDocument();
     expect(screen.getByRole("switch", { name: /AI content evaluation/ })).toBeDisabled();

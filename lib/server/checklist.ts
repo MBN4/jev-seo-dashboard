@@ -3,6 +3,7 @@ import { CHECKLIST, MANUAL_REASON, type ChecklistItem, type ItemStatus } from "@
 import { runExtraChecks } from "./extra-checks";
 import { requireAudit } from "./results";
 import { readState } from "./state";
+import { findingBreakdown, type Verdict } from "./finding-breakdown";
 import type { EngineAudit, Severity } from "@/types/engine";
 
 /**
@@ -19,6 +20,8 @@ export interface GradedItem extends ChecklistItem {
   fix: string | null;
   urls: string[];
   urlCount: number;
+  /** Plain "should I act on this?" for failing engine checks */
+  verdict: Verdict | null;
   /** Where the details live in the UI */
   link: "technical" | "extra" | "ai" | "performance" | null;
 }
@@ -57,7 +60,7 @@ export function gradeChecklist(audit: EngineAudit, keywords: string[] = []): Che
   const dfsOn = Boolean((audit.dataforseo as { available?: boolean } | null)?.available);
 
   const grade = (item: ChecklistItem): GradedItem => {
-    const base = { ...item, severity: null, reason: null, evidence: null, fix: null, urls: [] as string[], urlCount: 0 };
+    const base = { ...item, severity: null, reason: null, evidence: null, fix: null, urls: [] as string[], urlCount: 0, verdict: null };
     if (item.source === "manual") return { ...base, status: "manual", reason: MANUAL_REASON, link: null };
     if (item.source === "extra") {
       const f = extraFindings.get(item.id);
@@ -67,7 +70,7 @@ export function gradeChecklist(audit: EngineAudit, keywords: string[] = []): Che
     }
     const f = findings.get(item.id);
     const link = item.source === "ai" ? "ai" : item.source === "pagespeed" ? "performance" : "technical";
-    if (f) return { ...base, status: f.severity === "info" ? "note" : "fail", severity: f.severity, evidence: f.evidence, fix: f.fix, urls: f.urls.slice(0, 20), urlCount: f.count, link };
+    if (f) return { ...base, status: f.severity === "info" ? "note" : "fail", severity: f.severity, evidence: f.evidence, fix: f.fix, urls: f.urls.slice(0, 20), urlCount: f.count, link, verdict: findingBreakdown(audit, f).verdict };
     if (item.source === "ai" && !aiOn) return { ...base, status: "not_checked", reason: "Needs AI judgments (add TYPESAFE_API_KEY in Settings).", link: "ai" };
     if (item.source === "pagespeed" && !psiOk) {
       return { ...base, status: "not_checked", reason: psi429 ? "PageSpeed was rate limited (HTTP 429). Add a free PAGESPEED_API_KEY." : "PageSpeed did not run for this audit.", link: "performance" };
@@ -90,7 +93,7 @@ export function gradeChecklist(audit: EngineAudit, keywords: string[] = []): Che
   totals.total = sections.reduce((a, s) => a + s.items.length, 0);
   const topFailures = sections
     .flatMap((s) => s.items)
-    .filter((i) => i.status === "fail")
+    .filter((i) => i.status === "fail" && i.verdict?.tone !== "good")
     .sort((a, b) => SEV_RANK[a.severity ?? "info"] - SEV_RANK[b.severity ?? "info"] || b.urlCount - a.urlCount)
     .slice(0, 5);
   const denom = totals.pass + totals.fail;

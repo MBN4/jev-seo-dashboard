@@ -9,7 +9,7 @@
                                                          ▼
 ┌──────────────────── Rankora server (Node, :3000) ─────────────────┐
 │ middleware.ts        Host allow-list + cross-site write refusal   │
-│ instrumentation.ts   on start: unpack seed audits                 │
+│ instrumentation.ts   on start: unpack seed audits, start scheduler │
 │ app/api/**           route handlers (Zod validation, uniform errors)
 │ lib/server/                                                       │
 │   url-guard.ts       URL syntax + DNS + private/metadata blocks   │
@@ -26,6 +26,8 @@
 │   branding.ts        branded report copies (scripts/brand_report.py)
 │   site-size.ts       page count from robots.txt + sitemaps        │
 │   progress.ts        live snapshot from the engine log            │
+│   monitor.ts         scheduled audits, change checks, event feed  │
+│   audit-diff.ts      what changed between two audits              │
 │   state.ts, secrets.ts, diagnostics.ts, seeds.ts, verify.ts       │
 └───────────┬───────────────────────────────────────▲───────────────┘
             │ spawn: <engine python> -m <engine> run │ read
@@ -78,6 +80,7 @@ Replacing the engine with your own later means re-implementing that contract (th
 | `data/secrets.env` | API keys (mode 600, never returned by the API) |
 | `data/jobs/<id>/` | Job metadata and raw engine log |
 | `data/branded/<id>/` | Branded report copies, rebuilt when the source or brand changes |
+| `data/monitor.json`, `data/monitor/` | Monitored sites, change feed, last sitemap URL list per site |
 | `data/summaries.json` | Audit list summaries, reused while `audit.json` is unchanged |
 | `seed/*.tar.xz` | Bundled audits of your sites, unpacked on first start |
 
@@ -101,3 +104,13 @@ A 1,620-page audit is about 119 MB of JSON. Rankora handles it as follows:
 - Every list endpoint is paginated.
 
 Measured on the 1,620-page audit (warm cache): History in 15 ms, the Google checklist in 15 ms, an explorer filter in 24 ms.
+
+## Monitoring
+
+`lib/server/monitor.ts` runs a scheduler pass every minute inside the Rankora server process. Each pass does three things:
+
+1. **Reports new audits.** Each new completed audit of a monitored site becomes an event with a `diffAudits()` comparison against the previous completed audit.
+2. **Checks for changes.** Every 3 hours per site, it reads the homepage tags and the sitemap URL list through the same guarded client as **Count pages**. Differences become a `change` event, and an audit then runs within 3 hours of the previous one.
+3. **Starts one due audit.** This happens only when the concurrency limit allows. It goes through the normal `createAudit()` path, so validation, duplicate checks and keyless-stage handling are identical to a manual audit. The crawl limit comes from the latest sitemap count.
+
+When Rankora was closed at the due time, the next pass starts the overdue audit.

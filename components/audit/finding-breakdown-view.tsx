@@ -1,11 +1,11 @@
 "use client";
 import { useMemo, useState } from "react";
-import { AlertTriangle, Check, ChevronDown, Copy, Download, ExternalLink, Info, Lightbulb, ScanSearch, Search, ThumbsUp } from "lucide-react";
+import { AlertOctagon, AlertTriangle, Check, CheckCircle2, ChevronDown, Copy, Download, ExternalLink, Info, Lightbulb, ScanSearch, Search, ThumbsUp } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { shortUrl } from "@/lib/format";
-import type { Breakdown, BreakdownGroup, BreakdownNote, BreakdownTable, Cell, Tone } from "@/lib/server/finding-breakdown";
+import type { Breakdown, BreakdownGroup, BreakdownNote, BreakdownTable, Cell, Tone, Verdict } from "@/lib/server/finding-breakdown";
 
 const TONE_TEXT: Record<Tone, string> = {
   bad: "text-critical",
@@ -283,9 +283,30 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
 }
 
 /** The readable part of a finding: what was found, why it matters, how to fix, and the exact rows. */
-export function FindingBreakdownView({ b, guidance, onInspect }: { b: Breakdown; guidance?: string | null; onInspect?: (u: string) => void }) {
+const VERDICT_STYLE: Record<Verdict["tone"], { cls: string; icon: typeof Info; ink: string }> = {
+  good: { cls: "border-success/30 bg-success-soft/70", icon: CheckCircle2, ink: "text-success" },
+  info: { cls: "border-info/25 bg-info-soft/60", icon: Info, ink: "text-info" },
+  warn: { cls: "border-warning/30 bg-warning-soft/70", icon: AlertTriangle, ink: "text-warning-ink" },
+  bad: { cls: "border-critical/30 bg-critical-soft/70", icon: AlertOctagon, ink: "text-critical" },
+};
+
+export function VerdictBanner({ v, className }: { v: Verdict; className?: string }) {
+  const S = VERDICT_STYLE[v.tone];
+  return (
+    <div className={cn("flex gap-3 rounded-xl border p-3.5", S.cls, className)}>
+      <S.icon className={cn("mt-0.5 size-5 shrink-0", S.ink)} />
+      <div className="min-w-0">
+        <p className={cn("text-sm font-semibold", S.ink)}>{v.title}</p>
+        <p className="mt-0.5 text-[0.85rem] leading-relaxed">{v.text}</p>
+      </div>
+    </div>
+  );
+}
+
+export function FindingBreakdownView({ b, guidance, onInspect, hideVerdict }: { b: Breakdown; guidance?: string | null; onInspect?: (u: string) => void; hideVerdict?: boolean }) {
   return (
     <div className="space-y-6">
+      {!hideVerdict && b.verdict && <VerdictBanner v={b.verdict} />}
       <section>
         <SectionTitle>What we found</SectionTitle>
         <p className="text-[0.95rem] leading-relaxed font-medium">{b.headline}</p>

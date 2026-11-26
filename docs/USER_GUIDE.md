@@ -130,3 +130,20 @@ In **Settings → API keys**, paste a key and press **Save**.
 | `DATAFORSEO_USERNAME` / `DATAFORSEO_PASSWORD` | Full mode only (paid) |
 
 **Settings → Audit defaults** pre-fills the New Audit form. **Settings → Diagnostics** checks the engine, Python, its packages, Playwright and Chromium, the directories and the keys, with a suggested fix for each problem.
+
+## Monitoring
+
+Open **Monitoring** in the sidebar. The bell in the header shows how many changes you have not seen.
+
+- **Site cards:** each card shows the latest score and trend, when the next audit runs, and the sitemap page count. Use them to change the schedule, **Run now**, **Pause**, or open the latest results. You can add your own sites below the cards.
+- **What changed:** newest first.
+  - **First audit:** what needs fixing.
+  - **Daily audit:** score change, new problems, what got worse, what was fixed, and page changes such as broken pages, title or description edits, new noindex and new pages.
+  - **Change detected:** found between audits from the homepage and sitemaps, for example "3 new pages in the sitemap" or "homepage title changed", with before and after.
+- **Explanations:** click any issue to open its full explanation.
+
+Audits run while Rankora is running. Leave `./start.sh` running, for example on an always-on machine, for true daily monitoring.
+
+## New Audit: your sites and page counting
+
+Pick a site from **Your sites**, or the chips under the URL field, or type any address. Rankora counts the site's pages from its sitemaps and sets **Maximum pages** and the time budget to match automatically. The maximum is 2,000 pages. You can still change the numbers before starting.

@@ -5,7 +5,11 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
-import { AlertTriangle, CheckCircle2, Globe, Info, Loader2, Play, XCircle } from "lucide-react";
+import { AlertTriangle, CheckCircle2, ChevronDown, Globe, Info, Loader2, Play, Star, XCircle } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { GradeBadge } from "@/components/common/grade-badge";
+import { formatRelative } from "@/lib/format";
+import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,7 +22,7 @@ import { ConfirmationDialog } from "@/components/common/confirmation-dialog";
 import { LoadingSkeleton } from "@/components/common/loading-skeleton";
 import { OptionRow } from "@/components/audit/option-row";
 import { SiteSizeCounter } from "@/components/audit/site-size-counter";
-import { api, ApiError } from "@/lib/api";
+import { api, ApiError, type MonitorSite } from "@/lib/api";
 import { checkUrlSyntax } from "@/lib/url";
 import { SAMPLE_SITES } from "@/lib/brand";
 import { auditOptionsSchema, DEFAULT_AUDIT_OPTIONS, type AuditOptions } from "@/lib/schemas";
@@ -68,6 +72,18 @@ export default function NewAuditPage() {
     const t = setInterval(() => setPlaceholderIdx((i) => (i + 1) % SAMPLE_SITES.length), 2800);
     return () => clearInterval(t);
   }, []);
+
+  const [monitored, setMonitored] = useState<MonitorSite[] | null>(null);
+  useEffect(() => {
+    api.monitor().then((m) => setMonitored(m.sites)).catch(() => setMonitored(null));
+  }, []);
+  const mySites = (monitored ?? SAMPLE_SITES.map((url) => ({ url, domain: new URL(url).hostname.replace(/^www\./, ""), lastAudit: null, pagesCounted: null }))).map((s) => ({
+    url: s.url,
+    domain: s.domain,
+    score: s.lastAudit?.score ?? null,
+    grade: s.lastAudit?.grade ?? null,
+    detail: [s.pagesCounted != null ? `${s.pagesCounted.toLocaleString()} pages in sitemap` : null, s.lastAudit?.finishedAt ? `last audit ${formatRelative(s.lastAudit.finishedAt)}` : null].filter(Boolean).join(" · ") || "Not audited yet",
+  }));
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -155,9 +171,41 @@ export default function NewAuditPage() {
           <SectionCard title="Website">
             <div className="space-y-1.5">
               <Label htmlFor="url">Website URL</Label>
-              <div className="relative">
-                <Globe className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
-                <Input id="url" placeholder={SAMPLE_SITES[placeholderIdx]} autoComplete="url" autoFocus className="h-10 pl-9" aria-invalid={Boolean(err.url)} aria-describedby="url-help url-error" {...register("url")} />
+              <div className="flex gap-2">
+                <div className="relative min-w-0 flex-1">
+                  <Globe className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
+                  <Input id="url" placeholder={SAMPLE_SITES[placeholderIdx]} autoComplete="url" autoFocus className="h-10 pl-9" aria-invalid={Boolean(err.url)} aria-describedby="url-help url-error" {...register("url")} />
+                </div>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button type="button" variant="outline" className="h-10 shrink-0 gap-1.5">
+                      <Star className="size-4" /> <span className="hidden sm:inline">Your sites</span> <ChevronDown className="size-3.5 opacity-60" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-80">
+                    <DropdownMenuLabel className="text-xs text-muted-foreground">Monitored sites · pick one to audit now</DropdownMenuLabel>
+                    {mySites.map((s) => (
+                      <DropdownMenuItem key={s.url} onSelect={() => setValue("url", s.url, { shouldValidate: true, shouldTouch: true })} className="flex items-center justify-between gap-3 py-2">
+                        <span className="min-w-0">
+                          <span className="block truncate font-medium">{s.domain}</span>
+                          <span className="block text-[0.7rem] text-muted-foreground">{s.detail}</span>
+                        </span>
+                        {s.score != null && <GradeBadge grade={s.grade} score={s.score} />}
+                      </DropdownMenuItem>
+                    ))}
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                      <Link href="/monitoring" className="text-xs">Manage monitoring and daily audits →</Link>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+              <div className="flex flex-wrap gap-1.5 pt-0.5">
+                {mySites.map((s) => (
+                  <button key={s.url} type="button" onClick={() => setValue("url", s.url, { shouldValidate: true, shouldTouch: true })} className={cn("rounded-full border px-2.5 py-0.5 text-xs transition-colors hover:border-brand hover:text-foreground", v.url === s.url ? "border-brand bg-brand-soft text-brand-strong" : "text-muted-foreground")}>
+                    {s.domain}
+                  </button>
+                ))}
               </div>
               <p id="url-help" className="text-xs text-muted-foreground">The homepage of a public site. A bare domain works too. Local and private network addresses are refused.</p>
               {err.url && <p id="url-error" role="alert" className="text-xs text-critical">{err.url.message}</p>}
@@ -165,10 +213,11 @@ export default function NewAuditPage() {
                 <SiteSizeCounter
                   url={v.url}
                   currentMax={v.maxPages}
-                  onApply={(pages, budget) => {
+                  auto
+                  onApply={(pages, budget, automatic) => {
                     setValue("maxPages", pages, { shouldValidate: true });
-                    if (budget > v.timeBudget) setValue("timeBudget", budget, { shouldValidate: true });
-                    toast.success(`Crawl limit set to ${pages.toLocaleString()} pages`);
+                    if (budget > form.getValues("timeBudget")) setValue("timeBudget", budget, { shouldValidate: true });
+                    if (!automatic) toast.success(`Crawl limit set to ${pages.toLocaleString()} pages`);
                   }}
                 />
               </div>
@@ -183,7 +232,7 @@ export default function NewAuditPage() {
 
           <SectionCard title="Crawl" description="Maps to the engine's --max-pages, --max-depth and --time-budget.">
             <div className="grid gap-4 sm:grid-cols-3">
-              <NumberField id="maxPages" label="Maximum pages" hint="Engine default: 60 · up to 2,000" min={1} max={2000} value={v.maxPages} onChange={(n) => setValue("maxPages", n, { shouldValidate: true })} error={err.maxPages?.message} />
+              <NumberField id="maxPages" label="Maximum pages" hint="Set automatically from the page count · up to 2,000" min={1} max={2000} value={v.maxPages} onChange={(n) => setValue("maxPages", n, { shouldValidate: true })} error={err.maxPages?.message} />
               <NumberField id="maxDepth" label="Maximum depth" hint="Engine default: 5" min={1} max={10} value={v.maxDepth} onChange={(n) => setValue("maxDepth", n, { shouldValidate: true })} error={err.maxDepth?.message} />
               <NumberField id="timeBudget" label="Crawl time budget (s)" hint="Engine default: 600 · up to 5,400" min={30} max={5400} value={v.timeBudget} onChange={(n) => setValue("timeBudget", n, { shouldValidate: true })} error={err.timeBudget?.message} />
             </div>

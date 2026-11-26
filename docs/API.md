@@ -68,7 +68,7 @@ Query parameters: `q`, `status` (repeatable), `from`, `to` (YYYY-MM-DD), `sort=d
 | `POST /api/audits/{id}/cancel` | Stops only this audit's process group |
 | `GET /api/audits/{id}/results` | Overview: scores, counts, by-severity, by-category, status buckets, top actions (up to 5 sample URLs each), AI/PageSpeed availability |
 | `GET /api/audits/{id}/findings` | Query: `severity`, `category`, `origin` (repeatable), `q`, `sort=severity\|count\|title\|category`, `dir`, `page`, `pageSize`. Returns items, total, facets and `passedRules`. |
-| `GET /api/audits/{id}/findings/{findingId}` | Full finding (all URLs, detail, linked action) plus `breakdown: { headline, meaning, steps[], notes[{tone,title,text}], groups[{key,title,badge,explain,suggestion,itemsLabel,items[{url,note}],total}] \| null, table{columns,rows,total} \| null }`: a plain-language explanation rebuilt from the crawl data. For example, broken links are grouped by target, with every page that links there, the link text and the address to use instead. |
+| `GET /api/audits/{id}/findings/{findingId}` | Full finding (all URLs, detail, linked action) plus `breakdown: { verdict{tone: good\|info\|warn\|bad, title, text}, headline, meaning, steps[], notes[{tone,title,text}], groups[{key,title,badge,explain,suggestion,itemsLabel,items[{url,note}],total}] \| null, table{columns,rows,total} \| null }`: a plain-language explanation rebuilt from the crawl data. For example, broken links are grouped by target, with every page that links there, the link text and the address to use instead. |
 | `GET /api/audits/{id}/pages` | Query: `q`, `status=2xx\|3xx\|4xx\|5xx\|error`, `indexable=yes\|no`, `issues=with\|without`, `sort`, `dir`, `page`, `pageSize` |
 | `GET /api/audits/{id}/pages/detail?url=` | One page: meta, headings, content, links (with status), structured data, findings, AI answers |
 | `GET /api/audits/{id}/ai` | `{ available, skipped, site[], dimensions[], pages[{url, answers, findings}], notJudged, findings }`. Empty when Jev did not run. |
@@ -91,6 +91,17 @@ Query parameters: `q`, `status` (repeatable), `from`, `to` (YYYY-MM-DD), `sort=d
 | `GET /api/audits/import` | `{ discovered, hidden: [{id, hiddenAt}] }` |
 | `POST /api/site-size` | Body `{ "url": "…" }`. Counts pages from robots.txt and XML sitemaps without crawling: `{ finalUrl, sitemapUrlCount, sitemapFiles[{url, type, urls, children, error}], homepageLinks, estimate, basis: sitemap\|homepage-links, truncated, notes }`. Every request and redirect passes the private-network guard. Limits: 100 sitemap files, 200,000 URLs, 60 s. Rate limited to 10 per minute. |
 | `GET /api/history?domain=` | `{ domains, points: [{id, date, score, grade}] }`. Completed audits only. |
+
+## Monitoring
+
+| Route | Description |
+| --- | --- |
+| `GET /api/monitor` | `{ enabled, sites[{url, domain, enabled, intervalHours, builtIn, pagesCounted, lastCheckAt, lastAttemptError, running, lastAudit{id,score,grade,finishedAt,pagesCrawled,findingsTotal}, nextRunAt, history[{id,score,at}]}], events[{id, at, domain, kind: baseline\|audit\|change\|error, title, auditId, prevAuditId, score, grade, diff, change, seen}], unseen }`. `diff` holds score, newIssues, worse, resolved, better, pageChanges and todo. `change` holds homepage field changes and sitemap URLs added or removed. |
+| `POST /api/monitor/sites` | `{ "url": "…" }`: start monitoring a site (daily). 409 if already monitored; at most 25 sites. |
+| `PATCH /api/monitor/sites/{domain}` | `{ "enabled"?: bool, "intervalHours"?: 6\|12\|24\|48\|168 }` |
+| `DELETE /api/monitor/sites/{domain}` | Stop monitoring (audits are kept). The four built-in sites can only be paused (422). |
+| `POST /api/monitor/sites/{domain}/run` | Audit now. It is queued behind any running audit. Response `202`. |
+| `POST /api/monitor/seen` | `{ "ids"?: [] }`: mark events read (all when omitted). |
 
 ## Settings and system
 

@@ -23,11 +23,12 @@ Rankora drives an open-source audit engine (credited in [NOTICE.md](NOTICE.md)) 
   - Filters such as *Missing*, *Duplicate*, *Over 60 characters* and *Non-indexable*.
   - An **Issues** view that ranks everything missing across all tabs.
   - CSV export of any tab and filter.
-- **Every warning explained:** open any finding (from Technical SEO, the Google checklist or Recommendations) to see, in plain words:
+- **Every warning explained:** open any finding to see, in plain words, everything below. Findings open from Technical SEO, Recommendations and Monitoring, and the explanation also shows inline when you expand a rule in the Google checklist.
   - what was found and why it matters;
   - numbered steps to fix it;
   - exactly where it occurs. Broken links are grouped by the broken address, with every page that links to it and the link text. Redirects show the address to link to instead, and redirect chains show each hop.
   - Every address is clickable, and **Inspect** opens that page's full details. Copy and CSV buttons cover all affected pages.
+  - A verdict says whether to act: **Fix soon**, **Worth fixing**, **Nice to have**, or **Probably intended: no action needed**. For example, noindex on page 2+ of archives, author pages and legal pages is recognised as intended, and those rules no longer look like failures in the Google checklist.
   - Common causes are recognised and explained, such as Cloudflare email protection, Markdown pasted into a link, stray quote characters in an href, tracking pixels without alt text, and pagination sharing a title.
 - **Overview:** the score and grade, completeness, severity and category charts, the most important fixes, and score history across audits.
 - **Technical SEO, Pages, AI Content, Performance:** every finding with its evidence and fix, page-by-page analysis, AI content judgments (with a key), and Core Web Vitals (with a PageSpeed key).
@@ -38,9 +39,19 @@ Rankora drives an open-source audit engine (credited in [NOTICE.md](NOTICE.md)) 
 - **Recommendations:** ranked actions with your own status and notes.
 - **Reports:** Rankora-branded PDF, Excel, Markdown and JSON, with an in-browser PDF preview.
 
+## Monitoring (automatic daily audits)
+
+The four sites (emailverify.io, clustox.com, mycoldinbox.com, inboxwarm.ai) are monitored from the first start. You can add more on the **Monitoring** page.
+
+- **Daily audits:** each site is re-audited every 24 hours. You can change this to 6 hours, 12 hours, 2 days or a week, pause a site, or press **Run now**. The crawl limit is set from the site's current sitemap size, up to 2,000 pages.
+- **Change checks between audits:** every 3 hours, Rankora reads each homepage's title, description, H1, canonical and robots tag, plus the sitemap's URL list (no crawl). New or removed pages and homepage edits are reported straight away, and an audit runs within 3 hours of the last one.
+- **What changed:** every new audit is compared with the previous one. You see the score change, new problems, issues that got worse, fixed and improved issues, and pages that broke, changed title or description, became noindex, or are new. A "still to fix" list puts the most important item first and marks anything that is probably intended.
+- **Notifications:** a bell in the header counts unread changes, and a toast appears when one arrives.
+- Scheduling runs inside Rankora, so it needs Rankora to be running (`./start.sh`). Missed audits start within a minute of the next start. Your own audits are never interrupted: scheduled ones wait for a free slot. Set `RANKORA_MONITOR=0` to turn monitoring off.
+
 ## Before and during an audit
 
-- **Count pages:** reads the site's sitemaps (no crawl) to tell you how many pages it has, then sets the crawl limit to match, up to 2,000.
+- **Your sites and automatic page count:** pick one of your sites from the **Your sites** menu, or type any URL. Rankora reads its sitemaps (no crawl), counts the pages, and sets the crawl limit and time budget to match automatically, up to 2,000 pages.
 - **Live progress:** the engine's real stages, URLs crawled, pages judged and PageSpeed runs. Warnings are grouped by cause, each with its fix, so six rate-limited requests are one notice, not six.
 - **No keyless warnings:** AI judgments stay off until a key is added, and PageSpeed is off by default without one.
 - **Your sites:** audits of emailverify.io, clustox.com, mycoldinbox.com and inboxwarm.ai ship with Rankora and appear on first start. The New Audit placeholder rotates through them. The list is in `lib/brand.ts`.
@@ -84,6 +95,7 @@ More detail: [Installation](docs/INSTALLATION.md) · [User guide](docs/USER_GUID
 | `RANKORA_MAX_AUDIT_SECONDS` | `7200` | Hard limit per audit process |
 | `RANKORA_ALLOWED_HOSTS` | localhost only | Extra hostnames allowed to reach the app |
 | `RANKORA_AUDIT_CACHE_MB` | `350` | Memory budget for parsed audits (large crawls are 100+ MB) |
+| `RANKORA_MONITOR` | on | `0` turns off scheduled audits and change checks |
 | `NEXT_PUBLIC_BRAND_NAME` / `NEXT_PUBLIC_BRAND_TAGLINE` | `Rankora` / `SEO audit workspace` | Product name and tagline (rebuild after changing) |
 
 API keys are entered in **Settings → API keys**, and each one has a **Verify** button. All of them are optional:

@@ -44,6 +44,19 @@ export interface SiteSize {
   basis: "sitemap" | "homepage-links";
   durationMs: number;
   notes: string[];
+  /** SEO signals read from the homepage HTML (used by monitoring to spot changes). */
+  homepage: HomepageSignals;
+  /** Every sitemap URL, only when requested with `collectUrls` (monitoring); never sent to the browser. */
+  urls?: string[];
+}
+
+export interface HomepageSignals {
+  status: number;
+  title: string | null;
+  description: string | null;
+  h1: string | null;
+  canonical: string | null;
+  robots: string | null;
 }
 
 type Fetcher = (url: string, init?: RequestInit) => Promise<Response>;
@@ -51,6 +64,26 @@ type Fetcher = (url: string, init?: RequestInit) => Promise<Response>;
 export interface SiteSizeDeps {
   resolver?: Resolver;
   fetcher?: Fetcher;
+  collectUrls?: boolean;
+}
+
+const clean = (s: string | undefined | null) => (s == null ? null : decodeXml(s.replace(/<[^>]+>/g, " ")).replace(/\s+/g, " ").trim() || null);
+function metaContent(html: string, attr: "name" | "property", value: string): string | null {
+  const tag = [...html.matchAll(/<meta\s[^>]*>/gi)].map((m) => m[0]).find((t) => new RegExp(`${attr}\\s*=\\s*["']${value}["']`, "i").test(t));
+  return tag ? clean(/content\s*=\s*["']([^"']*)["']/i.exec(tag)?.[1]) : null;
+}
+
+/** Title, description, first H1, canonical and robots from homepage HTML. */
+export function homepageSignals(status: number, html: string): HomepageSignals {
+  const canonicalTag = [...html.matchAll(/<link\s[^>]*>/gi)].map((m) => m[0]).find((t) => /rel\s*=\s*["']canonical["']/i.test(t));
+  return {
+    status,
+    title: clean(/<title[^>]*>([\s\S]*?)<\/title>/i.exec(html)?.[1]),
+    description: metaContent(html, "name", "description"),
+    h1: clean(/<h1[^>]*>([\s\S]*?)<\/h1>/i.exec(html)?.[1]),
+    canonical: canonicalTag ? (/href\s*=\s*["']([^"']*)["']/i.exec(canonicalTag)?.[1] ?? null) : null,
+    robots: metaContent(html, "name", "robots"),
+  };
 }
 
 const hostKey = (h: string) => h.toLowerCase().replace(/^www\./, "");
@@ -171,8 +204,9 @@ export async function countSitePages(input: string, deps: SiteSizeDeps = {}): Pr
 
   // Homepage internal links (lower bound)
   const homeLinks = new Set<string>();
-  if (home.status === 200 && /html/i.test(home.type)) {
-    const html = home.body.toString("utf8");
+  const homeHtml = /html/i.test(home.type) ? home.body.toString("utf8") : "";
+  if (home.status === 200 && homeHtml) {
+    const html = homeHtml;
     const re = /<a\s[^>]*href\s*=\s*["']([^"']+)["']/gi;
     let m: RegExpExecArray | null;
     while ((m = re.exec(html))) {
@@ -264,5 +298,7 @@ export async function countSitePages(input: string, deps: SiteSizeDeps = {}): Pr
     basis: urls.size ? "sitemap" : "homepage-links",
     durationMs: Date.now() - started,
     notes,
+    homepage: homepageSignals(home.status, homeHtml),
+    ...(deps.collectUrls ? { urls: [...urls] } : {}),
   };
 }

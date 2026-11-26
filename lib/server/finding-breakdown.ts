@@ -57,7 +57,44 @@ export interface Breakdown {
   notes: BreakdownNote[];
   groups: BreakdownGroup[] | null;
   table: BreakdownTable | null;
+  /** "Should I act on this?" in one line. */
+  verdict: Verdict;
 }
+
+export interface Verdict {
+  tone: "good" | "info" | "warn" | "bad";
+  title: string;
+  text: string;
+}
+
+/** Pages that sites usually keep out of Google on purpose, recognised from the URL. */
+export function intendedNoindexReason(url: string): string | null {
+  let u: URL;
+  try {
+    u = new URL(url);
+  } catch {
+    return null;
+  }
+  const p = u.pathname.toLowerCase();
+  const q = u.search.toLowerCase();
+  if (/\/page\/\d+\/?$/.test(p) || /[?&](page|paged|p)=\d+/.test(q)) return "Pagination (page 2, 3…)";
+  if (/\/(author|authors)\//.test(p)) return "Author archive";
+  if (/\/(tag|tags)\//.test(p)) return "Tag archive";
+  if (/[?&]s=|\/search(\/|$)/.test(p + q)) return "Site search results";
+  if (/\/(cart|checkout|basket|my-account|account|login|log-in|signin|sign-in|signup|sign-up|register|wp-admin|admin|dashboard)(\/|$)/.test(p)) return "Account, login or checkout";
+  if (/\/(thank-you|thanks|thankyou|confirmation|success)(\/|$)/.test(p)) return "Thank-you or confirmation page";
+  if (/\/(privacy|privacy-policy|terms|terms-of-service|terms-and-conditions|cookie|cookies|cookie-policy|legal|disclaimer|gdpr)(\/|$)/.test(p)) return "Legal page";
+  if (/\/(feed|rss)(\/|$)/.test(p)) return "Feed";
+  return null;
+}
+
+const SEVERITY_VERDICT: Record<string, Verdict> = {
+  critical: { tone: "bad", title: "Fix this first", text: "This can stop pages, or the whole site, from appearing in Google." },
+  high: { tone: "bad", title: "Fix soon", text: "This directly hurts how these pages are crawled, indexed or ranked." },
+  medium: { tone: "warn", title: "Worth fixing", text: "This weakens these pages in search. It is not urgent, but it adds up." },
+  low: { tone: "info", title: "Nice to have", text: "A small improvement. Do it when you are already editing these pages." },
+  info: { tone: "good", title: "For information", text: "Nothing is broken. This is context for your decisions." },
+};
 
 const MAX_ROWS = 300;
 const MAX_ITEMS = 60;
@@ -306,7 +343,7 @@ function brokenGroups(ctx: Ctx, external: boolean): BreakdownGroup[] {
     .sort((x, y) => y.total - x.total);
 }
 
-function build(ctx: Ctx): Omit<Breakdown, "meaning" | "steps"> & { steps?: string[] } {
+function build(ctx: Ctx): Omit<Breakdown, "meaning" | "steps" | "verdict"> & { steps?: string[]; verdict?: Verdict } {
   const { a, f, pages, home } = ctx;
   const notes: BreakdownNote[] = [];
   const count = f.urls.length;
@@ -418,13 +455,26 @@ function build(ctx: Ctx): Omit<Breakdown, "meaning" | "steps"> & { steps?: strin
       return { headline: `Your sitemap lists ${plural(count, "address", "addresses")} that Google should not index as they are.`, notes, groups: null, table: table([{ key: "page", label: "Address in the sitemap" }, { key: "problem", label: "Why it should not be there" }], rows) };
     }
     case "noindex": {
-      const t = pageRows(ctx, (p) => {
+      const why = new Map(f.urls.map((u) => [u, intendedNoindexReason(u)]));
+      const t = pageRows(ctx, (p, u) => {
         const where: Cell[] = [];
         if ((p?.meta_robots ?? "").toLowerCase().includes("noindex")) where.push({ text: `meta robots: ${p?.meta_robots}`, mono: true });
         if ((p?.x_robots ?? "").toLowerCase().includes("noindex")) where.push({ text: `X-Robots-Tag: ${p?.x_robots}`, mono: true });
-        return { where };
-      }, [{ key: "where", label: "Where the noindex is" }]);
-      return { headline: `${say(count, "page", "tell Google not to index them. Check that each one is intended.")}`, notes, groups: null, table: t };
+        const r = why.get(u);
+        return { kind: r ? { text: `${r}: usually intended`, tone: "good" as Tone } : { text: "Content page: check this one", tone: "bad" as Tone }, where };
+      }, [{ key: "kind", label: "Looks like" }, { key: "where", label: "Where the noindex is" }]);
+      t.rows.sort((x, y) => Number((x.kind as Cell).tone === "good") - Number((y.kind as Cell).tone === "good"));
+      const intended = f.urls.filter((u) => why.get(u)).length;
+      const check = count - intended;
+      const home = f.urls.some((u) => { try { return new URL(u).pathname === "/"; } catch { return false; } });
+      const verdict: Verdict = home
+        ? { tone: "bad", title: "Fix immediately", text: "Your homepage is marked noindex, so Google will drop it from search." }
+        : check === 0
+          ? { tone: "good", title: "Probably intended: no action needed", text: `All ${plural(count, "page")} are ${[...new Set([...why.values()].filter(Boolean))].join(", ").toLowerCase()}. SEO plugins (Yoast, Rank Math) noindex these on purpose, so they do not compete with your real pages. Only change this if you want these pages in Google.` }
+          : { tone: "bad", title: `Check ${plural(check, "page")}`, text: `${plural(check, "content page")} ${check === 1 ? "is" : "are"} hidden from Google. If ${check === 1 ? "it" : "they"} should rank, remove the noindex.${intended ? ` The other ${n(intended)} look intentional (pagination, archives, legal or account pages).` : ""}` };
+      const lead = count === 1 ? "1 page tells Google not to index it." : `${n(count)} pages tell Google not to index them.`;
+      const tail = check === 0 ? (count === 1 ? " It looks intentional." : " All of them look intentional.") : count === 1 ? " It looks like a real content page." : ` ${n(check)} of them look like real content pages.`;
+      return { headline: lead + tail, notes, groups: null, table: t, verdict };
     }
     case "canonical_elsewhere":
     case "canonical_broken": {
@@ -589,6 +639,21 @@ function build(ctx: Ctx): Omit<Breakdown, "meaning" | "steps"> & { steps?: strin
   }
 }
 
+/** Verdict from the data where it is clear, else from the engine's severity. */
+function autoVerdict(f: EngineFinding, b: Omit<Breakdown, "meaning" | "steps" | "verdict">): Verdict {
+  if (f.id === "faq_rich_result_limited") return { tone: "good", title: "No action needed", text: "FAQ markup does no harm. Google simply no longer shows it as a rich result for most sites." };
+  if (f.id === "canonical_elsewhere" && f.urls.every((u) => u.includes("?"))) return { tone: "good", title: "Set up correctly: no action needed", text: "Every page here is a parameter version (tracking or filter) that points Google at the clean address, which is what Google recommends." };
+  if (f.id === "broken_internal_links" && b.groups?.length && b.groups.every((g) => isCloudflareEmail(g.key) || markdownHref(g.key))) {
+    const cf = b.groups.some((g) => isCloudflareEmail(g.key));
+    return { tone: "warn", title: "Easy fix", text: cf ? "Mostly Cloudflare's email protection plus a few mistyped links. One Cloudflare setting and a few link edits clear it." : "A few links were pasted with Markdown. Edit those links (shown below) to clear it." };
+  }
+  if (f.heuristic) {
+    const v = SEVERITY_VERDICT[f.severity] ?? SEVERITY_VERDICT.medium;
+    return { ...v, text: `${v.text} This check is a heuristic, so confirm each case before changing anything.` };
+  }
+  return SEVERITY_VERDICT[f.severity] ?? SEVERITY_VERDICT.medium;
+}
+
 export function findingBreakdown(a: EngineAudit, f: EngineFinding): Breakdown {
   const pages = new Map(a.pages.map((p) => [p.url, p]));
   let home: URL | undefined;
@@ -599,6 +664,7 @@ export function findingBreakdown(a: EngineAudit, f: EngineFinding): Breakdown {
   }
   const b = build({ a, f, pages, home });
   return {
+    verdict: b.verdict ?? autoVerdict(f, b),
     headline: b.headline,
     meaning: MEANING[f.id] ?? null,
     steps: b.steps ?? STEPS[f.id] ?? (f.fix ? [f.fix] : []),

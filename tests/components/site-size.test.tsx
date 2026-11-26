@@ -20,7 +20,7 @@ describe("count pages", () => {
     expect(await screen.findByText(/Pages listed in the site's sitemaps/)).toBeInTheDocument();
     expect(JSON.parse(String(calls[0].init!.body))).toEqual({ url: "clustox-demo.com" });
     await userEvent.click(screen.getByRole("button", { name: /crawl 732 pages/i }));
-    expect(onApply).toHaveBeenCalledWith(732, suggestedTimeBudget(732));
+    expect(onApply).toHaveBeenCalledWith(732, suggestedTimeBudget(732), false);
   });
 
   it("caps very large sites at the dashboard maximum", async () => {
@@ -29,8 +29,17 @@ describe("count pages", () => {
     render(<SiteSizeCounter url="bigsite-demo.com" currentMax={60} onApply={onApply} />);
     await userEvent.click(screen.getByRole("button", { name: /count pages/i }));
     await userEvent.click(await screen.findByRole("button", { name: /crawl 2,000 pages/i }));
-    expect(onApply).toHaveBeenCalledWith(2000, suggestedTimeBudget(2000));
+    expect(onApply).toHaveBeenCalledWith(2000, suggestedTimeBudget(2000), false);
     expect(screen.getByText(/at most 2,000 pages/)).toBeInTheDocument();
+  });
+
+  it("counts automatically and sets the crawl limit when a site is entered", async () => {
+    const calls = mockFetch({ "POST /api/site-size": result(49) });
+    const onApply = vi.fn();
+    render(<SiteSizeCounter url="https://mycoldinbox.com/" currentMax={60} onApply={onApply} auto />);
+    expect(await screen.findByText(/Crawl limit set to 49 pages automatically/, {}, { timeout: 3000 })).toBeInTheDocument();
+    expect(onApply).toHaveBeenCalledWith(49, suggestedTimeBudget(49), true);
+    expect(calls).toHaveLength(1);
   });
 
   it("is disabled until the URL is valid", () => {

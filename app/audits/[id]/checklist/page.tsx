@@ -4,7 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { ArrowUpRight, ChevronDown, ExternalLink, ScanSearch, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { UrlLink } from "@/components/audit/finding-breakdown-view";
+import { FindingBreakdownView, UrlLink } from "@/components/audit/finding-breakdown-view";
+import { PageDetailsDrawer } from "@/components/audit/page-details-drawer";
 import { FindingDetailDrawer } from "@/components/audit/finding-detail-drawer";
 import { Input } from "@/components/ui/input";
 import { FilterChip } from "@/components/common/filter-chip";
@@ -30,7 +31,28 @@ const FILTERS: Array<[ItemStatus | "all", string]> = [
 ];
 const TAB: Record<NonNullable<GradedItem["link"]>, string> = { technical: "Technical SEO", extra: "Extra Checks", ai: "AI Content", performance: "Performance" };
 
-function ItemRow({ item, auditId, defaultOpen, onExplain }: { item: GradedItem; auditId: string; defaultOpen: boolean; onExplain: (id: string) => void }) {
+/** The full plain-language explanation, loaded when a failing rule is opened. */
+function InlineFinding({ auditId, findingId, doc, onExplain, onInspect }: { auditId: string; findingId: string; doc: string; onExplain: (id: string) => void; onInspect: (u: string) => void }) {
+  const { data: f, error } = useApi(() => api.finding(auditId, findingId), [auditId, findingId]);
+  return (
+    <div className="space-y-4 px-5 pt-1 pb-5 sm:pl-12">
+      {error && <p className="text-sm text-critical">Could not load the details: {error.message}</p>}
+      {!f && !error && <LoadingSkeleton variant="panel" />}
+      {f && (
+        <>
+          <FindingBreakdownView b={f.breakdown} guidance={f.source ?? doc} onInspect={onInspect} />
+          <div className="flex flex-wrap items-center gap-2">
+            <Button size="sm" variant="outline" className="h-8 gap-1.5" onClick={() => onExplain(findingId)}>
+              <ScanSearch className="size-3.5" /> Open full view with all {f.urls.length.toLocaleString()} pages
+            </Button>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+function ItemRow({ item, auditId, defaultOpen, onExplain, onInspect }: { item: GradedItem; auditId: string; defaultOpen: boolean; onExplain: (id: string) => void; onInspect: (u: string) => void }) {
   const explainable = (item.status === "fail" || item.status === "note") && item.source !== "extra" && item.link !== null;
   const [open, setOpen] = useState(defaultOpen);
   const expandable = item.status !== "pass";
@@ -42,21 +64,28 @@ function ItemRow({ item, auditId, defaultOpen, onExplain }: { item: GradedItem; 
         aria-expanded={expandable ? open : undefined}
         className={cn("flex w-full items-start gap-3 px-5 py-3 text-left", expandable && "transition-colors hover:bg-muted/40")}
       >
-        <StatusIcon status={item.status} className="mt-0.5" />
+        <StatusIcon status={item.verdict?.tone === "good" ? "note" : item.status} className="mt-0.5" />
         <div className="min-w-0 flex-1">
           <p className={cn("text-sm font-medium", item.status === "pass" && "text-foreground/80")}>{item.rule}</p>
           <p className="text-xs text-muted-foreground">{item.status === "not_checked" || item.status === "manual" ? item.reason : item.why}</p>
         </div>
         <div className="flex shrink-0 items-center gap-2">
-          {item.severity && item.status === "fail" && <SeverityBadge severity={item.severity} />}
+          {item.verdict?.tone === "good" ? (
+            <span className="rounded-full bg-success-soft px-2 py-0.5 text-[0.68rem] font-medium text-success" title={item.verdict.text}>{item.verdict.title.split(":")[0]}</span>
+          ) : (
+            item.severity && item.status === "fail" && <SeverityBadge severity={item.severity} />
+          )}
           {item.urlCount > 0 && <span className="text-xs text-muted-foreground tabular">{item.urlCount} URL{item.urlCount === 1 ? "" : "s"}</span>}
-          <span className={cn("hidden rounded-full px-2 py-0.5 text-[0.68rem] font-medium sm:inline", STATUS_META[item.status].chip)}>{STATUS_META[item.status].label}</span>
+          {item.verdict?.tone !== "good" && <span className={cn("hidden rounded-full px-2 py-0.5 text-[0.68rem] font-medium sm:inline", STATUS_META[item.status].chip)}>{STATUS_META[item.status].label}</span>}
           {expandable && <ChevronDown className={cn("size-4 text-muted-foreground transition-transform", open && "rotate-180")} aria-hidden />}
         </div>
       </button>
       <AnimatePresence initial={false}>
         {open && expandable && (
           <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }} className="overflow-hidden">
+            {explainable ? (
+              <InlineFinding auditId={auditId} findingId={item.id} doc={item.doc} onExplain={onExplain} onInspect={onInspect} />
+            ) : (
             <div className="grid gap-4 px-5 pt-0 pb-4 pl-12 text-sm lg:grid-cols-2">
               <div className="space-y-2">
                 <p className="text-xs text-muted-foreground"><span className="font-medium text-foreground">Why Google cares:</span> {item.why}</p>
@@ -98,6 +127,7 @@ function ItemRow({ item, auditId, defaultOpen, onExplain }: { item: GradedItem; 
                 </ul>
               )}
             </div>
+            )}
           </motion.div>
         )}
       </AnimatePresence>
@@ -112,6 +142,7 @@ export default function ChecklistTab() {
   const [q, setQ] = useState("");
   const [hash, setHash] = useState("");
   const [explain, setExplain] = useState<string | null>(null);
+  const [inspect, setInspect] = useState<string | null>(null);
   useEffect(() => {
     setHash(window.location.hash.slice(1));
     const on = () => setHash(window.location.hash.slice(1));
@@ -164,11 +195,12 @@ export default function ChecklistTab() {
             </div>
           </header>
           <ul>
-            {s.shown.map((it) => <ItemRow key={it.id} item={it} auditId={audit.id} defaultOpen={hash === it.id} onExplain={setExplain} />)}
+            {s.shown.map((it) => <ItemRow key={it.id} item={it} auditId={audit.id} defaultOpen={hash === it.id} onExplain={setExplain} onInspect={setInspect} />)}
           </ul>
         </section>
       ))}
       <FindingDetailDrawer auditId={audit.id} findingId={explain} onClose={() => setExplain(null)} />
+      <PageDetailsDrawer auditId={audit.id} url={inspect} onClose={() => setInspect(null)} />
     </div>
   );
 }

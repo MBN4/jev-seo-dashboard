@@ -2,6 +2,11 @@ import type { AuditOptions } from "@/lib/schemas";
 import type { RecommendationStatus } from "@/lib/server/state";
 import type { ExtraResult } from "@/lib/server/extra-checks";
 import type { SiteSize } from "@/lib/server/site-size";
+import type { monitorOverview } from "@/lib/server/monitor";
+
+export type MonitorData = ReturnType<typeof monitorOverview>;
+export type MonitorSite = MonitorData["sites"][number];
+export type MonitorEvent = MonitorData["events"][number];
 import type { Checklist } from "@/lib/server/checklist";
 import type { Column, ExplorerOverview, FilterKind, Row } from "@/lib/server/explorer";
 
@@ -90,6 +95,12 @@ export const api = {
     request<SettingsData>(`/api/settings`, { method: "PUT", body: JSON.stringify(body) }),
   verifyKey: (service: "pagespeed" | "dataforseo") =>
     request<{ service: string; ok: boolean; status: string; message: string }>(`/api/settings/verify`, { method: "POST", body: JSON.stringify({ service }) }),
+  monitor: () => request<MonitorData>(`/api/monitor`),
+  monitorAdd: (url: string) => request<unknown>(`/api/monitor/sites`, { method: "POST", body: JSON.stringify({ url }) }),
+  monitorUpdate: (domain: string, body: { enabled?: boolean; intervalHours?: number }) => request<unknown>(`/api/monitor/sites/${enc(domain)}`, { method: "PATCH", body: JSON.stringify(body) }),
+  monitorRemove: (domain: string) => request<unknown>(`/api/monitor/sites/${enc(domain)}`, { method: "DELETE" }),
+  monitorRun: (domain: string) => request<{ queued: boolean }>(`/api/monitor/sites/${enc(domain)}/run`, { method: "POST" }),
+  monitorSeen: (ids?: string[]) => request<{ ok: boolean }>(`/api/monitor/seen`, { method: "POST", body: JSON.stringify(ids ? { ids } : {}) }),
   health: () => request<{ status: string; engineFound: boolean; running: Array<{ id: string; domain: string; startedAt: string | null }> }>(`/api/system/health`),
   diagnostics: (refresh = false) => request<Diagnostics>(`/api/system/diagnostics${refresh ? "?refresh=1" : ""}`),
 };
