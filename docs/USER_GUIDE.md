@@ -158,3 +158,14 @@ Pick a site from **Your sites**, or the chips under the URL field, or type any a
 3. **Get alerts.** Drops in clicks or impressions, pages that drop out of the index, and sitemap errors appear in **Monitoring** and on the bell.
 
 Data syncs daily on its own. **Sync now** refreshes a single site.
+
+## Progress
+
+Open **Progress** and pick a site. Each day's audit is a report:
+
+- **Fixed since last report / New since last report:** the change since yesterday's report.
+- **Still to fix:** everything open, most important first and longest open first. It shows the owner and whether the issue is getting better or worse. Use the arrow to see exactly which pages were fixed or newly affected since the last report. Click an issue for its full explanation.
+- **Fix log:** every issue that disappeared, and when.
+- **Download report:** the same information as a Markdown file, for sharing with the team.
+
+The first day shows only what is open. Comparisons start from the second report.

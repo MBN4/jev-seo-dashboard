@@ -103,6 +103,15 @@ Query parameters: `q`, `status` (repeatable), `from`, `to` (YYYY-MM-DD), `sort=d
 | `POST /api/monitor/sites/{domain}/run` | Audit now. It is queued behind any running audit. Response `202`. |
 | `POST /api/monitor/seen` | `{ "ids"?: [] }`: mark events read (all when omitted). |
 
+## Progress
+
+| Route | Description |
+| --- | --- |
+| `GET /api/progress` | Per monitored site: `{domain, reports, latest, previous, open, openByTier{P0,P1,P2,Weekly}, fixedSinceLast, newSinceLast, fixedEver}` |
+| `GET /api/progress/{domain}` | `{ latest, previous, first, sinceLast{fixed[], newIssues[], worse[], better[], pagesFixed, pagesNew}, open[{id, title, tier, owner, count, prevCount, since, daysOpen, reportsOpen, reopened, series, pagesFixed, pagesNew}], intended[], fixLog[], timeline[], totals, search{latest, previous, history}, storage{audits, auditBytes, historyBytes, keepAuditDays} }` |
+| `GET /api/progress/{domain}/report` | Markdown progress report (download) |
+| `PATCH /api/monitor/settings` | `{ "keepAuditDays": null \| 14 \| 30 \| 90 \| 180 \| 365 }`: clean up the full files of old scheduled audits. History records are always kept. |
+
 ## Search Console
 
 All Search Console routes are read-only towards Google. The service account key is never returned.

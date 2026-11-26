@@ -49,6 +49,18 @@ The five sites (emailverify.io, clustox.com, mycoldinbox.com, inboxwarm.ai, tell
 - **Notifications:** a bell in the header counts unread changes, and a toast appears when one arrives.
 - Scheduling runs inside Rankora, so it needs Rankora to be running (`./start.sh`). Missed audits start within a minute of the next start. Your own audits are never interrupted: scheduled ones wait for a free slot. Set `RANKORA_MONITOR=0` to turn monitoring off.
 
+## Progress (stored daily)
+
+Every daily audit is stored as a compact report in `data/history/<site>/<date>.json`. Each report holds every open issue with its affected pages, the score and, when connected, the day's Search Console numbers. The reports are kept forever (a few hundred KB each). The **Progress** page compares each report with the previous one:
+
+- **Since the last report:** what was fixed, what is new, what got worse or better, and which pages inside an open issue were fixed or newly affected.
+- **Still to fix:** sorted by priority (P0 critical, P1 high, P2 important, weekly) and then by how long each issue has been open. Each issue has an owner role (Dev, SEO, Content), a page-count trend, and a flag when it came back after a fix. You can filter by owner.
+- **Over time:** a chart of open issues by priority with the score, a fix log of every resolved issue, and Search Console clicks per day.
+- **Download report:** a Markdown progress report to share or paste into a task tool.
+- **Storage:** full audit files can be large (100 MB or more for a big site). You can let Rankora clean up scheduled audits older than 14 to 365 days. Your own audits, the two newest per site and the daily history are never removed. This is off by default.
+
+Priorities and owners for every check live in `lib/priorities.ts`, generated from [docs/COMBINED_LIST.md](docs/COMBINED_LIST.md). Findings the data shows are intentional, such as noindex on pagination or legal pages, are not counted as open.
+
 ## Google Search Console
 
 Connect Search Console once, in **Settings → Search Console**. Rankora then syncs each monitored site every day. It is read-only and never changes anything in Search Console. The **Search Console** page shows:

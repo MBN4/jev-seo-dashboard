@@ -190,10 +190,10 @@ Monitoring already reports each of these on the Monitoring page. None has a chec
 
 | # | What | Today | Needed |
 |---|---|---|---|
-| 1 | Priority level per check | The app shows only its own severity (critical, high, medium, low) | One priority file with P0, P1, P2, Weekly and Ignore for every check in Part A, shown on every screen |
-| 2 | Owner role per check | None | Dev, SEO or Content from Part A, shown on each issue and sent with each task |
+| 1 | Priority level per check | **Built:** `lib/priorities.ts`, used by Progress and the daily report | Show it on the remaining screens too |
+| 2 | Owner role per check | **Built:** shown on Progress, with a filter by owner | Send it with each task |
 | 3 | Task rules | Monitoring finds new and worse issues, but creates nothing | "appears", "grows" and "open" rules that decide when a task is opened |
-| 4 | "Done when" and auto-close | Fixed issues appear in the comparison, but nothing closes | The next audit marks the issue fixed, and closes the task when the check passes |
+| 4 | "Done when" and auto-close | **Built:** each daily report marks issues fixed (Progress, fix log) | Close the matching task once a task tool is connected |
 | 5 | Monitoring thresholds | Any score or sitemap change is reported | Score drop of 5 or more and sitemap removal of 10 or more are critical. Smaller changes are information only. |
 | 6 | IDs for monitoring signals | Events only | The `mon_*` IDs from Part B |
 | 7 | Align severities | 10 checks rank higher in the list than in the app | Either change the app's severity or keep both; the verdict text should match the priority |

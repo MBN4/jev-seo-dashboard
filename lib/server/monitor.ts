@@ -2,7 +2,7 @@ import "server-only";
 import fs from "node:fs";
 import path from "node:path";
 import { createHash, randomUUID } from "node:crypto";
-import { dataDir, maxConcurrentAudits, setting } from "./config";
+import { dataDir, jobsDir, maxConcurrentAudits, setting } from "./config";
 import { readState, writeAtomic } from "./state";
 import { listAudits, loadAudit } from "./audits";
 import { runningJobs } from "./jobs";
@@ -12,6 +12,9 @@ import { isConfigured } from "./secrets";
 import { diffAudits, diffHeadline, type AuditDiff } from "./audit-diff";
 import { SAMPLE_SITES } from "@/lib/brand";
 import { findingBreakdown } from "./finding-breakdown";
+import { recordedAuditIds, saveAuditRecord, saveGscRecord } from "./history";
+import { auditFolder, isValidAuditId } from "./paths";
+import { brandedDir } from "./branding";
 import { gscCredentialStatus, readSnapshot, syncSite, type GscDeps } from "./gsc";
 import { kpis, type GscAlert } from "@/lib/gsc-insights";
 import { checkUrlSyntax } from "@/lib/url";
@@ -85,6 +88,8 @@ interface MonitorState {
   events: MonitorEvent[];
   /** IDs of audits started by the scheduler */
   scheduled: string[];
+  /** Delete full files of scheduled audits older than this many days (null = keep all). History records are always kept. */
+  keepAuditDays: number | null;
 }
 
 const file = () => path.join(dataDir(), "monitor.json");
@@ -99,10 +104,13 @@ function newSite(url: string, builtIn: boolean): MonitoredSite {
 }
 
 export function readMonitor(): MonitorState {
-  let s: MonitorState = { version: 1, sites: [], events: [], scheduled: [] };
+  let s: MonitorState = { version: 1, sites: [], events: [], scheduled: [], keepAuditDays: null };
   try {
     const raw = JSON.parse(fs.readFileSync(file(), "utf8"));
-    s = { version: 1, sites: Array.isArray(raw.sites) ? raw.sites : [], events: Array.isArray(raw.events) ? raw.events : [], scheduled: Array.isArray(raw.scheduled) ? raw.scheduled : [] };
+    s = {
+      version: 1, sites: Array.isArray(raw.sites) ? raw.sites : [], events: Array.isArray(raw.events) ? raw.events : [], scheduled: Array.isArray(raw.scheduled) ? raw.scheduled : [],
+      keepAuditDays: typeof raw.keepAuditDays === "number" && raw.keepAuditDays >= 7 ? raw.keepAuditDays : null,
+    };
   } catch {
     /* first run */
   }
@@ -231,6 +239,11 @@ async function reportNewAudits(all: AuditSummary[]) {
   for (const t of todo) {
     const curr = loadAudit(t.id);
     if (!curr) continue;
+    try {
+      saveAuditRecord(t.domain, t.id, curr);
+    } catch (e) {
+      console.error("[history]", (e as Error).message);
+    }
     const prev = t.prevId ? loadAudit(t.prevId) : null;
     const rawDiff = prev ? diffAudits(t.prevId!, prev, t.id, curr) : diffAudits(t.id, { ...curr, findings: [], pages: [], actions: [] } as typeof curr, t.id, curr);
     // Mark actions the data shows are probably intended, and list them last.
@@ -273,6 +286,11 @@ export async function syncSearchConsole(domain: string, deps: GscDeps = {}) {
   const before = readSnapshot(domain);
   try {
     const r = await syncSite(domain, site.url, deps);
+    try {
+      saveGscRecord(domain, r.snapshot);
+    } catch (e) {
+      console.error("[history]", (e as Error).message);
+    }
     if (r.newAlerts.length)
       await updateMonitor((m) => {
         for (const a of r.newAlerts.slice().reverse())
@@ -287,6 +305,59 @@ export async function syncSearchConsole(domain: string, deps: GscDeps = {}) {
   }
 }
 
+/** Give every existing completed audit of a monitored site a history record (one per pass). */
+export function backfillHistory(all: AuditSummary[], limit = 1): number {
+  let done = 0;
+  for (const site of readMonitor().sites) {
+    const have = recordedAuditIds(site.domain);
+    for (const a of auditsFor(all, site.domain).completed) {
+      if (done >= limit) return done;
+      if (have.has(a.id)) continue;
+      const audit = loadAudit(a.id);
+      if (!audit) continue;
+      saveAuditRecord(site.domain, a.id, audit);
+      done++;
+    }
+  }
+  return done;
+}
+
+/**
+ * Optional clean-up (off by default): delete the full files of scheduled audits older than
+ * keepAuditDays. Never touches audits you started yourself, the two newest audits of a site,
+ * or any audit that has no history record yet.
+ */
+export function pruneOldAudits(nowMs: number): string[] {
+  const m = readMonitor();
+  if (!m.keepAuditDays) return [];
+  const removed: string[] = [];
+  const scheduled = new Set(m.scheduled);
+  const all = listAudits({ includeHidden: true });
+  for (const site of m.sites) {
+    const recorded = recordedAuditIds(site.domain);
+    const completed = auditsFor(all, site.domain).completed;
+    for (const a of completed.slice(0, -2)) {
+      const finished = Date.parse(a.finishedAt ?? a.createdAt);
+      if (!scheduled.has(a.id) || !recorded.has(a.id) || nowMs - finished < m.keepAuditDays * 24 * H) continue;
+      const folder = auditFolder(a.id);
+      if (folder) fs.rmSync(folder, { recursive: true, force: true });
+      if (isValidAuditId(a.id)) {
+        fs.rmSync(path.join(jobsDir(), a.id), { recursive: true, force: true });
+        fs.rmSync(brandedDir(a.id), { recursive: true, force: true });
+      }
+      removed.push(a.id);
+    }
+  }
+  return removed;
+}
+
+export async function setRetention(days: number | null) {
+  return updateMonitor((m) => {
+    m.keepAuditDays = days;
+    return days;
+  });
+}
+
 let ticking = false;
 
 /** One scheduler pass: report finished audits, run due change checks, start at most one due audit. */
@@ -297,6 +368,8 @@ export async function tick(deps: TickDeps = {}): Promise<{ started: string | nul
   const out = { started: null as string | null, checked: [] as string[], synced: null as string | null };
   try {
     await reportNewAudits(listAudits({ includeHidden: true }));
+    backfillHistory(listAudits({ includeHidden: true }));
+    pruneOldAudits(now());
 
     // Light change checks
     for (const site of readMonitor().sites.filter((x) => x.enabled)) {
@@ -412,7 +485,7 @@ export function monitorOverview() {
       search: searchSummary(site.domain),
     };
   });
-  return { enabled: monitorEnabled(), sites, events: m.events.slice(0, 100), unseen: m.events.filter((e) => !e.seen).length, scheduled: m.scheduled };
+  return { enabled: monitorEnabled(), keepAuditDays: m.keepAuditDays, sites, events: m.events.slice(0, 100), unseen: m.events.filter((e) => !e.seen).length, scheduled: m.scheduled };
 }
 
 function searchSummary(domain: string) {

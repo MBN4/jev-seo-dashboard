@@ -29,6 +29,7 @@
 │   monitor.ts         scheduled audits, change checks, event feed  │
 │   audit-diff.ts      what changed between two audits              │
 │   gsc.ts             Search Console: key, token, sync, snapshots  │
+│   history.ts         daily compact reports per site (kept forever)│
 │   state.ts, secrets.ts, diagnostics.ts, seeds.ts, verify.ts       │
 └───────────┬───────────────────────────────────────▲───────────────┘
             │ spawn: <engine python> -m <engine> run │ read
@@ -81,6 +82,7 @@ Replacing the engine with your own later means re-implementing that contract (th
 | `data/secrets.env` | API keys (mode 600, never returned by the API) |
 | `data/jobs/<id>/` | Job metadata and raw engine log |
 | `data/branded/<id>/` | Branded report copies, rebuilt when the source or brand changes |
+| `data/history/<site>/` | One compact report per day (issues with pages, score), Search Console daily numbers |
 | `data/gsc/` | Search Console service account key (mode 600) and one snapshot per site |
 | `data/monitor.json`, `data/monitor/` | Monitored sites, change feed, last sitemap URL list per site |
 | `data/summaries.json` | Audit list summaries, reused while `audit.json` is unchanged |
@@ -124,3 +126,17 @@ When Rankora was closed at the due time, the next pass starts the overdue audit.
 Each daily sync makes about 30 Search Analytics requests and up to 50 URL Inspection requests per site, well within Google's quotas (URL Inspection allows 2,000 per property per day). The scheduler syncs one site per pass, and failed syncs retry after 6 hours.
 
 The sync stores `data/gsc/<domain>.json`. `lib/gsc-insights.ts` derives totals, opportunities, the indexing summary and alerts from that file. The alert IDs are stable, so monitoring reports each problem once.
+
+## Progress history
+
+On each scheduler pass, a new completed audit of a monitored site is turned into a daily record (`lib/server/history.ts`). Audits already on disk are backfilled one per pass. If two audits finish on the same day, the later one is kept and the earlier is remembered as superseded, so it is never reloaded.
+
+`lib/issue-progress.ts` walks the records in date order to derive:
+
+- what was fixed, new, worse or better;
+- how long each issue has been open;
+- reopened issues;
+- page-level fixes;
+- the timeline and the fix log.
+
+Priority and owner come from `lib/priorities.ts`. Optional retention (`keepAuditDays`) only deletes full folders of scheduler-started audits that already have a record, never the two newest per site.

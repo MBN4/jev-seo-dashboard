@@ -343,6 +343,9 @@ function EventDetails({ e, onOpen }: { e: MonitorEvent; onOpen: (a: string, f: s
           <Link href={`/audits/${encodeURIComponent(e.auditId)}/checklist`} className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-info hover:underline">
             Full Google checklist for this audit <ArrowRight className="size-3" />
           </Link>
+          <Link href={`/progress?site=${encodeURIComponent(e.domain)}`} className="mt-2 ml-4 inline-flex items-center gap-1 text-xs font-medium text-info hover:underline">
+            Fixed vs still open over time <ArrowRight className="size-3" />
+          </Link>
         </Section>
       )}
     </div>

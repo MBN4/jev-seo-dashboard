@@ -3,11 +3,25 @@ import type { RecommendationStatus } from "@/lib/server/state";
 import type { ExtraResult } from "@/lib/server/extra-checks";
 import type { SiteSize } from "@/lib/server/site-size";
 import type { monitorOverview } from "@/lib/server/monitor";
+import type { FixedIssue, IssueRecord, OpenIssue, Progress } from "@/lib/issue-progress";
 import type { GscAlert, MetricRow, SitemapInfo, kpis as gscKpis, opportunities as gscOpportunities, indexing as gscIndexing } from "@/lib/gsc-insights";
 
 export type MonitorData = ReturnType<typeof monitorOverview>;
 export type MonitorSite = MonitorData["sites"][number];
 export type MonitorEvent = MonitorData["events"][number];
+
+type WithCount<T> = T & { urlCount: number };
+export type ProgressOpen = OpenIssue & { urlCount: number; pagesFixedCount: number; pagesNewCount: number };
+export interface ProgressView extends Omit<Progress, "open" | "fixLog" | "sinceLast" | "intended"> {
+  open: ProgressOpen[];
+  fixLog: Array<WithCount<FixedIssue>>;
+  sinceLast: { fixed: Array<WithCount<FixedIssue>>; newIssues: string[]; worse: string[]; better: string[]; pagesFixed: number; pagesNew: number } | null;
+  intended: Array<WithCount<IssueRecord>>;
+  storage: { audits: number; auditBytes: number; historyBytes: number; keepAuditDays: number | null };
+}
+export interface ProgressSites {
+  sites: Array<{ domain: string; url: string; reports: number; latest: Progress["latest"]; previous: Progress["previous"]; open: number; openByTier: Progress["openByTier"]; fixedSinceLast: number | null; newSinceLast: number | null; fixedEver: number }>;
+}
 
 export interface GscConnection { configured: boolean; clientEmail: string | null; projectId: string | null; source: string | null }
 export interface GscOverview {
@@ -131,6 +145,10 @@ export const api = {
   monitorRemove: (domain: string) => request<unknown>(`/api/monitor/sites/${enc(domain)}`, { method: "DELETE" }),
   monitorRun: (domain: string) => request<{ queued: boolean }>(`/api/monitor/sites/${enc(domain)}/run`, { method: "POST" }),
   monitorSeen: (ids?: string[]) => request<{ ok: boolean }>(`/api/monitor/seen`, { method: "POST", body: JSON.stringify(ids ? { ids } : {}) }),
+  siteProgress: () => request<ProgressSites>(`/api/progress`),
+  siteProgressDetail: (domain: string) => request<ProgressView>(`/api/progress/${enc(domain)}`),
+  progressReportUrl: (domain: string) => `/api/progress/${enc(domain)}/report`,
+  setRetention: (keepAuditDays: number | null) => request<{ keepAuditDays: number | null }>(`/api/monitor/settings`, { method: "PATCH", body: JSON.stringify({ keepAuditDays }) }),
   gsc: () => request<GscOverview>(`/api/gsc`),
   gscSite: (domain: string, days: number) => request<GscSiteView>(`/api/gsc/sites/${enc(domain)}${qs({ days })}`),
   gscSaveKey: (json: string) => request<GscConnection>(`/api/gsc/credentials`, { method: "PUT", body: JSON.stringify({ json }) }),
