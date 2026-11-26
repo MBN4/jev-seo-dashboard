@@ -83,7 +83,7 @@ export function intendedNoindexReason(url: string): string | null {
   if (/[?&]s=|\/search(\/|$)/.test(p + q)) return "Site search results";
   if (/\/(cart|checkout|basket|my-account|account|login|log-in|signin|sign-in|signup|sign-up|register|wp-admin|admin|dashboard)(\/|$)/.test(p)) return "Account, login or checkout";
   if (/\/(thank-you|thanks|thankyou|confirmation|success)(\/|$)/.test(p)) return "Thank-you or confirmation page";
-  if (/\/(privacy|privacy-policy|terms|terms-of-service|terms-and-conditions|cookie|cookies|cookie-policy|legal|disclaimer|gdpr)(\/|$)/.test(p)) return "Legal page";
+  if (/\/(privacy|privacy-policy|privacy-notice|terms|terms-of-use|terms-of-service|terms-and-conditions|acceptable-use|refund-policy|cookie|cookies|cookie-policy|legal|disclaimer|gdpr)(\/|$)/.test(p)) return "Legal page";
   if (/\/(feed|rss)(\/|$)/.test(p)) return "Feed";
   return null;
 }

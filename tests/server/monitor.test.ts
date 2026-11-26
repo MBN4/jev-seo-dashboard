@@ -73,6 +73,7 @@ describe("noindex verdict", () => {
     expect(intendedNoindexReason("https://s/blog/category/x/page/2")).toMatch(/Pagination/);
     expect(intendedNoindexReason("https://s/blog/author/maryam")).toMatch(/Author/);
     expect(intendedNoindexReason("https://s/privacy-policy")).toMatch(/Legal/);
+    expect(intendedNoindexReason("https://s/terms-of-use")).toMatch(/Legal/);
     expect(intendedNoindexReason("https://s/pricing")).toBeNull();
   });
 });
